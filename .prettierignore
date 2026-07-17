@@ -1,0 +1,8 @@
+node_modules/
+.pnpm-store/
+dist/
+build/
+coverage/
+.expo/
+docs/specifications/nestra-initial-application.md
+pnpm-lock.yaml

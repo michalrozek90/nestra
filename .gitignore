@@ -1,0 +1,31 @@
+# Dependencies and package-manager state
+node_modules/
+.pnpm-store/
+
+# Build and framework output
+dist/
+build/
+coverage/
+.expo/
+.expo-shared/
+web-build/
+
+# Environment files
+.env
+.env.local
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs and diagnostics
+*.log
+pnpm-debug.log*
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# TypeScript incremental output
+*.tsbuildinfo
