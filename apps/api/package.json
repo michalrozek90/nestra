@@ -4,21 +4,34 @@
   "private": true,
   "scripts": {
     "build": "nest build",
+    "db:migrate": "pnpm build && typeorm migration:run -d dist/database/data-source.js",
+    "db:migrate:generate": "pnpm build && typeorm migration:generate src/database/migrations/Generated -d dist/database/data-source.js --pretty",
+    "db:migrate:revert": "pnpm build && typeorm migration:revert -d dist/database/data-source.js",
+    "db:seed": "pnpm build && node dist/database/seed.js",
     "dev": "nest start --watch",
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@nestra/contracts": "workspace:*",
     "@nestjs/common": "11.1.28",
+    "@nestjs/config": "4.0.4",
     "@nestjs/core": "11.1.28",
     "@nestjs/platform-express": "11.1.28",
+    "@nestjs/swagger": "11.4.6",
+    "@nestjs/typeorm": "11.0.3",
+    "@nestra/contracts": "workspace:*",
+    "dotenv": "17.4.2",
+    "nestjs-zod": "5.4.0",
+    "pg": "8.22.0",
     "reflect-metadata": "0.2.2",
-    "rxjs": "7.8.2"
+    "rxjs": "7.8.2",
+    "typeorm": "1.1.0",
+    "zod": "4.4.3"
   },
   "devDependencies": {
-    "@nestra/tsconfig": "workspace:*",
     "@nestjs/cli": "11.0.24",
+    "@nestra/tsconfig": "workspace:*",
+    "@types/express": "5.0.6",
     "@types/node": "24.13.3",
     "typescript": "6.0.3"
   }

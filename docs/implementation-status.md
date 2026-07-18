@@ -2,7 +2,7 @@
 
 - [x] Stage 1 — Repository governance and workspace foundation
 - [x] Stage 2 — Application scaffolding and contracts build
-- [ ] Stage 3 — Backend platform foundation
+- [x] Stage 3 — Backend platform foundation
 - [ ] Stage 4 — Client platform foundation
 - [ ] Stage 5 — Authentication backend
 - [ ] Stage 6 — Authentication client
@@ -116,13 +116,22 @@ None known.
 
 ### Subtasks
 
-- [ ] Add API environment validation, TypeORM migrations and naming, versioned API routing,
-      request IDs, safe errors, health, Swagger/Zod integration, and seed infrastructure.
+- [x] Validate API environment variables without exposing private values.
+- [x] Add TypeORM configuration, plural snake-case naming, a dedicated CLI data source, committed
+      migrations, and migration/seed scripts.
+- [x] Add `/api/v1`, request IDs, safe common errors, and request logging.
+- [x] Add the database-backed health endpoint and shared Zod contracts.
+- [x] Integrate nestjs-zod with Swagger payload schemas at development-only `/docs`.
+- [x] Record the contracts build strategy in ADR 001 and update setup documentation.
 
 ### Completion criteria
 
-- [ ] Environment failures are explicit; migrations run and revert; health checks the database;
-      Swagger includes payload schemas; request IDs propagate; no auth or Notes logic exists.
+- [x] Invalid environment configuration fails explicitly without reporting private values.
+- [x] Migrations run, revert, and rerun with `synchronize` disabled.
+- [x] Health reports reachable and unreachable database states with the required HTTP status.
+- [x] Swagger contains complete health and API error payload schemas.
+- [x] Request IDs are accepted or generated and propagate through headers, errors, and safe logs.
+- [x] No authentication or Notes logic was added.
 
 ### Verification commands
 
@@ -139,11 +148,30 @@ Manual: inspect `/docs` and `/api/v1/health`.
 
 ### Completion date
 
-Not completed.
+2026-07-18
 
 ### Implementation notes
 
-Not started.
+Added validated NestJS configuration, TypeORM `1.1.0` with PostgreSQL, an explicit migration data
+source, a repeatable no-record Stage 3 seed command, shared health/error contracts, request ID
+middleware, a safe global exception filter, and the database-backed health module. TypeORM's
+automatic schema synchronization and migration-on-start behavior are disabled. The initial
+migration establishes the migration history without introducing Stage 5 or Stage 7 tables.
+
+`pnpm db:start`, migration run/revert/rerun, `pnpm format:check`, `pnpm lint`, `pnpm typecheck`,
+and `pnpm build` completed successfully. Manual checks confirmed health `200` while PostgreSQL was
+reachable, health `503` while it was stopped, request ID propagation and replacement, complete
+Swagger response properties at `/docs`, and explicit invalid-environment startup failure.
+`pnpm db:seed` also completed successfully. The optional Swagger telemetry install script is
+disabled through the pnpm build-script allow-list.
+
+A follow-up code review added lazy, concurrency-safe database initialization with a bounded health
+check, automatic compiled entity and migration discovery, a distinct route-not-found error,
+production rejection of the example JWT secret, and browser access to the `x-request-id` response
+header. A cold start without PostgreSQL returned health `503`, recovered to `200` after the
+database started, and migration revert/rerun continued to discover the committed migration.
+Table pluralization remains explicit on entity decorators while the naming strategy handles
+deterministic snake-case conversion; configured token lifetimes must also be greater than zero.
 
 ### Blockers
 
