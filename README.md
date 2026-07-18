@@ -70,8 +70,11 @@ macOS or Linux:
 cp infrastructure/.env.example infrastructure/.env
 ```
 
-Copy the API and client examples to their local `.env` files when those applications need runtime
-configuration. Local `.env` and `.env.local` files are ignored by Git.
+Copy the API example to `apps/api/.env` before running the API, migrations, or seed command, and
+replace the JWT placeholder with a private value of at least 32 characters. Copy the client
+example when the client needs runtime configuration. Local `.env` and `.env.local` files are
+ignored by Git. API startup fails with field names, but never private values, when configuration
+is missing or invalid. Preview and production environments reject the committed JWT placeholder.
 
 ## PostgreSQL
 
@@ -89,8 +92,30 @@ pnpm db:stop
 ```
 
 The database is exposed on `localhost:5432` and persisted in the named Docker volume
-`nestra_postgres_data`. Its checked-in credentials are for local development only. TypeORM,
-migrations, and seed commands are introduced in Stage 3.
+`nestra_postgres_data`. Its checked-in credentials are for local development only.
+
+Run, revert, and run the committed TypeORM migrations with:
+
+```bash
+pnpm db:migrate
+pnpm db:migrate:revert
+pnpm db:migrate
+```
+
+Generate a migration after changing persistence metadata:
+
+```bash
+pnpm db:migrate:generate
+```
+
+Run the repeatable development seed infrastructure with:
+
+```bash
+pnpm db:seed
+```
+
+Stage 3 does not create application seed records because users and notes are introduced later.
+The seed command refuses to run when `NODE_ENV=production`.
 
 ## Run the scaffolds
 
@@ -115,9 +140,11 @@ Start the NestJS API on `0.0.0.0:3000`:
 pnpm dev:api
 ```
 
-The temporary Stage 2 API route at `http://localhost:3000/` returns the same application metadata
-contract imported by the client. The full versioned `/api/v1` platform and health endpoint arrive
-in Stage 3.
+The versioned health endpoint is available at `http://localhost:3000/api/v1/health`. In
+development, Swagger UI is available outside the versioned prefix at `http://localhost:3000/docs`.
+Both successful and degraded health responses are documented from the shared Zod contract. The
+API can start while PostgreSQL is unavailable, report `503 degraded`, and reconnect on a later
+health check.
 
 For simultaneous contracts watch, API watch, and Expo Web development:
 

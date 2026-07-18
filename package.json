@@ -10,6 +10,10 @@
   "scripts": {
     "build": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/api build && pnpm --filter @nestra/client build",
     "db:logs": "docker compose --env-file infrastructure/.env -f infrastructure/docker-compose.yml logs --follow postgres",
+    "db:migrate": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/api db:migrate",
+    "db:migrate:generate": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/api db:migrate:generate",
+    "db:migrate:revert": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/api db:migrate:revert",
+    "db:seed": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/api db:seed",
     "db:start": "docker compose --env-file infrastructure/.env -f infrastructure/docker-compose.yml up --detach --wait postgres",
     "db:stop": "docker compose --env-file infrastructure/.env -f infrastructure/docker-compose.yml down",
     "dev": "pnpm --filter @nestra/contracts build && concurrently --kill-others-on-fail --names contracts,api,web \"pnpm --filter @nestra/contracts dev\" \"pnpm --filter @nestra/api dev\" \"pnpm --filter @nestra/client dev:web\"",
