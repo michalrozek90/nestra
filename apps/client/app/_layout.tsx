@@ -7,7 +7,7 @@ import { initializeLocalization } from '@/i18n/i18n';
 import { getBootstrapMessages } from '@/i18n/system-language';
 import { logger } from '@/infrastructure/logging/logger';
 import { colors, spacing } from '@/theme/tokens';
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 type InitializationStatus = 'loading' | 'ready' | 'failed';
 
@@ -36,24 +36,35 @@ export default function RootLayout() {
     };
   }, [initializationAttempt]);
 
-  if (initializationStatus !== 'ready') {
+  if (initializationStatus === 'loading') {
+    return (
+      <View
+        accessibilityLabel="Nestra"
+        accessibilityState={{ busy: true }}
+        style={styles.initializationContainer}
+      >
+        <StatusBar style="dark" />
+        <ActivityIndicator color={colors.primary} size="large" />
+      </View>
+    );
+  }
+
+  if (initializationStatus === 'failed') {
     const messages = getBootstrapMessages();
 
     return (
       <View style={styles.initializationContainer}>
         <StatusBar style="dark" />
         <Text accessibilityRole="header" style={styles.initializationTitle}>
-          {initializationStatus === 'loading' ? messages.loading : messages.failed}
+          {messages.failed}
         </Text>
-        {initializationStatus === 'failed' ? (
-          <Button
-            label={messages.retry}
-            onPress={() => {
-              setInitializationStatus('loading');
-              setInitializationAttempt((attempt) => attempt + 1);
-            }}
-          />
-        ) : null}
+        <Button
+          label={messages.retry}
+          onPress={() => {
+            setInitializationStatus('loading');
+            setInitializationAttempt((attempt) => attempt + 1);
+          }}
+        />
       </View>
     );
   }

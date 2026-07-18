@@ -10,7 +10,7 @@ type HeaderProps = {
 export function Header({ title, description }: HeaderProps) {
   return (
     <View style={styles.container}>
-      <Text accessibilityRole="header" style={styles.title}>
+      <Text accessibilityRole="header" aria-level={1} style={styles.title}>
         {title}
       </Text>
       {description ? <Text style={styles.description}>{description}</Text> : null}

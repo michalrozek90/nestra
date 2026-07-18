@@ -32,7 +32,6 @@ export function recordSuccessfulApiRequest(response: AxiosResponse): void {
   publish({
     ...snapshot,
     lastSuccessfulRequestAt: new Date().toISOString(),
-    lastErrorCode: null,
     lastRequestId: getRequestId(response) ?? snapshot.lastRequestId,
   });
 }

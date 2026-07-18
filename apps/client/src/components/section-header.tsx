@@ -7,7 +7,11 @@ type SectionHeaderProps = {
 };
 
 export function SectionHeader({ title }: SectionHeaderProps) {
-  return <Text style={styles.title}>{title}</Text>;
+  return (
+    <Text accessibilityRole="header" aria-level={2} style={styles.title}>
+      {title}
+    </Text>
+  );
 }
 
 const styles = StyleSheet.create({

@@ -14,7 +14,7 @@ export function EmptyState({ title, description }: EmptyStateProps) {
     <Card>
       <View style={styles.container}>
         <Ionicons color={colors.primary} name="leaf-outline" size={34} />
-        <Text accessibilityRole="header" style={styles.title}>
+        <Text accessibilityRole="header" aria-level={2} style={styles.title}>
           {title}
         </Text>
         <Text style={styles.description}>{description}</Text>

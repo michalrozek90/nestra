@@ -21,6 +21,15 @@ const MINIMUM_LEVEL: Readonly<Record<ApplicationEnvironment, LogLevel>> = {
 
 const SENSITIVE_CONTEXT_KEY =
   /(authorization|password|token|secret|credential|noteContent|content|draft)/i;
+const SAFE_ERROR_NAMES: ReadonlySet<string> = new Set([
+  'Error',
+  'EvalError',
+  'RangeError',
+  'ReferenceError',
+  'SyntaxError',
+  'TypeError',
+  'URIError',
+]);
 
 function sanitizeText(text: string): string {
   return text
@@ -64,9 +73,30 @@ function sanitizeContext(context: LogContext | undefined): LogContext | undefine
   );
 }
 
+function getSafeErrorName(errorName: string): string {
+  return SAFE_ERROR_NAMES.has(errorName) ? errorName : 'Error';
+}
+
+function getSafeDevelopmentStack(stack: string | undefined): string | undefined {
+  if (!stack) {
+    return undefined;
+  }
+
+  const safeStackFrames = stack
+    .split(/\r?\n/)
+    .slice(1)
+    .filter((line) => /^\s*at\s/.test(line) || /^\s*[^@\s]+@.+:\d+:\d+\s*$/.test(line))
+    .slice(0, 20)
+    .map((line) => sanitizeText(line));
+
+  return safeStackFrames.length > 0 ? safeStackFrames.join('\n') : undefined;
+}
+
 function normalizeError(error: unknown, environment: ApplicationEnvironment): LogContext {
   if (isAxiosError(error)) {
     const parsedApiError = apiErrorResponseSchema.safeParse(error.response?.data);
+    const safeStack =
+      environment === 'development' ? getSafeDevelopmentStack(error.stack) : undefined;
 
     return {
       name: 'AxiosError',
@@ -79,15 +109,18 @@ function normalizeError(error: unknown, environment: ApplicationEnvironment): Lo
             ...(parsedApiError.data.requestId ? { requestId: parsedApiError.data.requestId } : {}),
           }
         : {}),
-      ...(environment === 'development' && error.stack ? { stack: sanitizeText(error.stack) } : {}),
+      ...(safeStack ? { stack: safeStack } : {}),
     };
   }
 
   if (error instanceof Error) {
+    const safeStack =
+      environment === 'development' ? getSafeDevelopmentStack(error.stack) : undefined;
+
     return {
-      name: sanitizeText(error.name),
-      message: sanitizeText(error.message),
-      ...(environment === 'development' && error.stack ? { stack: sanitizeText(error.stack) } : {}),
+      name: getSafeErrorName(error.name),
+      message: 'An operation failed',
+      ...(safeStack ? { stack: safeStack } : {}),
     };
   }
 

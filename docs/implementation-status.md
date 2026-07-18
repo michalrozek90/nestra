@@ -262,6 +262,15 @@ establish an application-owned design system, and add a persisted appearance sel
 mode as the default. This entry records planned work only; no UI dependency or theme implementation
 has been added yet.
 
+A Stage 4 code-review follow-up made unknown-error logging privacy-safe, made the static Web
+initialization shell independent of the build machine's locale, assigned bottom safe-area ownership
+to the authentication layout, kept the last failed API error metadata coherent after later
+successes, and added an accessible heading hierarchy to current primitives. The Paper and
+appearance work above remains pending. `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, and
+`pnpm build` passed after the remediation. The static export contained a locale-neutral loading
+shell, and the running development server returned HTTP 200 for `/login` and `/settings`. Native
+safe-area behavior was not manually rechecked in this run because ADB was unavailable.
+
 ### Blockers
 
 None known.
