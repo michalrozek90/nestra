@@ -181,13 +181,29 @@ None known.
 
 ### Subtasks
 
-- [ ] Add responsive route shells, localized placeholders, persisted i18n, validated runtime
-      configuration, Axios, safe logging, diagnostics foundation, tokens, and used primitives.
+- [x] Add route groups and one responsive tabs, rail, and sidebar navigation shell.
+- [x] Add centralized breakpoints, design tokens, used accessible primitives, and localized
+      placeholders.
+- [x] Add English and Polish resources, system-language detection, English fallback, and persisted
+      manual language selection.
+- [x] Add validated runtime configuration, a configured Axios instance, safe logging, and the API
+      diagnostics foundation.
+- [ ] Integrate the latest stable compatible React Native Paper release and record the UI-library
+      decision in ADR 002.
+- [ ] Define the Nestra design-system foundation with semantic tokens and customized Material
+      Design 3 light and dark themes.
+- [ ] Add a persisted `system`, `light`, and `dark` appearance preference, default it to `system`,
+      and synchronize Paper, navigation, status bars, and native system UI.
+- [ ] Migrate current used primitives and screens onto the design system without creating
+      speculative or one-to-one wrappers for the entire Paper API.
 
 ### Completion criteria
 
-- [ ] Web uses port 8081; navigation responds to breakpoints; language persists with English
+- [x] Web uses port 8081; navigation responds to breakpoints; language persists with English
       fallback; runtime validation and safe logger rules hold; no auth or Notes business logic.
+- [ ] The Paper-based design system renders existing screens accessibly in light and dark themes;
+      system mode follows device changes; manual light or dark selection persists; navigation and
+      native system surfaces use the resolved appearance consistently.
 
 ### Verification commands
 
@@ -199,15 +215,61 @@ pnpm build
 pnpm dev:web
 ```
 
-Manual: resize through every breakpoint.
+Manual: resize through every breakpoint. Verify system, light, and dark appearance behavior on Web
+and at least one native target.
 
 ### Completion date
 
-Not completed.
+Not completed. Initially completed on 2026-07-18 and reopened on 2026-07-18 after expanding the
+client-foundation scope.
 
 ### Implementation notes
 
-Not started.
+Added the Expo Router application and authentication route shells with five responsive main
+destinations. The same tab tree renders as bottom tabs below 768 px, an icon-only rail from 768 px,
+and an icon-and-label sidebar from 1200 px. Central tokens and only currently used primitives
+provide consistent spacing, contrast, keyboard focus, and touch targets.
+
+Added feature-oriented English and Polish i18next resources, first-launch system detection,
+AsyncStorage-backed preference persistence, immediate Settings language switching, and English
+fallback. Added strict Zod validation for all client runtime values, an Axios instance with safe
+diagnostic metadata capture, a redacting environment-aware logger, and a diagnostics foundation
+without Stage 9 health behavior. Direct client console calls are restricted to the logger through
+ESLint.
+
+Installed Expo-compatible `expo-localization` `~57.0.1`, AsyncStorage `2.2.0`, and
+`@expo/vector-icons` `^15.1.1`, plus Axios `^1.18.1`, i18next `^26.3.6`, react-i18next `^17.0.10`,
+and Zod `4.4.3`. Expo's dependency compatibility check passed.
+
+`pnpm format:check`, `pnpm lint`, `pnpm typecheck`, and `pnpm build` completed successfully.
+`pnpm dev:web` built the contracts, started Expo at port 8081, served the Settings route with HTTP
+200, and supported the manual browser checks. Headless browser inspection at 600, 900, and 1400 px
+confirmed bottom tabs, rail, and sidebar behavior. Browser interaction checks confirmed Polish
+system detection, immediate English switching, persisted English after reload, and English fallback
+for emulated unsupported `de-DE`. A build with an invalid application environment failed explicitly
+and reported only the invalid field name.
+
+A follow-up navigation check corrected the Settings diagnostics action and disabled-diagnostics
+fallback to use canonical absolute routes. Browser interaction confirmed that selecting Developer
+diagnostics navigates to `/settings/developer-diagnostics` and renders the diagnostics screen.
+
+A native layout follow-up removed the compact tab bar's fixed height and bottom padding so React
+Navigation can apply the Android or iOS bottom safe-area inset without placing destinations behind
+system navigation controls.
+
+The client-foundation roadmap was expanded before Stage 5 to adopt stable React Native Paper,
+establish an application-owned design system, and add a persisted appearance selector with system
+mode as the default. This entry records planned work only; no UI dependency or theme implementation
+has been added yet.
+
+A Stage 4 code-review follow-up made unknown-error logging privacy-safe, made the static Web
+initialization shell independent of the build machine's locale, assigned bottom safe-area ownership
+to the authentication layout, kept the last failed API error metadata coherent after later
+successes, and added an accessible heading hierarchy to current primitives. The Paper and
+appearance work above remains pending. `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, and
+`pnpm build` passed after the remediation. The static export contained a locale-neutral loading
+shell, and the running development server returned HTTP 200 for `/login` and `/settings`. Native
+safe-area behavior was not manually rechecked in this run because ADB was unavailable.
 
 ### Blockers
 

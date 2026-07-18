@@ -10,7 +10,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   runtimeVersion: rootPackage.version,
   scheme: 'nestra',
   orientation: 'default',
-  plugins: ['expo-router', 'expo-status-bar'],
+  plugins: [
+    'expo-router',
+    'expo-status-bar',
+    ['expo-localization', { supportedLocales: ['en', 'pl'] }],
+  ],
   experiments: {
     typedRoutes: true,
   },

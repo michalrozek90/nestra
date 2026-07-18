@@ -210,14 +210,16 @@ identifiers are `nestra`, `com.michalrozek.nestra` for Android, and
 
 1. Repository and workspace foundation
 2. Expo, NestJS, contracts, database, and shared configuration scaffolding
-3. Backend and client platform foundations
+3. Backend foundation and a client platform foundation with a React Native Paper-based design
+   system and persisted system, light, and dark appearance modes
 4. Authentication
 5. Notes and resilient autosave
 6. Settings, diagnostics, release automation, and `0.1.0` readiness
 
-Post-`0.1.0` milestones cover automated tests, a UI/UX redesign, observability, shopping lists,
-reminders, ambient audio, offline synchronization, and a future Tauri desktop wrapper. The
-authoritative scope and detailed stage boundaries are in the specification.
+Post-`0.1.0` milestones cover automated tests, refinement of the established design system and
+product branding, observability, shopping lists, reminders, ambient audio, offline synchronization,
+and a future Tauri desktop wrapper. The authoritative scope and detailed stage boundaries are in
+the specification.
 
 ## License
 

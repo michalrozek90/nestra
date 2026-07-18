@@ -185,11 +185,14 @@ Do not add speculative infrastructure for excluded features.
 - expo-localization;
 - expo-secure-store for native auth tokens;
 - AsyncStorage for non-sensitive preferences and editor drafts;
+- React Native Paper;
 - React Native StyleSheet;
 - Expo-compatible icons;
-- small custom design tokens.
+- app-owned semantic design tokens and light and dark Material Design 3 themes;
+- expo-system-ui for native appearance integration.
 
-Do not add a large UI library in `0.1.0`.
+Use the latest stable mutually compatible React Native Paper release. Do not use a prerelease or add
+a second UI component or styling framework in `0.1.0`.
 
 ### API
 
@@ -1059,7 +1062,7 @@ Behavior:
 - 768–1199: left navigation rail, content max width about 960;
 - 1200+: left sidebar with icons and labels, content max width about 1200.
 
-Use one responsive route tree and a supported responsive tab-bar position, not separate navigation trees. Use `useWindowDimensions` or equivalent. Store breakpoints in `apps/client/src/theme/breakpoints.ts`. Do not add Tailwind or another styling framework yet.
+Use one responsive route tree and a supported responsive tab-bar position, not separate navigation trees. Use `useWindowDimensions` or equivalent. Store breakpoints in `apps/client/src/theme/breakpoints.ts`. Use React Native Paper with React Native layout APIs; do not add Tailwind or another styling framework.
 
 ---
 
@@ -1098,7 +1101,21 @@ Design is not a primary goal of `0.1.0`. Build a clean, accessible, usable found
 - clear states;
 - restrained placeholders.
 
-No detailed branding redesign, animation system, or styling framework. A dedicated redesign follows the test foundation.
+No detailed branding redesign or animation system. Build an application-owned design-system layer
+on React Native Paper using customized Material Design 3 light and dark themes, semantic color
+roles, typography, spacing, radii, sizes, and only the component variants required by implemented
+features. A dedicated visual refinement follows the test foundation.
+
+Appearance behavior:
+
+- support `system`, `light`, and `dark` preferences;
+- use `system` by default;
+- react to system appearance changes while `system` is selected;
+- persist a manual preference with AsyncStorage;
+- apply one resolved theme consistently to React Native Paper, Expo Router/React Navigation,
+  status bars, navigation surfaces, and native system UI;
+- configure Expo for automatic system appearance and use `expo-system-ui` where required;
+- expose the appearance selector directly in Settings.
 
 Create central tokens and only used primitives, such as:
 
@@ -1118,6 +1135,10 @@ SaveStatus
 ```
 
 Avoid speculative components and boolean-heavy APIs.
+
+Use React Native Paper primitives directly when no product-specific behavior or semantics are
+needed. Keep application components for reusable Nestra concepts and composed behavior; do not
+create one-to-one wrappers for the entire Paper API.
 
 ## 26. Notes backend
 
@@ -1629,7 +1650,10 @@ Scope:
 - base Axios;
 - logger;
 - diagnostics foundation;
-- minimal tokens/primitives.
+- stable React Native Paper integration;
+- application-owned light and dark Material Design 3 themes and semantic design tokens;
+- persisted `system`, `light`, and `dark` appearance preference with `system` as the default;
+- used Nestra components composed from Paper primitives.
 
 Done when:
 
@@ -1640,6 +1664,9 @@ Done when:
 - runtime validation works;
 - direct console only in logger;
 - localized placeholders;
+- Paper, navigation, status bar, and native system UI use the same resolved appearance;
+- system appearance changes are followed in `system` mode and manual selection persists;
+- existing client screens and used primitives render correctly in both light and dark themes;
 - no auth or Notes business logic.
 
 Verify:
@@ -1652,7 +1679,8 @@ pnpm build
 pnpm dev:web
 ```
 
-Resize through all breakpoints. Stop.
+Resize through all breakpoints. Verify default system appearance, live system changes, persisted
+manual light and dark selection, and readable contrast on Web and at least one native target. Stop.
 
 ## Stage 5 — Authentication backend
 
@@ -1922,11 +1950,11 @@ Dedicated E2E strategy spike
 - implement approved strategy
 - cover auth and critical Notes flows
 
-0.1.3 — UI/UX redesign
+0.1.3 — UI/UX refinement
 - visual direction and Nestra branding
+- refine the established React Native Paper-based design system
 - responsive refinement
 - accessibility review
-- decide whether a styling library is justified
 
 0.1.4 — Observability
 - evaluate and add Sentry
