@@ -4,5 +4,6 @@ dist/
 build/
 coverage/
 .expo/
+**/expo-env.d.ts
 docs/specifications/nestra-initial-application.md
 pnpm-lock.yaml

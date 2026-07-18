@@ -101,6 +101,8 @@ pnpm build
 pnpm typecheck
 ```
 
+Each standalone development command builds the contracts package once before starting its target.
+
 Start the Expo web client on port 8081:
 
 ```bash
