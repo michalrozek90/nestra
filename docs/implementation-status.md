@@ -103,6 +103,10 @@ web configuration were inspected. `pnpm build`, `pnpm typecheck`, `pnpm dev:web`
 and the combined `pnpm dev` were executed successfully. Compose configuration resolves PostgreSQL
 `18.4-alpine`, port 5432, a health check, and the `nestra_postgres_data` named volume.
 PostgreSQL was pulled, started, and reached healthy status using Docker Desktop's Hyper-V backend.
+A follow-up review ensured every standalone client and API development command builds contracts
+before startup and excluded Expo's generated type declaration from formatting checks. The
+remediation passed `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, and `pnpm build`;
+`pnpm dev:api` also built contracts first and reached a successful NestJS startup.
 
 ### Blockers
 
