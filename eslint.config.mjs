@@ -25,4 +25,11 @@ export default typescriptEslint.config(
       '@typescript-eslint/no-explicit-any': 'error',
     },
   },
+  {
+    files: ['apps/client/**/*.{ts,tsx}'],
+    ignores: ['apps/client/src/infrastructure/logging/console-logger.ts'],
+    rules: {
+      'no-console': 'error',
+    },
+  },
 );
