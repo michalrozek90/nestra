@@ -1,0 +1,25 @@
+{
+  "name": "@nestra/api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "nest build",
+    "dev": "nest start --watch",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@nestra/contracts": "workspace:*",
+    "@nestjs/common": "11.1.28",
+    "@nestjs/core": "11.1.28",
+    "@nestjs/platform-express": "11.1.28",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2"
+  },
+  "devDependencies": {
+    "@nestra/tsconfig": "workspace:*",
+    "@nestjs/cli": "11.0.24",
+    "@types/node": "24.13.3",
+    "typescript": "6.0.3"
+  }
+}

@@ -8,13 +8,25 @@
   },
   "packageManager": "pnpm@11.13.1",
   "scripts": {
+    "build": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/api build && pnpm --filter @nestra/client build",
+    "db:logs": "docker compose --env-file infrastructure/.env -f infrastructure/docker-compose.yml logs --follow postgres",
+    "db:start": "docker compose --env-file infrastructure/.env -f infrastructure/docker-compose.yml up --detach --wait postgres",
+    "db:stop": "docker compose --env-file infrastructure/.env -f infrastructure/docker-compose.yml down",
+    "dev": "pnpm --filter @nestra/contracts build && concurrently --kill-others-on-fail --names contracts,api,web \"pnpm --filter @nestra/contracts dev\" \"pnpm --filter @nestra/api dev\" \"pnpm --filter @nestra/client dev:web\"",
+    "dev:android": "pnpm --filter @nestra/client dev:android",
+    "dev:api": "pnpm --filter @nestra/api dev",
+    "dev:client": "pnpm --filter @nestra/client dev",
+    "dev:ios": "pnpm --filter @nestra/client dev:ios",
+    "dev:web": "pnpm --filter @nestra/client dev:web",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "typecheck": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/contracts typecheck && pnpm --filter @nestra/api typecheck && pnpm --filter @nestra/client typecheck"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "concurrently": "10.0.3",
     "eslint": "10.7.0",
     "globals": "17.7.0",
     "prettier": "3.9.5",

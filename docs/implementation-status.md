@@ -1,7 +1,7 @@
 # Nestra implementation status
 
 - [x] Stage 1 — Repository governance and workspace foundation
-- [ ] Stage 2 — Application scaffolding and contracts build
+- [x] Stage 2 — Application scaffolding and contracts build
 - [ ] Stage 3 — Backend platform foundation
 - [ ] Stage 4 — Client platform foundation
 - [ ] Stage 5 — Authentication backend
@@ -62,15 +62,22 @@ None known.
 
 ### Subtasks
 
-- [ ] Scaffold Expo client, NestJS API, contracts, and shared tsconfig packages.
-- [ ] Build contracts as ESM, CommonJS, declarations, and source maps with tsdown.
-- [ ] Wire workspace scripts, Docker PostgreSQL, environment examples, identifiers, and version
+- [x] Scaffold Expo client, NestJS API, contracts, and shared tsconfig packages.
+- [x] Build contracts as ESM, CommonJS, declarations, and source maps with tsdown.
+- [x] Wire workspace scripts, Docker PostgreSQL, environment examples, identifiers, and version
       reading.
 
 ### Completion criteria
 
-- [ ] Client web starts, API builds, dual-format contracts build and import through exports,
-      PostgreSQL is healthy, and root build ordering works without Stage 3 logic.
+- [x] Expo Web starts on port 8081 and produces a static export.
+- [x] The NestJS API builds, starts in watch mode, and imports the sample contract through package
+      exports.
+- [x] Contracts produce ESM, CommonJS, declaration files, and source maps; the client imports the
+      same contract through package exports.
+- [x] PostgreSQL starts and reports healthy through Docker Compose.
+- [x] Root build ordering is contracts, API, then client, and the combined development command
+      starts contracts watch, API watch, and Expo Web.
+- [x] No Stage 3 environment validation, TypeORM, API platform, health, or Swagger logic was added.
 
 ### Verification commands
 
@@ -84,11 +91,18 @@ pnpm dev:api
 
 ### Completion date
 
-Not completed.
+2026-07-18
 
 ### Implementation notes
 
-Not started.
+Created private Expo, NestJS, contracts, and tsconfig workspace packages. Expo SDK `57.0.7`
+selected its compatible React Native and Router dependencies through `expo install`. Contracts use
+tsdown `0.22.9` with conditional ESM/CommonJS exports and root-version replacement at build time.
+The API and client both returned application metadata version `0.0.0`; Expo identifiers and static
+web configuration were inspected. `pnpm build`, `pnpm typecheck`, `pnpm dev:web`, `pnpm dev:api`,
+and the combined `pnpm dev` were executed successfully. Compose configuration resolves PostgreSQL
+`18.4-alpine`, port 5432, a health check, and the `nestra_postgres_data` named volume.
+PostgreSQL was pulled, started, and reached healthy status using Docker Desktop's Hyper-V backend.
 
 ### Blockers
 
