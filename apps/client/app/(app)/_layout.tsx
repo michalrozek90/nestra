@@ -2,10 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Text, useWindowDimensions, type ColorValue } from 'react-native';
+import { StyleSheet, useWindowDimensions, type ColorValue } from 'react-native';
+import { Text } from 'react-native-paper';
 
 import { getResponsiveLayout } from '@/theme/breakpoints';
-import { colors, sizes } from '@/theme/tokens';
+import { sizes } from '@/theme/tokens';
+import { useNestraTheme } from '@/theme/themes';
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -16,6 +18,7 @@ function TabIcon({ color, name, size }: { color: ColorValue; name: IoniconName; 
 export default function ApplicationLayout() {
   const { t } = useTranslation('common');
   const { width } = useWindowDimensions();
+  const theme = useNestraTheme();
   const responsiveLayout = getResponsiveLayout(width);
   const isCompact = responsiveLayout === 'compact';
   const isExpanded = responsiveLayout === 'expanded';
@@ -24,10 +27,12 @@ export default function ApplicationLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        sceneStyle: styles.scene,
-        tabBarActiveBackgroundColor: isCompact ? colors.surface : colors.primarySoft,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
+        sceneStyle: { backgroundColor: theme.colors.background },
+        tabBarActiveBackgroundColor: isCompact
+          ? theme.colors.surface
+          : theme.colors.primaryContainer,
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
         tabBarItemStyle: isCompact ? styles.compactTab : styles.sideTab,
         ...(isCompact
           ? {
@@ -42,14 +47,19 @@ export default function ApplicationLayout() {
         tabBarLabelStyle: styles.tabLabel,
         tabBarPosition: isCompact ? 'bottom' : 'left',
         tabBarShowLabel: isCompact || isExpanded,
-        tabBarStyle: isCompact
-          ? styles.tabBar
-          : [
-              styles.tabBar,
-              {
+        tabBarStyle: [
+          styles.tabBar,
+          {
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.outlineVariant,
+          },
+          isCompact
+            ? null
+            : {
+                minWidth: isExpanded ? sizes.navigationSidebarWidth : sizes.navigationRailWidth,
                 width: isExpanded ? sizes.navigationSidebarWidth : sizes.navigationRailWidth,
               },
-            ],
+        ],
         tabBarVariant: isCompact ? 'uikit' : 'material',
       }}
     >
@@ -118,16 +128,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     maxWidth: 64,
   },
-  scene: {
-    backgroundColor: colors.background,
-  },
   sideTab: {
     borderRadius: 0,
     minHeight: 56,
   },
   tabBar: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+    borderStyle: 'solid',
   },
   tabLabel: {
     fontSize: 13,

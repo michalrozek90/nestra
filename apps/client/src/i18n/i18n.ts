@@ -24,7 +24,7 @@ async function resolveInitialLanguage(): Promise<SupportedLanguage> {
     const storedLanguage = await readLanguagePreference();
     return isSupportedLanguage(storedLanguage) ? storedLanguage : getDetectedSystemLanguage();
   } catch (error: unknown) {
-    markPreferenceStorageUnavailable();
+    markPreferenceStorageUnavailable('language');
     logger.error('Language preference could not be read', error);
     return getDetectedSystemLanguage();
   }
@@ -64,7 +64,7 @@ export async function changeApplicationLanguage(language: SupportedLanguage): Pr
   try {
     await writeLanguagePreference(language);
   } catch (error: unknown) {
-    markPreferenceStorageUnavailable();
+    markPreferenceStorageUnavailable('language');
     logger.error('Language preference could not be saved', error);
     throw error;
   }

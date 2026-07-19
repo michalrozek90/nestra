@@ -1,7 +1,8 @@
 import { applicationMetadata } from '@nestra/contracts';
 import { Redirect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
+import { Text } from 'react-native-paper';
 
 import { Card } from '@/components/card';
 import { Header } from '@/components/header';
@@ -12,7 +13,8 @@ import { getSelectedLanguage } from '@/i18n/i18n';
 import { getDetectedSystemLanguage } from '@/i18n/system-language';
 import { useApiDiagnostics } from '@/infrastructure/diagnostics/api-diagnostics';
 import { getPreferenceStorageAvailability } from '@/infrastructure/storage/preference-storage';
-import { colors, spacing } from '@/theme/tokens';
+import { spacing, typography } from '@/theme/tokens';
+import { useNestraTheme } from '@/theme/themes';
 
 type DiagnosticRowProps = {
   readonly label: string;
@@ -20,10 +22,12 @@ type DiagnosticRowProps = {
 };
 
 function DiagnosticRow({ label, value }: DiagnosticRowProps) {
+  const theme = useNestraTheme();
+
   return (
     <View style={styles.row}>
-      <Text style={styles.label}>{label}</Text>
-      <Text selectable style={styles.value}>
+      <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>{label}</Text>
+      <Text selectable style={[styles.value, { color: theme.colors.onSurface }]}>
         {value}
       </Text>
     </View>
@@ -116,9 +120,8 @@ export default function DeveloperDiagnosticsScreen() {
 
 const styles = StyleSheet.create({
   label: {
-    color: colors.textSecondary,
+    ...typography.supporting,
     flex: 1,
-    fontSize: 14,
   },
   row: {
     alignItems: 'flex-start',
@@ -130,9 +133,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   value: {
-    color: colors.textPrimary,
+    ...typography.supporting,
     flex: 1,
-    fontSize: 14,
     fontWeight: '600',
     textAlign: 'right',
   },

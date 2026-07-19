@@ -3,7 +3,8 @@ import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getResponsiveLayout } from '@/theme/breakpoints';
-import { colors, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
+import { useNestraTheme } from '@/theme/themes';
 
 const CONTENT_MAX_WIDTH = {
   compact: undefined,
@@ -14,9 +15,13 @@ const CONTENT_MAX_WIDTH = {
 export function Screen({ children }: PropsWithChildren) {
   const { width } = useWindowDimensions();
   const responsiveLayout = getResponsiveLayout(width);
+  const theme = useNestraTheme();
 
   return (
-    <SafeAreaView edges={['top', 'right', 'left']} style={styles.safeArea}>
+    <SafeAreaView
+      edges={['top', 'right', 'left']}
+      style={[styles.safeArea, { backgroundColor: theme.colors.background }]}
+    >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -44,7 +49,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   safeArea: {
-    backgroundColor: colors.background,
     flex: 1,
   },
   scrollContent: {

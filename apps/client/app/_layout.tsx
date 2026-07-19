@@ -1,18 +1,22 @@
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Text } from 'react-native-paper';
 
 import { Button } from '@/components/button';
 import { initializeLocalization } from '@/i18n/i18n';
 import { getBootstrapMessages } from '@/i18n/system-language';
 import { logger } from '@/infrastructure/logging/logger';
-import { colors, spacing } from '@/theme/tokens';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { AppearanceProvider, useAppearance } from '@/theme/appearance-provider';
+import { spacing } from '@/theme/tokens';
+import { useNestraTheme } from '@/theme/themes';
 
 type InitializationStatus = 'loading' | 'ready' | 'failed';
 
-export default function RootLayout() {
-  const [initializationStatus, setInitializationStatus] = useState<InitializationStatus>('loading');
+function RootNavigator() {
+  const theme = useNestraTheme();
+  const { isInitialized: isAppearanceInitialized } = useAppearance();
+  const [localizationStatus, setLocalizationStatus] = useState<InitializationStatus>('loading');
   const [initializationAttempt, setInitializationAttempt] = useState(0);
 
   useEffect(() => {
@@ -21,13 +25,13 @@ export default function RootLayout() {
     void initializeLocalization()
       .then(() => {
         if (isMounted) {
-          setInitializationStatus('ready');
+          setLocalizationStatus('ready');
         }
       })
       .catch((error: unknown) => {
         logger.error('Client localization initialization failed', error);
         if (isMounted) {
-          setInitializationStatus('failed');
+          setLocalizationStatus('failed');
         }
       });
 
@@ -36,32 +40,30 @@ export default function RootLayout() {
     };
   }, [initializationAttempt]);
 
-  if (initializationStatus === 'loading') {
+  if (localizationStatus === 'loading' || !isAppearanceInitialized) {
     return (
       <View
         accessibilityLabel="Nestra"
         accessibilityState={{ busy: true }}
-        style={styles.initializationContainer}
+        style={[styles.initializationContainer, { backgroundColor: theme.colors.background }]}
       >
-        <StatusBar style="dark" />
-        <ActivityIndicator color={colors.primary} size="large" />
+        <ActivityIndicator color={theme.colors.primary} size="large" />
       </View>
     );
   }
 
-  if (initializationStatus === 'failed') {
+  if (localizationStatus === 'failed') {
     const messages = getBootstrapMessages();
 
     return (
-      <View style={styles.initializationContainer}>
-        <StatusBar style="dark" />
+      <View style={[styles.initializationContainer, { backgroundColor: theme.colors.background }]}>
         <Text accessibilityRole="header" style={styles.initializationTitle}>
           {messages.failed}
         </Text>
         <Button
           label={messages.retry}
           onPress={() => {
-            setInitializationStatus('loading');
+            setLocalizationStatus('loading');
             setInitializationAttempt((attempt) => attempt + 1);
           }}
         />
@@ -70,24 +72,32 @@ export default function RootLayout() {
   }
 
   return (
-    <>
-      <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false }} />
-    </>
+    <Stack
+      screenOptions={{
+        contentStyle: { backgroundColor: theme.colors.background },
+        headerShown: false,
+      }}
+    />
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AppearanceProvider>
+      <RootNavigator />
+    </AppearanceProvider>
   );
 }
 
 const styles = StyleSheet.create({
   initializationContainer: {
     alignItems: 'center',
-    backgroundColor: colors.background,
     flex: 1,
     gap: spacing.lg,
     justifyContent: 'center',
     padding: spacing.xl,
   },
   initializationTitle: {
-    color: colors.textPrimary,
     fontSize: 20,
     fontWeight: '600',
     textAlign: 'center',

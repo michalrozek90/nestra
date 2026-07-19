@@ -18,9 +18,11 @@ platforms without introducing a web-only styling model.
 
 ## Decision
 
-Nestra will use the latest stable, mutually compatible React Native Paper release as its UI
-component foundation. At the time of this decision, the stable line is React Native Paper 5; a
-prerelease major version must not be installed.
+Nestra will use React Native Paper `5.15.3`, the latest stable release verified during Stage 4, as
+its UI component foundation. Its peer requirements accept the project's React `19.2.3`, React
+Native `0.86.0`, and `react-native-safe-area-context` `5.7.0`. A prerelease major version must not
+be installed. Expo-managed native appearance integration uses the Expo SDK 57-compatible
+`expo-system-ui` `57.0.1` release.
 
 The application will own customized Material Design 3 light and dark themes, semantic design
 tokens, and reusable product-specific components. The appearance preference will support
@@ -28,8 +30,9 @@ tokens, and reusable product-specific components. The appearance preference will
 manual selection with AsyncStorage.
 
 The resolved appearance will be applied consistently to React Native Paper, Expo Router/React
-Navigation, status bars, navigation surfaces, and native system UI. Expo will use automatic system
-appearance and `expo-system-ui` where required.
+Navigation, status bars, navigation surfaces, and native system UI. Expo uses automatic system
+appearance, React Native's application-level appearance override for manual selections, and
+`expo-system-ui` for the native root surface background.
 
 React Native Paper primitives may be used directly when no Nestra-specific abstraction is useful.
 Application components will encapsulate reusable product semantics or composed behavior; the
