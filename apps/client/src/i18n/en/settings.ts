@@ -2,6 +2,7 @@ export const enSettings = {
   title: 'Settings',
   sections: {
     language: 'Language',
+    appearance: 'Appearance',
     developer: 'Developer',
   },
   language: {
@@ -9,6 +10,14 @@ export const enSettings = {
     polish: 'Polish',
     selected: 'Selected',
     saveFailed: 'The language changed, but the preference could not be saved.',
+  },
+  appearance: {
+    system: 'System',
+    systemDescription: 'Follow the appearance selected on this device.',
+    light: 'Light',
+    dark: 'Dark',
+    selected: 'Selected',
+    saveFailed: 'The appearance preference could not be saved. Try again.',
   },
   diagnostics: {
     entryTitle: 'Developer diagnostics',

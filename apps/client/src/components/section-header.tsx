@@ -1,14 +1,22 @@
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Text } from 'react-native-paper';
 
-import { colors } from '@/theme/tokens';
+import { typography } from '@/theme/tokens';
+import { useNestraTheme } from '@/theme/themes';
 
 type SectionHeaderProps = {
   readonly title: string;
 };
 
 export function SectionHeader({ title }: SectionHeaderProps) {
+  const theme = useNestraTheme();
+
   return (
-    <Text accessibilityRole="header" aria-level={2} style={styles.title}>
+    <Text
+      accessibilityRole="header"
+      aria-level={2}
+      style={[styles.title, { color: theme.colors.onSurfaceVariant }]}
+    >
       {title}
     </Text>
   );
@@ -16,10 +24,7 @@ export function SectionHeader({ title }: SectionHeaderProps) {
 
 const styles = StyleSheet.create({
   title: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.7,
+    ...typography.sectionTitle,
     textTransform: 'uppercase',
   },
 });

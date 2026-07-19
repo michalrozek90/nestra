@@ -1,48 +1,77 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { forwardRef, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { Icon, Surface, Text, TouchableRipple } from 'react-native-paper';
 
-import { colors, radii, sizes, spacing } from '@/theme/tokens';
+import { radii, sizes, spacing, typography } from '@/theme/tokens';
+import { useNestraTheme } from '@/theme/themes';
 
 type SettingsRowProps = {
   readonly title: string;
   readonly description?: string;
   readonly onPress: () => void;
-  readonly isSelected?: boolean;
+  readonly isSelected?: boolean | undefined;
+  readonly isDisabled?: boolean | undefined;
   readonly accessibilityHint?: string | undefined;
+  readonly tabIndex?: 0 | -1 | undefined;
 };
 
-export function SettingsRow({
-  title,
-  description,
-  onPress,
-  isSelected = false,
-  accessibilityHint,
-}: SettingsRowProps) {
+export const SettingsRow = forwardRef<View, SettingsRowProps>(function SettingsRow(
+  { title, description, onPress, isSelected, isDisabled = false, accessibilityHint, tabIndex },
+  ref,
+) {
   const [isFocused, setIsFocused] = useState(false);
+  const theme = useNestraTheme();
+  const isSelection = isSelected !== undefined;
 
   return (
-    <Pressable
-      accessibilityHint={accessibilityHint}
-      accessibilityRole="button"
-      accessibilityState={{ selected: isSelected }}
-      onBlur={() => setIsFocused(false)}
-      onFocus={() => setIsFocused(true)}
-      onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed, isFocused && styles.focused]}
+    <Surface
+      elevation={0}
+      style={[
+        styles.surface,
+        {
+          backgroundColor: theme.colors.surface,
+          borderColor: isFocused ? theme.colors.primary : theme.colors.outlineVariant,
+          opacity: isDisabled ? 0.6 : 1,
+        },
+      ]}
     >
-      <View style={styles.copy}>
-        <Text style={styles.title}>{title}</Text>
-        {description ? <Text style={styles.description}>{description}</Text> : null}
-      </View>
-      <Ionicons
-        color={isSelected ? colors.primary : colors.textSecondary}
-        name={isSelected ? 'checkmark-circle' : 'chevron-forward'}
-        size={24}
-      />
-    </Pressable>
+      <TouchableRipple
+        ref={ref}
+        accessibilityHint={accessibilityHint}
+        accessibilityRole={isSelection ? 'radio' : 'button'}
+        accessibilityState={
+          isSelection ? { checked: isSelected, disabled: isDisabled } : { disabled: isDisabled }
+        }
+        aria-checked={isSelection ? isSelected : undefined}
+        borderless
+        disabled={isDisabled}
+        onBlur={() => setIsFocused(false)}
+        onFocus={() => setIsFocused(true)}
+        onPress={onPress}
+        style={styles.ripple}
+        tabIndex={tabIndex}
+      >
+        <View style={styles.row}>
+          <View style={styles.copy}>
+            <Text style={styles.title}>{title}</Text>
+            {description ? (
+              <Text style={[styles.description, { color: theme.colors.onSurfaceVariant }]}>
+                {description}
+              </Text>
+            ) : null}
+          </View>
+          <Icon
+            color={isSelected ? theme.colors.primary : theme.colors.onSurfaceVariant}
+            size={24}
+            source={
+              isSelection ? (isSelected ? 'radiobox-marked' : 'radiobox-blank') : 'chevron-right'
+            }
+          />
+        </View>
+      </TouchableRipple>
+    </Surface>
   );
-}
+});
 
 const styles = StyleSheet.create({
   copy: {
@@ -50,31 +79,24 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   description: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    lineHeight: 20,
+    ...typography.supporting,
   },
-  focused: {
-    borderColor: colors.focus,
-    borderWidth: 2,
-  },
-  pressed: {
-    backgroundColor: colors.surfaceMuted,
+  ripple: {
+    borderRadius: radii.md,
   },
   row: {
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.md,
     minHeight: sizes.minimumTouchTarget,
     padding: spacing.lg,
   },
+  surface: {
+    borderRadius: radii.md,
+    borderWidth: 2,
+    overflow: 'hidden',
+  },
   title: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '600',
+    ...typography.settingsTitle,
   },
 });

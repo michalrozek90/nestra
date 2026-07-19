@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Button as PaperButton } from 'react-native-paper';
 
-import { colors, radii, sizes, spacing } from '@/theme/tokens';
+import { radii, sizes, spacing } from '@/theme/tokens';
 
 export type ButtonVariant = 'primary' | 'secondary';
 
@@ -20,70 +20,31 @@ export function Button({
   isDisabled = false,
   accessibilityLabel,
 }: ButtonProps) {
-  const [isFocused, setIsFocused] = useState(false);
-
   return (
-    <Pressable
+    <PaperButton
       accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: isDisabled }}
+      contentStyle={styles.content}
       disabled={isDisabled}
-      onBlur={() => setIsFocused(false)}
-      onFocus={() => setIsFocused(true)}
+      labelStyle={styles.label}
+      mode={variant === 'primary' ? 'contained' : 'outlined'}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.base,
-        variant === 'primary' ? styles.primary : styles.secondary,
-        pressed && (variant === 'primary' ? styles.primaryPressed : styles.secondaryPressed),
-        isFocused && styles.focused,
-        isDisabled && styles.disabled,
-      ]}
+      style={styles.button}
     >
-      <Text style={variant === 'primary' ? styles.primaryLabel : styles.secondaryLabel}>
-        {label}
-      </Text>
-    </Pressable>
+      {label}
+    </PaperButton>
   );
 }
 
 const styles = StyleSheet.create({
-  base: {
-    alignItems: 'center',
+  button: {
     borderRadius: radii.md,
-    borderWidth: 2,
-    justifyContent: 'center',
+  },
+  content: {
     minHeight: sizes.minimumTouchTarget,
     paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.sm,
   },
-  disabled: {
-    opacity: 0.55,
-  },
-  focused: {
-    borderColor: colors.focus,
-  },
-  primary: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  primaryLabel: {
-    color: colors.textOnPrimary,
+  label: {
     fontSize: 16,
     fontWeight: '600',
-  },
-  primaryPressed: {
-    backgroundColor: colors.primaryPressed,
-  },
-  secondary: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-  },
-  secondaryLabel: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  secondaryPressed: {
-    backgroundColor: colors.surfaceMuted,
   },
 });

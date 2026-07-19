@@ -1,18 +1,3 @@
-export const colors = {
-  background: '#f7f6f2',
-  surface: '#ffffff',
-  surfaceMuted: '#edf1ee',
-  primary: '#2f6652',
-  primaryPressed: '#244f40',
-  primarySoft: '#dcebe4',
-  textPrimary: '#1d2723',
-  textSecondary: '#5c6963',
-  textOnPrimary: '#ffffff',
-  border: '#d5ddd8',
-  danger: '#a13d3d',
-  focus: '#397d64',
-} as const;
-
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -33,4 +18,39 @@ export const sizes = {
   minimumTouchTarget: 48,
   navigationRailWidth: 88,
   navigationSidebarWidth: 248,
+} as const;
+
+export const typography = {
+  screenTitle: {
+    fontSize: 32,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+    lineHeight: 40,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.7,
+    lineHeight: 20,
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: '600',
+    lineHeight: 28,
+  },
+  body: {
+    fontSize: 16,
+    fontWeight: '400',
+    lineHeight: 24,
+  },
+  settingsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 24,
+  },
+  supporting: {
+    fontSize: 14,
+    fontWeight: '400',
+    lineHeight: 20,
+  },
 } as const;

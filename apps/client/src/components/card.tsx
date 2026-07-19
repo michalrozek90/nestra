@@ -1,19 +1,23 @@
 import type { PropsWithChildren } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Card as PaperCard } from 'react-native-paper';
 
-import { colors, radii, spacing } from '@/theme/tokens';
+import { radii, spacing } from '@/theme/tokens';
 
 export function Card({ children }: PropsWithChildren) {
-  return <View style={styles.card}>{children}</View>;
+  return (
+    <PaperCard mode="outlined" style={styles.card}>
+      <PaperCard.Content style={styles.content}>{children}</PaperCard.Content>
+    </PaperCard>
+  );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
     borderRadius: radii.lg,
-    borderWidth: 1,
+  },
+  content: {
     gap: spacing.md,
-    padding: spacing.lg,
+    paddingVertical: spacing.lg,
   },
 });

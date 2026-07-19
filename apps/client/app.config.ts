@@ -2,6 +2,9 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 import rootPackage from '../../package.json';
 
+// Expo uses this before the JavaScript theme loads; keep it aligned with lightColorScheme.background.
+const APP_BOOTSTRAP_BACKGROUND_COLOR = '#f7f6f2';
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'Nestra',
@@ -10,9 +13,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   runtimeVersion: rootPackage.version,
   scheme: 'nestra',
   orientation: 'default',
+  backgroundColor: APP_BOOTSTRAP_BACKGROUND_COLOR,
+  userInterfaceStyle: 'automatic',
   plugins: [
     'expo-router',
     'expo-status-bar',
+    'expo-system-ui',
     ['expo-localization', { supportedLocales: ['en', 'pl'] }],
   ],
   experiments: {

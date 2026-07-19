@@ -2,6 +2,7 @@ export const plSettings = {
   title: 'Ustawienia',
   sections: {
     language: 'Język',
+    appearance: 'Wygląd',
     developer: 'Dla dewelopera',
   },
   language: {
@@ -9,6 +10,14 @@ export const plSettings = {
     polish: 'Polski',
     selected: 'Wybrany',
     saveFailed: 'Język został zmieniony, ale nie udało się zapisać ustawienia.',
+  },
+  appearance: {
+    system: 'Systemowy',
+    systemDescription: 'Używaj wyglądu wybranego na tym urządzeniu.',
+    light: 'Jasny',
+    dark: 'Ciemny',
+    selected: 'Wybrany',
+    saveFailed: 'Nie udało się zapisać ustawienia wyglądu. Spróbuj ponownie.',
   },
   diagnostics: {
     entryTitle: 'Diagnostyka deweloperska',

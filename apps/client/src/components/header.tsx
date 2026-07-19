@@ -1,6 +1,8 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from 'react-native-paper';
 
-import { colors, spacing } from '@/theme/tokens';
+import { spacing, typography } from '@/theme/tokens';
+import { useNestraTheme } from '@/theme/themes';
 
 type HeaderProps = {
   readonly title: string;
@@ -8,12 +10,18 @@ type HeaderProps = {
 };
 
 export function Header({ title, description }: HeaderProps) {
+  const theme = useNestraTheme();
+
   return (
     <View style={styles.container}>
       <Text accessibilityRole="header" aria-level={1} style={styles.title}>
         {title}
       </Text>
-      {description ? <Text style={styles.description}>{description}</Text> : null}
+      {description ? (
+        <Text style={[styles.description, { color: theme.colors.onSurfaceVariant }]}>
+          {description}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -23,14 +31,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   description: {
-    color: colors.textSecondary,
-    fontSize: 16,
-    lineHeight: 24,
+    ...typography.body,
   },
   title: {
-    color: colors.textPrimary,
-    fontSize: 32,
-    fontWeight: '700',
-    letterSpacing: -0.5,
+    ...typography.screenTitle,
   },
 });

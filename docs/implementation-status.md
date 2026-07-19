@@ -188,13 +188,13 @@ None known.
       manual language selection.
 - [x] Add validated runtime configuration, a configured Axios instance, safe logging, and the API
       diagnostics foundation.
-- [ ] Integrate the latest stable compatible React Native Paper release and record the UI-library
+- [x] Integrate the latest stable compatible React Native Paper release and record the UI-library
       decision in ADR 002.
-- [ ] Define the Nestra design-system foundation with semantic tokens and customized Material
+- [x] Define the Nestra design-system foundation with semantic tokens and customized Material
       Design 3 light and dark themes.
-- [ ] Add a persisted `system`, `light`, and `dark` appearance preference, default it to `system`,
+- [x] Add a persisted `system`, `light`, and `dark` appearance preference, default it to `system`,
       and synchronize Paper, navigation, status bars, and native system UI.
-- [ ] Migrate current used primitives and screens onto the design system without creating
+- [x] Migrate current used primitives and screens onto the design system without creating
       speculative or one-to-one wrappers for the entire Paper API.
 
 ### Completion criteria
@@ -221,7 +221,8 @@ and at least one native target.
 ### Completion date
 
 Not completed. Initially completed on 2026-07-18 and reopened on 2026-07-18 after expanding the
-client-foundation scope.
+client-foundation scope. The expanded implementation was completed on 2026-07-19, but native manual
+verification remains blocked.
 
 ### Implementation notes
 
@@ -257,23 +258,74 @@ A native layout follow-up removed the compact tab bar's fixed height and bottom 
 Navigation can apply the Android or iOS bottom safe-area inset without placing destinations behind
 system navigation controls.
 
-The client-foundation roadmap was expanded before Stage 5 to adopt stable React Native Paper,
-establish an application-owned design system, and add a persisted appearance selector with system
-mode as the default. This entry records planned work only; no UI dependency or theme implementation
-has been added yet.
+Integrated stable React Native Paper `5.15.3` and the Expo SDK 57-compatible `expo-system-ui`
+`57.0.1`. Added application-owned Material Design 3 light and dark themes, semantic color and
+typography tokens, a Paper and Expo Router theme provider, synchronized status and root surfaces,
+and platform-specific application appearance adapters. ADR 002 records the selected UI and theming
+strategy and the verified dependency versions.
+
+Added an AsyncStorage-backed `system`, `light`, and `dark` preference with `system` as the default
+and a localized direct selector in Settings. Existing Button, Card, Screen, Header, EmptyState,
+SectionHeader, and SettingsRow concepts now compose Paper primitives or consume the Paper theme;
+no speculative Paper wrappers were added. Web uses a `matchMedia` external-store subscription so
+system appearance changes update immediately, while native uses React Native's application-level
+appearance override. Expo configuration introspection confirmed automatic native appearance,
+the System UI plugin, the Android automatic UI-style resource, and the iOS `Automatic` setting.
 
 A Stage 4 code-review follow-up made unknown-error logging privacy-safe, made the static Web
 initialization shell independent of the build machine's locale, assigned bottom safe-area ownership
 to the authentication layout, kept the last failed API error metadata coherent after later
-successes, and added an accessible heading hierarchy to current primitives. The Paper and
-appearance work above remains pending. `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, and
-`pnpm build` passed after the remediation. The static export contained a locale-neutral loading
-shell, and the running development server returned HTTP 200 for `/login` and `/settings`. Native
-safe-area behavior was not manually rechecked in this run because ADB was unavailable.
+successes, and added an accessible heading hierarchy to current primitives. At that point, the
+Paper and appearance work was still pending. `pnpm format:check`, `pnpm lint`, `pnpm typecheck`,
+and `pnpm build` passed after the remediation. The static export contained a locale-neutral loading
+shell, and the running development server returned HTTP 200 for `/login` and `/settings`.
+
+For the expanded implementation, `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm build`,
+and `pnpm dev:web` completed successfully. `expo install --check` reported compatible dependencies,
+and the static Web export completed with all routes. Headless browser checks at 600, 900, and 1400
+px confirmed a bottom bar, an 88 px icon rail, and a 248 px labeled sidebar. Browser interaction
+confirmed persisted manual dark and light choices, live light-to-dark-to-light system changes,
+manual light overriding a dark system preference, accessible radio selection state, and persisted
+English language selection. The temporary browser profile and verification script were removed
+after the checks.
+
+Added a repository-owned `.gitattributes` policy that keeps text files on LF across operating
+systems and overrides conflicting global Git checkout conversion settings.
+
+A theming audit against the official Paper, React Navigation, and Expo guidance moved the complete
+MD3 light and dark schemes into `colors.ts`, documented semantic color usage in
+`docs/client-theming.md`, and reduced the native/Web appearance adapters from four files to two.
+The Expo build-time root background is one documented local constant in `app.config.ts`; duplicating
+that single value is simpler than maintaining a cross-runtime JSON bridge or adding `tsx` only for
+configuration imports. Paper's `adaptNavigationTheme` was evaluated but its current navigation
+theme type is incompatible with the required React Navigation 7 font and `ColorValue` shape, so the
+six navigation color roles remain explicitly mapped without unsafe assertions.
+
+After the audit, `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, Expo public and
+introspected config resolution, and `expo install --check` passed. `pnpm dev:web` served Settings
+with HTTP 200. The main foreground/background role pairs have WCAG contrast ratios from 6.30:1 to
+15.37:1 in the light scheme and from 7.07:1 to 14.17:1 in the dark scheme.
+
+A code-review remediation made appearance changes commit to application state only after
+AsyncStorage succeeds, so a failed write keeps the previous selection and can be retried. Language
+and appearance storage availability are now tracked independently before being combined for
+diagnostics. The language selector also permits retrying a failed persistence attempt for the
+already active language.
+
+Settings language and appearance choices now use named radio groups with disabled save states and
+one keyboard tab stop per group. The Web implementation supports wrapping arrow-key selection and
+focus movement without weakening React Native types; native keeps the same radio-group semantics.
+A headless browser check confirmed both group labels, radio checked state, roving tab indexes,
+arrow-key selection and focus, persistence after reload, and unchanged selection plus an alert
+after a simulated storage failure. `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm build`,
+`pnpm dev:web`, and `expo install --check` passed after the remediation.
 
 ### Blockers
 
-None known.
+Manual native verification is blocked because no Android SDK or `adb` executable is available in
+the environment, and iOS cannot be run on this Windows host. Stage 4 must remain incomplete until
+the system, light, and dark modes, live system changes, persistence, status bar, navigation
+surfaces, and safe-area behavior are checked on an Android or iOS target.
 
 ## Stage 5 — Authentication backend
 
