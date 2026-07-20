@@ -201,8 +201,8 @@ identifiers are `nestra`, `com.michalrozek.nestra` for Android, and
 
 ## Documentation
 
-- [Initial application specification](docs/specifications/nestra-initial-application.md)
-- [Implementation status](docs/implementation-status.md)
+- [`0.1.0` product and technical specification](docs/specifications/nestra-initial-application.md)
+- [Implementation board](https://github.com/users/michalrozek90/projects/1)
 - [Architecture decisions](docs/decisions/README.md)
 - [Contributor instructions](AGENTS.md)
 

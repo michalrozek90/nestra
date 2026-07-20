@@ -1,96 +1,14 @@
-# Nestra — Initial Application Specification
+# Nestra — 0.1.0 Product and Technical Specification
 
-**Status:** Final implementation specification  
-**Target first release:** `0.1.0`  
-**Audience:** Codex or another coding agent operating inside the repository  
-**Specification language:** English  
+**Status:** Final product and technical specification
+**Target first release:** `0.1.0`
+**Audience:** Nestra contributors and implementation agents
+**Specification language:** English
 **UI languages:** English and Polish
 
 ---
 
-## 1. Repository context
-
-The current working directory is already the root of an existing cloned Git repository. It may be empty apart from Git metadata and files created by the hosting platform.
-
-Codex must:
-
-1. inspect the current directory and existing files;
-2. preserve valid existing work and Git configuration;
-3. create all project files directly in the current repository root.
-
-Codex must not:
-
-- create a nested `nestra/` directory;
-- run `git init`;
-- replace the repository;
-- change or remove the configured Git remote;
-- delete files before reviewing them;
-- work outside the repository root;
-- commit, tag, push, create branches, or open pull requests unless explicitly instructed.
-
----
-
-## 2. Execution rule: exactly one stage per run
-
-This project must be implemented incrementally.
-
-**One Codex run must execute exactly one implementation stage.**
-
-At the start of every run, Codex must:
-
-1. read this specification;
-2. read `AGENTS.md`;
-3. read `docs/implementation-status.md`;
-4. identify the first incomplete stage;
-5. inspect the current implementation;
-6. implement only that stage.
-
-At the end of every run, Codex must:
-
-1. run the verification commands for the current stage;
-2. update `docs/implementation-status.md`;
-3. mark the stage complete only when every criterion passes;
-4. record blockers honestly;
-5. summarize the work;
-6. stop without starting the next stage.
-
-Finishing early is not permission to continue. If the user explicitly requests a later stage while a prerequisite is incomplete, report the dependency instead of silently bypassing it.
-
----
-
-## 3. Progress tracker
-
-During Stage 1, create `docs/implementation-status.md` containing:
-
-```md
-# Nestra implementation status
-
-- [ ] Stage 1 — Repository governance and workspace foundation
-- [ ] Stage 2 — Application scaffolding and contracts build
-- [ ] Stage 3 — Backend platform foundation
-- [ ] Stage 4 — Client platform foundation
-- [ ] Stage 5 — Authentication backend
-- [ ] Stage 6 — Authentication client
-- [ ] Stage 7 — Notes backend
-- [ ] Stage 8 — Notes client and autosave
-- [ ] Stage 9 — Settings, changelog, logging, and diagnostics
-- [ ] Stage 10 — CI, release automation, documentation, and 0.1.0 readiness
-```
-
-Each stage section must also show:
-
-- subtasks;
-- completion criteria;
-- verification commands;
-- completion date;
-- short implementation notes;
-- blockers.
-
-Only the active stage may be updated.
-
----
-
-## 4. Product overview
+## 1. Product overview
 
 Build **Nestra**, a cross-platform personal application. The name is inspired by “nest”: a personal, organized, comfortable place for everyday matters.
 
@@ -116,7 +34,7 @@ Release `0.1.0` implements the foundation and the complete **Notes** module. Sho
 
 ---
 
-## 5. Architecture
+## 2. Architecture
 
 ```text
 Expo client
@@ -169,7 +87,7 @@ Do not add speculative infrastructure for excluded features.
 
 ---
 
-## 6. Technology stack
+## 3. Technology stack
 
 ### Client
 
@@ -223,7 +141,7 @@ The package must remain framework-independent and contain no React, NestJS, Type
 
 ---
 
-## 7. Dependency policy
+## 4. Dependency policy
 
 - Use the latest stable mutually compatible versions available at implementation time.
 - No beta, canary, RC, nightly, or other prerelease dependencies.
@@ -242,9 +160,9 @@ pnpm --filter @nestra/client exec expo install <package>
 
 ---
 
-## 8. Runtime pinning
+## 5. Runtime pinning
 
-During Stage 1:
+Repository runtime setup must:
 
 1. determine the latest active Node.js LTS supported by the selected Expo and NestJS versions;
 2. pin Node consistently;
@@ -261,7 +179,7 @@ Document the exact versions in README. Use Corepack where compatible.
 
 ---
 
-## 9. Repository structure
+## 6. Repository structure
 
 ```text
 .
@@ -294,9 +212,8 @@ Document the exact versions in README. Use Corepack where compatible.
 ├── docs/
 │   ├── specifications/
 │   │   └── nestra-initial-application.md
-│   ├── decisions/
-│   │   └── README.md
-│   └── implementation-status.md
+│   └── decisions/
+│       └── README.md
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml
@@ -333,19 +250,7 @@ The root and every non-published workspace package must set `"private": true`.
 
 ---
 
-## 10. AGENTS.md and ADRs
-
-Create a concise `AGENTS.md` that points to this specification and the tracker and repeats:
-
-- existing repository root;
-- no `git init`;
-- one stage per run;
-- pnpm only;
-- strict TypeScript;
-- no `any`;
-- verify before completion;
-- no private-data logging;
-- no Git writes without explicit approval.
+## 7. Architecture decision records
 
 Use lightweight ADRs in `docs/decisions/`, for example:
 
@@ -360,7 +265,7 @@ Each ADR contains status, context, decision, consequences, and alternatives.
 
 ---
 
-## 11. Root scripts
+## 8. Root scripts
 
 ```bash
 pnpm dev
@@ -396,7 +301,7 @@ Requirements:
 
 ---
 
-## 12. Product versioning and release automation
+## 9. Product versioning and release automation
 
 The first released version is `0.1.0`. Do not use alpha, beta, or RC suffixes.
 
@@ -420,7 +325,7 @@ Their automation is deferred until native build pipelines are introduced.
 
 ### Release Please
 
-Configure Release Please in Stage 10, before the first release. Do not wait for Tauri.
+Configure Release Please before the first release. Do not wait for Tauri.
 
 On pushes to `main`, it must:
 
@@ -447,7 +352,7 @@ Use one repository-wide release component. Configure:
 - pre-1.0 breaking changes must not automatically force `1.0.0`;
 - explicit deliberate action before `1.0.0`.
 
-Before Stage 10 is complete:
+Before release automation is considered complete:
 
 - validate current Release Please bootstrap behavior from official docs;
 - use a dry run or another non-destructive check;
@@ -500,7 +405,7 @@ Prepare `0.1.0` product notes. Do not parse technical CHANGELOG at runtime.
 
 ---
 
-## 13. Application identifiers
+## 10. Application identifiers
 
 Use development identifiers:
 
@@ -516,7 +421,7 @@ Review them before store publication.
 
 ---
 
-## 14. Environment files and local networking
+## 11. Environment files and local networking
 
 Create:
 
@@ -597,7 +502,7 @@ export type RuntimeConfig = {
 
 All four values come from explicit configuration; diagnostics and verbose logging are separate environment variables.
 
-## 15. API and database conventions
+## 12. API and database conventions
 
 Use global prefix:
 
@@ -647,7 +552,7 @@ Use committed TypeORM migrations and dedicated data-source configuration. Provid
 
 ---
 
-## 16. Shared contracts and professional Swagger integration
+## 13. Shared contracts and professional Swagger integration
 
 Recommended contracts structure:
 
@@ -698,7 +603,7 @@ If current package APIs differ, preserve the architecture, use supported APIs, a
 
 ---
 
-## 17. Error contract and request IDs
+## 14. Error contract and request IDs
 
 Use:
 
@@ -746,7 +651,7 @@ Request ID behavior:
 
 ---
 
-## 18. Health endpoint
+## 15. Health endpoint
 
 Public endpoint:
 
@@ -771,7 +676,7 @@ Developer diagnostics calls it once when the screen opens and on manual refresh.
 
 ---
 
-## 19. Password and email rules
+## 16. Password and email rules
 
 Use Argon2id through a maintained Node package.
 
@@ -801,7 +706,7 @@ Maximum 254 characters. Enforce DB-level uniqueness. Invalid login does not reve
 
 ---
 
-## 20. Authentication architecture
+## 17. Authentication architecture
 
 ### Access token
 
@@ -940,7 +845,7 @@ Protected by access-token guard; returns `PublicUser`.
 
 ---
 
-## 21. Client auth storage and Axios
+## 18. Client auth storage and Axios
 
 Storage contract:
 
@@ -976,7 +881,7 @@ Requirements:
 
 ---
 
-## 22. Auth restoration and navigation
+## 19. Auth restoration and navigation
 
 At startup:
 
@@ -1032,7 +937,7 @@ No `/settings/language` route.
 
 ---
 
-## 23. Responsive client foundation
+## 20. Responsive client foundation
 
 Main destinations:
 
@@ -1066,7 +971,7 @@ Use one responsive route tree and a supported responsive tab-bar position, not s
 
 ---
 
-## 24. Localization
+## 21. Localization
 
 Support `en` and `pl`.
 
@@ -1089,7 +994,7 @@ Translate navigation, auth, validation, Notes, save states, loading/empty/error 
 
 ---
 
-## 25. Design scope
+## 22. Design scope
 
 Design is not a primary goal of `0.1.0`. Build a clean, accessible, usable foundation only:
 
@@ -1140,7 +1045,7 @@ Use React Native Paper primitives directly when no product-specific behavior or 
 needed. Keep application components for reusable Nestra concepts and composed behavior; do not
 create one-to-one wrappers for the entire Paper API.
 
-## 26. Notes backend
+## 23. Notes backend
 
 Entity:
 
@@ -1197,7 +1102,7 @@ Every query and mutation includes authenticated user ID. Missing and foreign-own
 
 ---
 
-## 27. Notes client
+## 24. Notes client
 
 Support:
 
@@ -1259,7 +1164,7 @@ No WebSockets or general mutation queue. Another device sees changes after refoc
 
 ---
 
-## 28. Client logging
+## 25. Client logging
 
 Create `apps/client/src/infrastructure/logging/`.
 
@@ -1305,7 +1210,7 @@ Backend uses NestJS logging with request IDs, safe identifiers, and error codes.
 
 ---
 
-## 29. Developer diagnostics
+## 26. Developer diagnostics
 
 Route:
 
@@ -1358,7 +1263,7 @@ Call health once on open and on a manual Refresh action. No polling or raw log v
 
 ---
 
-## 30. Settings
+## 27. Settings
 
 Main Settings screen:
 
@@ -1393,7 +1298,7 @@ Shopping, Reminders, and Relax show only localized “Coming in a future version
 
 ---
 
-## 31. Deferred security hardening
+## 28. Deferred security hardening
 
 Future milestone:
 
@@ -1414,7 +1319,7 @@ Future milestone:
 
 ---
 
-## 32. ESLint, Prettier, CI, and README
+## 29. ESLint, Prettier, CI, and README
 
 Use ESLint flat config where supported and Prettier. Avoid duplicated formatting rules.
 
@@ -1466,7 +1371,7 @@ State explicitly that no license has been selected and do not create `LICENSE`.
 
 ---
 
-## 33. TypeScript, naming, and architecture rules
+## 30. TypeScript, naming, and architecture rules
 
 - strict TypeScript;
 - no `any`;
@@ -1527,384 +1432,9 @@ Do not commit unless explicitly instructed.
 
 ---
 
-## 34. Implementation stages and stage definitions of done
+## 31. Global `0.1.0` readiness
 
-## Stage 1 — Repository governance and workspace foundation
-
-Scope:
-
-- inspect repository;
-- preserve Git;
-- save specification under `docs/specifications/`;
-- create AGENTS, tracker, ADR structure;
-- pnpm workspace and private root package;
-- pin Node/pnpm;
-- Git ignore, EditorConfig, ESLint, Prettier;
-- initial README structure;
-- CHANGELOG with Unreleased.
-
-Done when:
-
-- no nested project and no `git init`;
-- remote unchanged;
-- root private;
-- workspace valid;
-- versions pinned;
-- tracker shows every stage;
-- tooling configs parse;
-- no Stage 2 app scaffolding started.
-
-Verify:
-
-```bash
-pnpm install
-pnpm format:check
-pnpm lint
-```
-
-Stop.
-
-## Stage 2 — Application scaffolding and contracts build
-
-Scope:
-
-- Expo client;
-- Nest API;
-- contracts and tsconfig packages;
-- tsdown dual build;
-- workspace wiring and build order;
-- contracts watch;
-- Docker PostgreSQL;
-- env examples;
-- app identifiers and unified version reading.
-
-Done when:
-
-- Expo web starts;
-- API builds;
-- contracts produce ESM/CJS/d.ts/maps;
-- API and client import a sample contract through exports;
-- Postgres healthy;
-- root build order works;
-- no Stage 3 business/platform logic.
-
-Verify:
-
-```bash
-pnpm db:start
-pnpm build
-pnpm typecheck
-pnpm dev:web
-pnpm dev:api
-```
-
-Stop.
-
-## Stage 3 — Backend platform foundation
-
-Scope:
-
-- env validation;
-- TypeORM and migrations;
-- DB naming;
-- `/api/v1`;
-- request IDs and common errors;
-- health and DB check;
-- Zod/Nest/Swagger;
-- seed infrastructure;
-- contracts-build ADR.
-
-Done when:
-
-- invalid env fails clearly;
-- migrations run/revert;
-- synchronize disabled;
-- health validates and reflects DB;
-- Swagger has complete sample schemas;
-- request IDs in headers/errors;
-- no auth or Notes.
-
-Verify:
-
-```bash
-pnpm db:start
-pnpm db:migrate
-pnpm db:migrate:revert
-pnpm db:migrate
-pnpm build
-pnpm typecheck
-```
-
-Inspect `/docs` and `/api/v1/health`. Stop.
-
-## Stage 4 — Client platform foundation
-
-Scope:
-
-- route groups and shells;
-- responsive tabs/rail/sidebar;
-- breakpoints;
-- placeholders;
-- i18n and persisted language;
-- runtime validation;
-- base Axios;
-- logger;
-- diagnostics foundation;
-- stable React Native Paper integration;
-- application-owned light and dark Material Design 3 themes and semantic design tokens;
-- persisted `system`, `light`, and `dark` appearance preference with `system` as the default;
-- used Nestra components composed from Paper primitives.
-
-Done when:
-
-- web port 8081;
-- navigation changes by breakpoint;
-- language switches and persists;
-- fallback English;
-- runtime validation works;
-- direct console only in logger;
-- localized placeholders;
-- Paper, navigation, status bar, and native system UI use the same resolved appearance;
-- system appearance changes are followed in `system` mode and manual selection persists;
-- existing client screens and used primitives render correctly in both light and dark themes;
-- no auth or Notes business logic.
-
-Verify:
-
-```bash
-pnpm format:check
-pnpm lint
-pnpm typecheck
-pnpm build
-pnpm dev:web
-```
-
-Resize through all breakpoints. Verify default system appearance, live system changes, persisted
-manual light and dark selection, and readable contrast on Web and at least one native target. Stop.
-
-## Stage 5 — Authentication backend
-
-Scope:
-
-- User and RefreshSession;
-- migrations;
-- Argon2id;
-- email normalization;
-- JWT access;
-- opaque refresh rotation;
-- all auth endpoints and guard;
-- Swagger;
-- auth ADR.
-
-Done when:
-
-- register auto-authenticates;
-- login errors generic;
-- refresh rotates atomically and old token fails;
-- fixed expiry;
-- logout idempotent;
-- me protected;
-- no plaintext secret storage;
-- no device name;
-- complete Swagger.
-
-Verify:
-
-```bash
-pnpm db:migrate
-pnpm format:check
-pnpm lint
-pnpm typecheck
-pnpm build
-```
-
-Exercise endpoints manually through Swagger or HTTP client. Stop.
-
-## Stage 6 — Authentication client
-
-Scope:
-
-- register/login UI;
-- confirmation;
-- token storage;
-- Axios auth and single refresh promise;
-- restoration and initialization;
-- route protection;
-- logout and Account settings.
-
-Done when:
-
-- register/login navigate to notes;
-- valid session restores without flash;
-- concurrent 401s cause one refresh;
-- failed refresh clears state;
-- logout clears even offline;
-- localized auth errors;
-- no token logging.
-
-Verify:
-
-```bash
-pnpm format:check
-pnpm lint
-pnpm typecheck
-pnpm build
-```
-
-Verify on web and at least one native target. Stop.
-
-## Stage 7 — Notes backend
-
-Scope:
-
-- Note and migration;
-- Notes module and endpoints;
-- ownership;
-- archive filter and sorting;
-- archive unpins;
-- hard delete;
-- contracts and Swagger.
-
-Done when:
-
-- active/archived queries work;
-- title/content rules work;
-- unknown fields rejected;
-- PATCH requires field;
-- archive unpins;
-- archived cannot pin;
-- hard delete;
-- foreign user gets NOTE_NOT_FOUND;
-- UTC ISO dates;
-- no pagination.
-
-Verify:
-
-```bash
-pnpm db:migrate
-pnpm format:check
-pnpm lint
-pnpm typecheck
-pnpm build
-```
-
-Exercise with two users. Stop.
-
-## Stage 8 — Notes client and autosave
-
-Scope:
-
-- lists and editors;
-- all note actions;
-- TanStack Query;
-- 800 ms server autosave;
-- 150 ms local drafts;
-- save serialization;
-- stale protection;
-- draft recovery and statuses;
-- refetch behavior.
-
-Done when:
-
-- actions work;
-- requests debounced;
-- unchanged input not sent;
-- draft protects input;
-- leave/background flushes;
-- failure retains draft;
-- stale response cannot overwrite;
-- new note route replaced after POST;
-- no general offline queue/WebSocket.
-
-Verify:
-
-```bash
-pnpm format:check
-pnpm lint
-pnpm typecheck
-pnpm build
-```
-
-Manually test rapid typing, leaving, API failure, retry, background, recovery. Stop.
-
-## Stage 9 — Settings, changelog, logging, and diagnostics
-
-Scope:
-
-- complete Settings;
-- language;
-- account/logout;
-- in-app 0.1.0 notes;
-- changelog screen;
-- diagnostics and health;
-- final logger review;
-- version display;
-- placeholders.
-
-Done when:
-
-- language directly on Settings;
-- no language route;
-- logout available;
-- release notes prepared;
-- diagnostics visibility works;
-- health on open/manual refresh;
-- no token/note content leaks;
-- UI and API version consistent;
-- no raw log viewer.
-
-Verify:
-
-```bash
-pnpm format:check
-pnpm lint
-pnpm typecheck
-pnpm build
-```
-
-Inspect all screens and logs. Stop.
-
-## Stage 10 — CI, release automation, documentation, and 0.1.0 readiness
-
-Scope:
-
-- CI;
-- Release Please;
-- bootstrap verification;
-- release ADR;
-- complete README/troubleshooting/roadmap;
-- dependency, naming, security, and stage review;
-- final builds and release notes.
-
-Done when:
-
-- CI performs install/format/lint/typecheck/build;
-- Actions pinned;
-- Release Please will automatically create `v0.1.0`;
-- bootstrap verified non-destructively;
-- root version is source;
-- README supports fresh setup;
-- all prior stages complete;
-- no tests/Tauri/license;
-- global readiness passes.
-
-Verify:
-
-```bash
-pnpm install --frozen-lockfile
-pnpm format:check
-pnpm lint
-pnpm typecheck
-pnpm build
-```
-
-Review workflows. Do not create a local tag. Stop.
-
----
-
-## 35. Global `0.1.0` readiness
-
-The release PR is ready only after all ten stages are checked.
+The release PR is ready only after all tracked `0.1.0` work items are complete.
 
 Required:
 
@@ -1930,7 +1460,7 @@ Required:
 
 ---
 
-## 36. Post-0.1.0 roadmap
+## 32. Post-0.1.0 roadmap
 
 ```text
 0.1.1 — Unit testing foundation
@@ -1991,40 +1521,3 @@ Before store distribution
 
 1.0.0 — first stable public release
 ```
-
----
-
-## 37. Final Codex instructions
-
-Every run:
-
-1. stay in the existing root;
-2. never run `git init`;
-3. read the tracker;
-4. execute exactly one stage;
-5. use pnpm only;
-6. use strict TypeScript and no `any`;
-7. check current stable compatibility;
-8. implement working code;
-9. run stage verification;
-10. update tracker honestly;
-11. do not mark blocked work complete;
-12. do not commit/tag/push/open PRs without permission;
-13. stop after reporting the stage.
-
-If current package APIs differ, use supported APIs while preserving this architecture and document the difference.
-
-Stage report must include:
-
-- checklist items;
-- files changed;
-- dependencies;
-- ADRs;
-- commands;
-- verification results;
-- manual checks;
-- blockers;
-- remaining stages;
-- suggested next-stage prompt.
-
-Never claim a check passed unless it was executed.

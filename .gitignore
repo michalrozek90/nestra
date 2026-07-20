@@ -24,6 +24,7 @@ pnpm-debug.log*
 # Editors and operating systems
 .idea/
 .vscode/
+.codex/
 .DS_Store
 Thumbs.db
 
