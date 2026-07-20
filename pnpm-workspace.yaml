@@ -3,6 +3,7 @@ packages:
   - packages/*
 allowBuilds:
   '@scarf/scarf': false
+  argon2: true
 minimumReleaseAgeExclude:
   - '@expo/cli@57.0.9'
   - '@expo/metro-config@57.0.6'

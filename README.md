@@ -46,6 +46,10 @@ consistent.
 pnpm install
 ```
 
+The API password hashing dependency `argon2` requires a native build during installation. Its install
+script is enabled in `pnpm-workspace.yaml`. If API startup reports that no native build was found for
+`argon2`, rerun `pnpm install` or `pnpm rebuild argon2`.
+
 Local environment templates are committed at:
 
 ```text
