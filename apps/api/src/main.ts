@@ -8,6 +8,12 @@ import { cleanupOpenApiDoc } from 'nestjs-zod';
 import { AppModule } from './app.module';
 import { ApiErrorResponseDto } from './common/api-error-response.dto';
 import type { ApiEnvironment } from './config/api-environment';
+import { AuthenticationSessionResponseDto } from './auth/dto/authentication-session-response.dto';
+import { LoginRequestDto } from './auth/dto/login-request.dto';
+import { LogoutRequestDto } from './auth/dto/logout-request.dto';
+import { PublicUserDto } from './auth/dto/public-user.dto';
+import { RefreshRequestDto } from './auth/dto/refresh-request.dto';
+import { RegisterRequestDto } from './auth/dto/register-request.dto';
 import { HealthResponseDto } from './health/health-response.dto';
 
 async function bootstrap(): Promise<void> {
@@ -30,9 +36,19 @@ async function bootstrap(): Promise<void> {
       .setTitle('Nestra API')
       .setDescription('Nestra REST API')
       .setVersion(applicationVersion)
+      .addBearerAuth()
       .build();
     const openApiDocument = SwaggerModule.createDocument(application, swaggerConfig, {
-      extraModels: [ApiErrorResponseDto, HealthResponseDto],
+      extraModels: [
+        ApiErrorResponseDto,
+        AuthenticationSessionResponseDto,
+        HealthResponseDto,
+        LoginRequestDto,
+        LogoutRequestDto,
+        PublicUserDto,
+        RefreshRequestDto,
+        RegisterRequestDto,
+      ],
     });
 
     SwaggerModule.setup('docs', application, cleanupOpenApiDoc(openApiDocument));

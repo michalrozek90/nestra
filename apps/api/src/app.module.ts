@@ -6,6 +6,7 @@ import { createZodValidationPipe, ZodSerializerInterceptor } from 'nestjs-zod';
 import { ApiExceptionFilter } from './common/api-exception.filter';
 import { RequestIdMiddleware } from './common/request-id.middleware';
 import { parseApiEnvironment } from './config/api-environment';
+import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
 
 const StrictZodValidationPipe = createZodValidationPipe({
@@ -20,6 +21,7 @@ const StrictZodValidationPipe = createZodValidationPipe({
       validate: parseApiEnvironment,
     }),
     HealthModule,
+    AuthModule,
   ],
   providers: [
     {
