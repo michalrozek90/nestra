@@ -1,6 +1,7 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBadRequestResponse,
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiNoContentResponse,
@@ -44,7 +45,7 @@ export class AuthController {
     description: 'An account with the submitted email already exists.',
     type: ApiErrorResponseDto,
   })
-  @ApiUnauthorizedResponse({
+  @ApiBadRequestResponse({
     description: 'Request validation failed.',
     type: ApiErrorResponseDto,
   })
@@ -62,6 +63,10 @@ export class AuthController {
   @ApiOkResponse({
     description: 'The user was authenticated successfully.',
     type: AuthenticationSessionResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Request validation failed.',
+    type: ApiErrorResponseDto,
   })
   @ApiUnauthorizedResponse({
     description: 'The email or password is invalid.',
@@ -82,6 +87,10 @@ export class AuthController {
     description: 'The refresh token was rotated successfully.',
     type: AuthenticationSessionResponseDto,
   })
+  @ApiBadRequestResponse({
+    description: 'Request validation failed.',
+    type: ApiErrorResponseDto,
+  })
   @ApiUnauthorizedResponse({
     description: 'The refresh token or session is invalid or expired.',
     type: ApiErrorResponseDto,
@@ -95,6 +104,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Revoke a refresh session when possible' })
   @ApiNoContentResponse({
     description: 'Logout completed idempotently.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Request validation failed.',
+    type: ApiErrorResponseDto,
   })
   async logout(@Body() request: LogoutRequestDto): Promise<void> {
     await this.authService.logout(request.refreshToken);
