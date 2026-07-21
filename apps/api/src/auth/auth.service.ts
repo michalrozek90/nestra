@@ -2,7 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { AuthenticationSessionResponse, PublicUser } from '@nestra/contracts';
-import { IsNull, QueryFailedError, Repository } from 'typeorm';
+import { DataSource, type EntityManager, IsNull, QueryFailedError, Repository } from 'typeorm';
 
 import { addDurationToDate } from '../common/duration';
 import { getTimestampMilliseconds, toIsoDateTimeString } from '../common/date-time';
@@ -33,6 +33,7 @@ export class AuthService {
     private readonly accessTokenService: AccessTokenService,
     private readonly configService: ConfigService<ApiEnvironment, true>,
     private readonly databaseConnectionService: DatabaseConnectionService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async register(email: string, password: string): Promise<AuthenticationSessionResponse> {
@@ -41,13 +42,16 @@ export class AuthService {
     const passwordHash = await this.passwordService.hashPassword(password);
 
     try {
-      const user = this.userRepository.create({
-        email: normalizedEmail,
-        passwordHash,
-      });
-      const savedUser = await this.userRepository.save(user);
+      return await this.dataSource.transaction(async (entityManager) => {
+        const transactionalUserRepository = entityManager.getRepository(UserEntity);
+        const user = transactionalUserRepository.create({
+          email: normalizedEmail,
+          passwordHash,
+        });
+        const savedUser = await transactionalUserRepository.save(user);
 
-      return this.createAuthenticationSession(savedUser);
+        return this.createAuthenticationSession(savedUser, entityManager);
+      });
     } catch (error: unknown) {
       if (this.isUniqueEmailViolation(error)) {
         throw new ApiException(
@@ -68,7 +72,12 @@ export class AuthService {
       where: { email: normalizedEmail },
     });
 
-    if (user === null) {
+    const isPasswordValid = await this.passwordService.verifyPassword(
+      password,
+      user?.passwordHash ?? null,
+    );
+
+    if (user === null || !isPasswordValid) {
       throw new ApiException(
         'AUTH_INVALID_CREDENTIALS',
         'The email or password is invalid.',
@@ -76,17 +85,9 @@ export class AuthService {
       );
     }
 
-    const isPasswordValid = await this.passwordService.verifyPassword(password, user.passwordHash);
-
-    if (!isPasswordValid) {
-      throw new ApiException(
-        'AUTH_INVALID_CREDENTIALS',
-        'The email or password is invalid.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-
-    return this.createAuthenticationSession(user);
+    return this.dataSource.transaction((entityManager) =>
+      this.createAuthenticationSession(user, entityManager),
+    );
   }
 
   async refresh(refreshToken: string): Promise<AuthenticationSessionResponse> {
@@ -219,13 +220,15 @@ export class AuthService {
 
   private async createAuthenticationSession(
     user: UserEntity,
+    entityManager: EntityManager,
   ): Promise<AuthenticationSessionResponse> {
     const refreshSessionExpiresAt = addDurationToDate(
       new Date(),
       this.configService.get('refreshSessionExpiresIn', { infer: true }),
     );
     const refreshTokenSecret = generateRefreshTokenSecret();
-    const refreshSession = this.refreshSessionRepository.create({
+    const transactionalRefreshSessionRepository = entityManager.getRepository(RefreshSessionEntity);
+    const refreshSession = transactionalRefreshSessionRepository.create({
       userId: user.id,
       tokenHash: hashRefreshToken(
         buildRefreshToken(crypto.randomUUID(), generateRefreshTokenSecret()),
@@ -233,10 +236,10 @@ export class AuthService {
       expiresAt: refreshSessionExpiresAt,
     });
 
-    const savedRefreshSession = await this.refreshSessionRepository.save(refreshSession);
+    const savedRefreshSession = await transactionalRefreshSessionRepository.save(refreshSession);
     const refreshToken = buildRefreshToken(savedRefreshSession.id, refreshTokenSecret);
 
-    await this.refreshSessionRepository.update(savedRefreshSession.id, {
+    await transactionalRefreshSessionRepository.update(savedRefreshSession.id, {
       tokenHash: hashRefreshToken(refreshToken),
     });
 
