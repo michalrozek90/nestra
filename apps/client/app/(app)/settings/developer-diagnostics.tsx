@@ -1,4 +1,5 @@
 import { applicationMetadata } from '@nestra/contracts';
+import { useQuery } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, View } from 'react-native';
@@ -15,6 +16,9 @@ import { useApiDiagnostics } from '@/infrastructure/diagnostics/api-diagnostics'
 import { getPreferenceStorageAvailability } from '@/infrastructure/storage/preference-storage';
 import { spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
+import { useAuth } from '@/infrastructure/auth/auth-provider';
+import { authStorageImplementation } from '@/infrastructure/auth/auth-token-storage';
+import { getAuthenticationTokenPresence } from '@/infrastructure/auth/auth-token-presence';
 
 type DiagnosticRowProps = {
   readonly label: string;
@@ -41,7 +45,18 @@ function formatTimestamp(timestamp: string | null, fallback: string): string {
 export default function DeveloperDiagnosticsScreen() {
   const { t } = useTranslation('settings');
   const apiDiagnostics = useApiDiagnostics();
+  const { status } = useAuth();
+  const tokenPresenceQuery = useQuery({
+    queryKey: ['diagnostics', 'authentication-token-presence'],
+    queryFn: getAuthenticationTokenPresence,
+  });
   const notAvailable = t('diagnostics.values.notAvailable');
+  const formatBoolean = (booleanValue: boolean | undefined) =>
+    booleanValue === undefined
+      ? notAvailable
+      : booleanValue
+        ? t('diagnostics.values.yes')
+        : t('diagnostics.values.no');
 
   if (!runtimeConfig.showDeveloperDiagnostics) {
     return <Redirect href="/settings" />;
@@ -94,6 +109,24 @@ export default function DeveloperDiagnosticsScreen() {
       </View>
 
       <View style={styles.section}>
+        <SectionHeader title={t('diagnostics.sections.authentication')} />
+        <Card>
+          <DiagnosticRow
+            label={t('diagnostics.labels.authenticated')}
+            value={formatBoolean(status === 'authenticated')}
+          />
+          <DiagnosticRow
+            label={t('diagnostics.labels.accessTokenPresent')}
+            value={formatBoolean(tokenPresenceQuery.data?.hasAccessToken)}
+          />
+          <DiagnosticRow
+            label={t('diagnostics.labels.refreshTokenPresent')}
+            value={formatBoolean(tokenPresenceQuery.data?.hasRefreshToken)}
+          />
+        </Card>
+      </View>
+
+      <View style={styles.section}>
         <SectionHeader title={t('diagnostics.sections.localization')} />
         <Card>
           <DiagnosticRow
@@ -103,6 +136,10 @@ export default function DeveloperDiagnosticsScreen() {
           <DiagnosticRow
             label={t('diagnostics.labels.detectedLanguage')}
             value={getDetectedSystemLanguage()}
+          />
+          <DiagnosticRow
+            label={t('diagnostics.labels.authStorage')}
+            value={authStorageImplementation}
           />
           <DiagnosticRow
             label={t('diagnostics.labels.preferenceStorage')}

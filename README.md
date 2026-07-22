@@ -179,6 +179,13 @@ For a physical phone, the computer and phone must share a network, the API must 
 `0.0.0.0`, and Windows Firewall must permit the selected private-network port. Native clients do
 not use browser CORS, but the URL remains environment-configurable.
 
+### Authentication storage
+
+Native builds store authentication tokens in the platform-protected SecureStore. The web client
+uses `localStorage` as a prototype compromise, isolated behind the same typed storage interface.
+Before any public production web release, replace or reassess this approach and evaluate server-set
+cookies with the `httpOnly`, `Secure`, and `SameSite` attributes.
+
 ## Development standards
 
 - pnpm is the only package manager.

@@ -1,9 +1,13 @@
 export const plSettings = {
   title: 'Ustawienia',
   sections: {
+    account: 'Konto',
     language: 'Język',
     appearance: 'Wygląd',
     developer: 'Dla dewelopera',
+  },
+  account: {
+    signOut: 'Wyloguj się',
   },
   language: {
     english: 'Angielski',
@@ -26,6 +30,7 @@ export const plSettings = {
     sections: {
       application: 'Aplikacja',
       api: 'API',
+      authentication: 'Uwierzytelnianie',
       localization: 'Lokalizacja',
     },
     labels: {
@@ -41,11 +46,17 @@ export const plSettings = {
       selectedLanguage: 'Wybrany język',
       detectedLanguage: 'Wykryty język systemu',
       preferenceStorage: 'Pamięć ustawień',
+      authenticated: 'Uwierzytelniono',
+      accessTokenPresent: 'Token dostępu obecny',
+      refreshTokenPresent: 'Token odświeżania obecny',
+      authStorage: 'Pamięć uwierzytelniania',
     },
     values: {
       available: 'Dostępna',
       unavailable: 'Niedostępna',
       notAvailable: 'Brak danych',
+      yes: 'Tak',
+      no: 'Nie',
     },
   },
 } as const;

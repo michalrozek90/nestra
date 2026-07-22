@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, useWindowDimensions, type ColorValue } from 'react-native';
@@ -8,6 +8,7 @@ import { Text } from 'react-native-paper';
 import { getResponsiveLayout } from '@/theme/breakpoints';
 import { sizes } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
+import { useAuth } from '@/infrastructure/auth/auth-provider';
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -19,9 +20,14 @@ export default function ApplicationLayout() {
   const { t } = useTranslation('common');
   const { width } = useWindowDimensions();
   const theme = useNestraTheme();
+  const { status } = useAuth();
   const responsiveLayout = getResponsiveLayout(width);
   const isCompact = responsiveLayout === 'compact';
   const isExpanded = responsiveLayout === 'expanded';
+
+  if (status !== 'authenticated') {
+    return <Redirect href="/login" />;
+  }
 
   return (
     <Tabs

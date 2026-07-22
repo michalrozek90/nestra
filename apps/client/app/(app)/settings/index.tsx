@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 
 import { Header } from '@/components/header';
+import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
 import { SettingsRadioGroup } from '@/components/settings-radio-group';
@@ -16,12 +17,15 @@ import { useAppearance } from '@/theme/appearance-provider';
 import type { AppearancePreference } from '@/theme/appearance-preference';
 import { spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
+import { useAuth } from '@/infrastructure/auth/auth-provider';
+import { logger } from '@/infrastructure/logging/logger';
 
 export default function SettingsScreen() {
   const { t } = useTranslation('settings');
   const router = useRouter();
   const theme = useNestraTheme();
   const { preference: appearancePreference, changePreference } = useAppearance();
+  const { user, signOut, isSigningOut } = useAuth();
   const [isChangingLanguage, setIsChangingLanguage] = useState(false);
   const [hasLanguageSaveError, setHasLanguageSaveError] = useState(false);
   const [isChangingAppearance, setIsChangingAppearance] = useState(false);
@@ -62,9 +66,31 @@ export default function SettingsScreen() {
     }
   }
 
+  async function handleSignOut(): Promise<void> {
+    try {
+      await signOut();
+    } catch (error: unknown) {
+      logger.error('Sign-out action failed', error);
+    } finally {
+      router.replace('/login');
+    }
+  }
+
   return (
     <Screen>
       <Header title={t('title')} />
+
+      <View style={styles.section}>
+        <SectionHeader title={t('sections.account')} />
+        <Text selectable>{user?.email}</Text>
+        <Button
+          isDisabled={isSigningOut}
+          isLoading={isSigningOut}
+          label={t('account.signOut')}
+          onPress={() => void handleSignOut()}
+          variant="secondary"
+        />
+      </View>
 
       <View style={styles.section}>
         <SectionHeader title={t('sections.language')} />

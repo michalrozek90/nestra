@@ -1,5 +1,12 @@
 import type { PropsWithChildren } from 'react';
-import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getResponsiveLayout } from '@/theme/breakpoints';
@@ -12,7 +19,11 @@ const CONTENT_MAX_WIDTH = {
   expanded: 1200,
 } as const;
 
-export function Screen({ children }: PropsWithChildren) {
+type ScreenProps = PropsWithChildren<{
+  readonly contentStyle?: StyleProp<ViewStyle>;
+}>;
+
+export function Screen({ children, contentStyle }: ScreenProps) {
   const { width } = useWindowDimensions();
   const responsiveLayout = getResponsiveLayout(width);
   const theme = useNestraTheme();
@@ -30,6 +41,7 @@ export function Screen({ children }: PropsWithChildren) {
         <View
           style={[
             styles.content,
+            contentStyle,
             CONTENT_MAX_WIDTH[responsiveLayout]
               ? { maxWidth: CONTENT_MAX_WIDTH[responsiveLayout] }
               : null,
