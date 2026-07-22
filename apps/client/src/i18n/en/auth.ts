@@ -26,6 +26,8 @@ export const enAuth = {
     invalidCredentials: 'The email or password is incorrect.',
     emailAlreadyRegistered: 'An account already exists for this email address.',
     sessionExpired: 'Your session has expired. Sign in again.',
+    sessionStorageUnavailable:
+      'Nestra could not save the session on this device. Check storage access. If you just created an account, sign in instead of registering again.',
     validationFailed: 'Check the entered information and try again.',
     serviceUnavailable: 'Nestra cannot reach the server. Check the connection and try again.',
     unexpected: 'Authentication could not be completed. Try again.',

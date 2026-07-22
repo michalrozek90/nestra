@@ -27,7 +27,12 @@ export default function LoginScreen() {
   const theme = useNestraTheme();
   const { completeAuthentication } = useAuth();
   const passwordInputRef = useRef<{ focus(): void } | null>(null);
-  const loginMutation = useMutation({ mutationFn: login });
+  const loginMutation = useMutation({
+    mutationFn: async (request: LoginRequest) => {
+      const session = await login(request);
+      await completeAuthentication(session);
+    },
+  });
   const {
     control,
     handleSubmit,
@@ -39,8 +44,7 @@ export default function LoginScreen() {
 
   const submit = handleSubmit(async (request) => {
     try {
-      const session = await loginMutation.mutateAsync(request);
-      await completeAuthentication(session);
+      await loginMutation.mutateAsync(request);
       router.replace('/notes');
     } catch {
       // The mutation exposes a localized, credential-safe error below.

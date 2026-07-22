@@ -18,6 +18,7 @@ import type { AppearancePreference } from '@/theme/appearance-preference';
 import { spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
 import { useAuth } from '@/infrastructure/auth/auth-provider';
+import { logger } from '@/infrastructure/logging/logger';
 
 export default function SettingsScreen() {
   const { t } = useTranslation('settings');
@@ -65,6 +66,16 @@ export default function SettingsScreen() {
     }
   }
 
+  async function handleSignOut(): Promise<void> {
+    try {
+      await signOut();
+    } catch (error: unknown) {
+      logger.error('Sign-out action failed', error);
+    } finally {
+      router.replace('/login');
+    }
+  }
+
   return (
     <Screen>
       <Header title={t('title')} />
@@ -76,9 +87,7 @@ export default function SettingsScreen() {
           isDisabled={isSigningOut}
           isLoading={isSigningOut}
           label={t('account.signOut')}
-          onPress={() => {
-            void signOut().then(() => router.replace('/login'));
-          }}
+          onPress={() => void handleSignOut()}
           variant="secondary"
         />
       </View>

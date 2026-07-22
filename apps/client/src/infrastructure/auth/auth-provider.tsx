@@ -16,8 +16,6 @@ export type AuthenticationStatus =
 type AuthContextValue = {
   readonly status: AuthenticationStatus;
   readonly user: PublicUser | null;
-  readonly hasAccessToken: boolean;
-  readonly hasRefreshToken: boolean;
   readonly isSigningOut: boolean;
   readonly completeAuthentication: (session: AuthenticationSessionResponse) => Promise<void>;
   readonly retryRestoration: () => Promise<void>;
@@ -81,7 +79,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const completeAuthentication = useCallback(
     async (session: AuthenticationSessionResponse) => {
-      await persistAuthenticationSessionTokens(session);
+      try {
+        await persistAuthenticationSessionTokens(session);
+      } catch (storageError: unknown) {
+        try {
+          await logout({ refreshToken: session.refreshToken });
+        } catch {
+          logger.warn('Authentication session cleanup did not reach the API');
+        }
+        throw storageError;
+      }
       client.setQueryData<PublicUser>(AUTH_SESSION_QUERY_KEY, session.user);
     },
     [client],
@@ -103,12 +110,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     setIsSigningOut(true);
     try {
-      const refreshToken = await authTokenStorage.getRefreshToken();
+      let refreshToken: string | null = null;
+      try {
+        refreshToken = await authTokenStorage.getRefreshToken();
+      } catch (error: unknown) {
+        logger.error('Refresh token could not be read during sign-out', error);
+      }
+
       if (refreshToken) {
         try {
           await logout({ refreshToken });
         } catch {
-          // Local logout is authoritative even when the API is unavailable.
+          logger.warn('Server sign-out did not complete; continuing with local sign-out');
         }
       }
     } finally {
@@ -132,8 +145,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
     () => ({
       status,
       user,
-      hasAccessToken: user !== null,
-      hasRefreshToken: user !== null,
       isSigningOut,
       completeAuthentication,
       retryRestoration,

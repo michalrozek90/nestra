@@ -1,10 +1,13 @@
 import { apiErrorResponseSchema, type ApiErrorCode } from '@nestra/contracts';
 import { isAxiosError } from 'axios';
 
+import { AuthenticationSessionStorageError } from './auth-session-storage';
+
 export type AuthErrorTranslationKey =
   | 'errors.invalidCredentials'
   | 'errors.emailAlreadyRegistered'
   | 'errors.sessionExpired'
+  | 'errors.sessionStorageUnavailable'
   | 'errors.validationFailed'
   | 'errors.serviceUnavailable'
   | 'errors.unexpected';
@@ -31,6 +34,10 @@ function mapApiErrorCode(errorCode: ApiErrorCode): AuthErrorTranslationKey {
 }
 
 export function getAuthErrorTranslationKey(error: unknown): AuthErrorTranslationKey {
+  if (error instanceof AuthenticationSessionStorageError) {
+    return 'errors.sessionStorageUnavailable';
+  }
+
   if (!isAxiosError(error)) {
     return 'errors.unexpected';
   }

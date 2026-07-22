@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { registerRequestSchema } from '@nestra/contracts';
+import { registerRequestSchema, type RegisterRequest } from '@nestra/contracts';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
@@ -33,7 +33,12 @@ export default function RegisterScreen() {
   const { completeAuthentication } = useAuth();
   const passwordInputRef = useRef<{ focus(): void } | null>(null);
   const passwordConfirmationInputRef = useRef<{ focus(): void } | null>(null);
-  const registerMutation = useMutation({ mutationFn: registerAccount });
+  const registerMutation = useMutation({
+    mutationFn: async (request: RegisterRequest) => {
+      const session = await registerAccount(request);
+      await completeAuthentication(session);
+    },
+  });
   const {
     control,
     handleSubmit,
@@ -45,8 +50,7 @@ export default function RegisterScreen() {
 
   const submit = handleSubmit(async ({ email, password }) => {
     try {
-      const session = await registerMutation.mutateAsync({ email, password });
-      await completeAuthentication(session);
+      await registerMutation.mutateAsync({ email, password });
       router.replace('/notes');
     } catch {
       // The mutation exposes a localized, credential-safe error below.

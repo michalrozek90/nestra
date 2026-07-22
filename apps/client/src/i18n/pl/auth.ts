@@ -26,6 +26,8 @@ export const plAuth = {
     invalidCredentials: 'Adres e-mail lub hasło są nieprawidłowe.',
     emailAlreadyRegistered: 'Dla tego adresu e-mail istnieje już konto.',
     sessionExpired: 'Sesja wygasła. Zaloguj się ponownie.',
+    sessionStorageUnavailable:
+      'Nestra nie mogła zapisać sesji na tym urządzeniu. Sprawdź dostęp do pamięci. Jeśli konto zostało właśnie utworzone, przejdź do logowania zamiast ponawiać rejestrację.',
     validationFailed: 'Sprawdź wprowadzone informacje i spróbuj ponownie.',
     serviceUnavailable:
       'Nestra nie może połączyć się z serwerem. Sprawdź połączenie i spróbuj ponownie.',
