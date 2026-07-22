@@ -17,6 +17,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   userInterfaceStyle: 'automatic',
   plugins: [
     'expo-router',
+    'expo-secure-store',
     'expo-status-bar',
     'expo-system-ui',
     ['expo-localization', { supportedLocales: ['en', 'pl'] }],

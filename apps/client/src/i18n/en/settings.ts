@@ -1,9 +1,13 @@
 export const enSettings = {
   title: 'Settings',
   sections: {
+    account: 'Account',
     language: 'Language',
     appearance: 'Appearance',
     developer: 'Developer',
+  },
+  account: {
+    signOut: 'Sign out',
   },
   language: {
     english: 'English',
@@ -26,6 +30,7 @@ export const enSettings = {
     sections: {
       application: 'Application',
       api: 'API',
+      authentication: 'Authentication',
       localization: 'Localization',
     },
     labels: {
@@ -41,11 +46,17 @@ export const enSettings = {
       selectedLanguage: 'Selected language',
       detectedLanguage: 'Detected system language',
       preferenceStorage: 'Preference storage',
+      authenticated: 'Authenticated',
+      accessTokenPresent: 'Access token present',
+      refreshTokenPresent: 'Refresh token present',
+      authStorage: 'Authentication storage',
     },
     values: {
       available: 'Available',
       unavailable: 'Unavailable',
       notAvailable: 'Not available',
+      yes: 'Yes',
+      no: 'No',
     },
   },
 } as const;

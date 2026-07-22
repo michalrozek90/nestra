@@ -11,6 +11,7 @@ type ButtonProps = {
   readonly variant?: ButtonVariant;
   readonly isDisabled?: boolean;
   readonly accessibilityLabel?: string;
+  readonly isLoading?: boolean;
 };
 
 export function Button({
@@ -19,14 +20,16 @@ export function Button({
   variant = 'primary',
   isDisabled = false,
   accessibilityLabel,
+  isLoading = false,
 }: ButtonProps) {
   return (
     <PaperButton
       accessibilityLabel={accessibilityLabel ?? label}
       contentStyle={styles.content}
-      disabled={isDisabled}
+      disabled={isDisabled || isLoading}
       labelStyle={styles.label}
       mode={variant === 'primary' ? 'contained' : 'outlined'}
+      loading={isLoading}
       onPress={onPress}
       style={styles.button}
     >

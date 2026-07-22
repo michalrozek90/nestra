@@ -688,7 +688,7 @@ Use Argon2id through a maintained Node package.
 
 Password:
 
-- minimum 12 characters;
+- minimum 7 characters;
 - maximum 128;
 - no forced uppercase/digit/symbol composition;
 - registration UI includes confirmation;

@@ -15,6 +15,8 @@ import { useApiDiagnostics } from '@/infrastructure/diagnostics/api-diagnostics'
 import { getPreferenceStorageAvailability } from '@/infrastructure/storage/preference-storage';
 import { spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
+import { useAuth } from '@/infrastructure/auth/auth-provider';
+import { authStorageImplementation } from '@/infrastructure/auth/auth-token-storage';
 
 type DiagnosticRowProps = {
   readonly label: string;
@@ -41,7 +43,10 @@ function formatTimestamp(timestamp: string | null, fallback: string): string {
 export default function DeveloperDiagnosticsScreen() {
   const { t } = useTranslation('settings');
   const apiDiagnostics = useApiDiagnostics();
+  const { status, hasAccessToken, hasRefreshToken } = useAuth();
   const notAvailable = t('diagnostics.values.notAvailable');
+  const formatBoolean = (booleanValue: boolean) =>
+    booleanValue ? t('diagnostics.values.yes') : t('diagnostics.values.no');
 
   if (!runtimeConfig.showDeveloperDiagnostics) {
     return <Redirect href="/settings" />;
@@ -94,6 +99,24 @@ export default function DeveloperDiagnosticsScreen() {
       </View>
 
       <View style={styles.section}>
+        <SectionHeader title={t('diagnostics.sections.authentication')} />
+        <Card>
+          <DiagnosticRow
+            label={t('diagnostics.labels.authenticated')}
+            value={formatBoolean(status === 'authenticated')}
+          />
+          <DiagnosticRow
+            label={t('diagnostics.labels.accessTokenPresent')}
+            value={formatBoolean(hasAccessToken)}
+          />
+          <DiagnosticRow
+            label={t('diagnostics.labels.refreshTokenPresent')}
+            value={formatBoolean(hasRefreshToken)}
+          />
+        </Card>
+      </View>
+
+      <View style={styles.section}>
         <SectionHeader title={t('diagnostics.sections.localization')} />
         <Card>
           <DiagnosticRow
@@ -103,6 +126,10 @@ export default function DeveloperDiagnosticsScreen() {
           <DiagnosticRow
             label={t('diagnostics.labels.detectedLanguage')}
             value={getDetectedSystemLanguage()}
+          />
+          <DiagnosticRow
+            label={t('diagnostics.labels.authStorage')}
+            value={authStorageImplementation}
           />
           <DiagnosticRow
             label={t('diagnostics.labels.preferenceStorage')}

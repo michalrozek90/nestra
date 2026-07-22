@@ -1,11 +1,17 @@
-import { Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useNestraTheme } from '@/theme/themes';
+import { useAuth } from '@/infrastructure/auth/auth-provider';
 
 export default function AuthenticationLayout() {
   const theme = useNestraTheme();
+  const { status } = useAuth();
+
+  if (status === 'authenticated') {
+    return <Redirect href="/notes" />;
+  }
 
   return (
     <SafeAreaView
