@@ -8,6 +8,7 @@ import { RequestIdMiddleware } from './common/request-id.middleware';
 import { parseApiEnvironment } from './config/api-environment';
 import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
+import { NotesModule } from './notes/notes.module';
 
 const StrictZodValidationPipe = createZodValidationPipe({
   strictSchemaDeclaration: true,
@@ -22,6 +23,7 @@ const StrictZodValidationPipe = createZodValidationPipe({
     }),
     HealthModule,
     AuthModule,
+    NotesModule,
   ],
   providers: [
     {
