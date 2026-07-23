@@ -1,6 +1,56 @@
 export const plNotes = {
-  foundation: {
+  list: {
     title: 'Twoje notatki',
-    description: 'Obszar Notatek jest gotowy na funkcje notatek.',
+    active: 'Aktywne',
+    archived: 'Archiwalne',
+    pinned: 'Przypięta',
+    loading: 'Wczytywanie notatek…',
+    emptyActiveTitle: 'Nie masz jeszcze notatek',
+    emptyActiveDescription: 'Utwórz notatkę, aby zachować coś ważnego pod ręką.',
+    emptyArchivedTitle: 'Brak archiwalnych notatek',
+    emptyArchivedDescription: 'Zarchiwizowane notatki pojawią się w tym miejscu.',
+  },
+  editor: {
+    newTitle: 'Nowa notatka',
+    editTitle: 'Edytuj notatkę',
+    loading: 'Wczytywanie notatki…',
+    titleLabel: 'Tytuł',
+    contentLabel: 'Treść',
+    titleRequired: 'Wpisz tytuł.',
+    titleTooLong: 'Tytuł może mieć maksymalnie 120 znaków.',
+    contentRequired: 'Wpisz treść notatki.',
+    contentTooLong: 'Notatka może mieć maksymalnie 20 000 znaków.',
+    saving: 'Zapisywanie…',
+    saved: 'Zapisano',
+    saveFailed: 'Zapis nie powiódł się',
+    savedLocally: 'Zapisano lokalnie',
+  },
+  actions: {
+    back: 'Wstecz',
+    new: 'Nowa notatka',
+    retry: 'Spróbuj ponownie',
+    pin: 'Przypnij',
+    unpin: 'Odepnij',
+    archive: 'Archiwizuj',
+    restore: 'Przywróć',
+    delete: 'Usuń',
+    cancel: 'Anuluj',
+    keepDraft: 'Zachowaj szkic',
+    discardDraft: 'Odrzuć szkic',
+  },
+  delete: {
+    title: 'Usunąć notatkę?',
+    description: 'Tej operacji nie można cofnąć.',
+  },
+  draftRecovery: {
+    invalidTitle: 'Szkic wymaga uwagi',
+    invalidDescription:
+      'Lokalny szkic nie spełnia obecnie wymagań notatki. Możesz zachować go i kontynuować edycję albo odrzucić i wrócić do wersji z serwera.',
+  },
+  errors: {
+    notFound: 'Ta notatka już nie istnieje.',
+    validationFailed: 'Notatka zawiera nieprawidłowe wartości.',
+    serviceUnavailable: 'Usługa notatek jest niedostępna. Sprawdź połączenie i spróbuj ponownie.',
+    unexpected: 'Podczas pracy z notatką wystąpił nieoczekiwany błąd.',
   },
 } as const;

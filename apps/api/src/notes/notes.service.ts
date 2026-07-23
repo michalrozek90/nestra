@@ -82,6 +82,30 @@ export class NotesService {
         );
       }
 
+      const isPinStateOnlyUpdate =
+        noteInput.isPinned !== undefined &&
+        noteInput.title === undefined &&
+        noteInput.content === undefined &&
+        noteInput.isArchived === undefined;
+
+      if (isPinStateOnlyUpdate) {
+        await transactionalNoteRepository
+          .createQueryBuilder()
+          .update(NoteEntity)
+          .set({
+            isPinned: nextIsPinned,
+            updatedAt: note.updatedAt,
+          })
+          .where({
+            id: noteId,
+            userId,
+          })
+          .execute();
+
+        note.isPinned = nextIsPinned;
+        return this.toNote(note);
+      }
+
       if (noteInput.title !== undefined) {
         note.title = noteInput.title;
       }

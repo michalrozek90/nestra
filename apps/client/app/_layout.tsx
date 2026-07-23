@@ -11,6 +11,7 @@ import { getBootstrapMessages } from '@/i18n/system-language';
 import { logger } from '@/infrastructure/logging/logger';
 import { AuthProvider, useAuth } from '@/infrastructure/auth/auth-provider';
 import { queryClient } from '@/infrastructure/query/query-client';
+import { useApplicationQueryFocus } from '@/infrastructure/query/use-application-query-focus';
 import { AppearanceProvider, useAppearance } from '@/theme/appearance-provider';
 import { spacing } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
@@ -126,6 +127,8 @@ function ClientBootstrap() {
 }
 
 export default function RootLayout() {
+  useApplicationQueryFocus();
+
   return (
     <AppearanceProvider>
       <QueryClientProvider client={queryClient}>

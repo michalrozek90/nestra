@@ -1,6 +1,56 @@
 export const enNotes = {
-  foundation: {
+  list: {
     title: 'Your notes',
-    description: 'The Notes workspace is ready for the notes feature.',
+    active: 'Active',
+    archived: 'Archived',
+    pinned: 'Pinned',
+    loading: 'Loading notes…',
+    emptyActiveTitle: 'No notes yet',
+    emptyActiveDescription: 'Create a note to keep something important close at hand.',
+    emptyArchivedTitle: 'No archived notes',
+    emptyArchivedDescription: 'Notes that you archive will appear here.',
+  },
+  editor: {
+    newTitle: 'New note',
+    editTitle: 'Edit note',
+    loading: 'Loading note…',
+    titleLabel: 'Title',
+    contentLabel: 'Content',
+    titleRequired: 'Enter a title.',
+    titleTooLong: 'The title can contain up to 120 characters.',
+    contentRequired: 'Enter note content.',
+    contentTooLong: 'The note can contain up to 20,000 characters.',
+    saving: 'Saving…',
+    saved: 'Saved',
+    saveFailed: 'Save failed',
+    savedLocally: 'Saved locally',
+  },
+  actions: {
+    back: 'Back',
+    new: 'New note',
+    retry: 'Try again',
+    pin: 'Pin',
+    unpin: 'Unpin',
+    archive: 'Archive',
+    restore: 'Restore',
+    delete: 'Delete',
+    cancel: 'Cancel',
+    keepDraft: 'Keep draft',
+    discardDraft: 'Discard draft',
+  },
+  delete: {
+    title: 'Delete note?',
+    description: 'This action cannot be undone.',
+  },
+  draftRecovery: {
+    invalidTitle: 'Draft needs attention',
+    invalidDescription:
+      'The locally saved draft does not currently meet note requirements. You can keep editing it or discard it and return to the server version.',
+  },
+  errors: {
+    notFound: 'This note no longer exists.',
+    validationFailed: 'The note contains invalid values.',
+    serviceUnavailable: 'The notes service is unavailable. Check your connection and try again.',
+    unexpected: 'Something went wrong while working with this note.',
   },
 } as const;
