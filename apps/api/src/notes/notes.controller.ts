@@ -17,19 +17,19 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
+  ApiInternalServerErrorResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Note, NoteList } from '@nestra/contracts';
 import { ZodResponse } from 'nestjs-zod';
 
-import { JwtAuthGuard, type RequestWithAccessToken } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard, type RequestWithAccessToken } from '../auth';
 import { ApiErrorResponseDto } from '../common/api-error-response.dto';
 import { ApiException } from '../common/api.exception';
 import { CreateNoteDto } from './dto/create-note.dto';
@@ -43,17 +43,16 @@ import { NotesService } from './notes.service';
 @ApiTags('notes')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@ApiInternalServerErrorResponse({
+  description: 'An unexpected server error occurred.',
+  type: ApiErrorResponseDto,
+})
 @Controller('notes')
 export class NotesController {
   constructor(private readonly notesService: NotesService) {}
 
   @Get()
   @ApiOperation({ summary: 'List active or archived notes owned by the authenticated user' })
-  @ApiQuery({
-    name: 'archived',
-    required: true,
-    schema: { type: 'string', enum: ['false', 'true'] },
-  })
   @ZodResponse({
     status: HttpStatus.OK,
     description: 'Owned notes sorted by pin state and most recent update.',
