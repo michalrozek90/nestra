@@ -15,6 +15,12 @@ import { PublicUserDto } from './auth/dto/public-user.dto';
 import { RefreshRequestDto } from './auth/dto/refresh-request.dto';
 import { RegisterRequestDto } from './auth/dto/register-request.dto';
 import { HealthResponseDto } from './health/health-response.dto';
+import { CreateNoteDto } from './notes/dto/create-note.dto';
+import { NoteListDto } from './notes/dto/note-list.dto';
+import { NoteRouteParametersDto } from './notes/dto/note-route-parameters.dto';
+import { NoteDto } from './notes/dto/note.dto';
+import { NotesQueryDto } from './notes/dto/notes-query.dto';
+import { UpdateNoteDto } from './notes/dto/update-note.dto';
 
 async function bootstrap(): Promise<void> {
   const application = await NestFactory.create(AppModule);
@@ -45,9 +51,15 @@ async function bootstrap(): Promise<void> {
         HealthResponseDto,
         LoginRequestDto,
         LogoutRequestDto,
+        CreateNoteDto,
+        NoteDto,
+        NoteListDto,
+        NoteRouteParametersDto,
+        NotesQueryDto,
         PublicUserDto,
         RefreshRequestDto,
         RegisterRequestDto,
+        UpdateNoteDto,
       ],
     });
 
