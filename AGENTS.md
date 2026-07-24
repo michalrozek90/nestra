@@ -20,38 +20,46 @@ docs/workflows/agent-task-workflow.md
 
 Read and follow that document in addition to this file, the active specification, the selected issue, and `docs/code-review.md`. The workflow applies regardless of whether the agent runs through Codex, Cursor, or another compatible coding environment.
 
-## Required workflow
+## Implementation modes
 
-Before every implementation run:
+### Autonomous issue workflow
 
-1. Read this file.
-2. Read the authoritative specification.
-3. Read the GitHub Project and the selected work item through the GitHub MCP integration.
-4. Inspect the current repository state and existing work.
-5. Confirm that the selected work item's dependencies are complete.
+Use the autonomous issue workflow only when the user explicitly invokes it by:
 
-If the user did not select a work item explicitly, choose the first actionable `Todo` item according
-to board order, priority, and dependencies. Do not infer workflow position from the issue title. If
-the GitHub Project cannot be read, report the access blocker instead of guessing status or silently
-starting unrelated work.
+- writing `/work <issue-number-or-url>`;
+- explicitly asking to start or resume the autonomous issue workflow;
+- explicitly asking to work on a specific GitHub issue or Project item using that workflow.
 
-Implement **exactly one GitHub Project work item per run**. During the initial staged build, one
-stage issue is one work item and the stage dependency order still applies.
+In autonomous issue workflow mode, read and follow:
 
-Do not begin another work item even if the selected item finishes early. After completing the
-selected work item:
+```text
+docs/workflows/agent-task-workflow.md
+```
 
-1. Run every verification command required by that work item.
-2. Fix all relevant failures.
-3. Report completed work, verification results, blockers, and remaining work.
-4. Do not close the issue or change its GitHub Project status unless the user explicitly requests
-   that exact state change.
-5. When the user explicitly authorizes creation of a pull request, link the selected issue with a
-   GitHub closing keyword such as `Closes #123`. Merging the PR closes the issue; the user or GitHub
-   Project automation owns the transition to `Done`.
-6. Stop.
+Also read the selected GitHub issue, its comments, the corresponding GitHub Project item, the active specification, relevant architecture decisions, and `docs/code-review.md` as required by that workflow.
 
-Do not mark blocked, unverified, or partially implemented work as complete.
+The autonomous workflow may read and update GitHub Project status, create or resume branches and pull requests, create commits, push changes, perform review, and merge only according to the permissions and approval rules defined in the workflow.
+
+If required GitHub data cannot be retrieved, report the blocker and stop the autonomous workflow instead of guessing or silently continuing.
+
+### Direct implementation request
+
+When the user provides the complete task directly in the conversation without invoking `/work` or explicitly requesting the autonomous issue workflow:
+
+- treat the user's message as the authoritative task description;
+- do not require a GitHub issue or GitHub Project item;
+- do not read the GitHub Project or attempt to select a `Todo` item;
+- do not access GitHub unless the task itself requires GitHub information or the user explicitly asks for it;
+- do not change GitHub Project statuses;
+- do not create or switch branches;
+- do not create commits, tags, pushes, pull requests, merges, or releases unless the user explicitly requests the specific action;
+- inspect the current repository state and relevant existing code before editing;
+- implement only the task described by the user;
+- follow all repository engineering, TypeScript, architecture, privacy, documentation, and verification rules from this file;
+- run the relevant verification commands when implementation changes are made;
+- report completed work, verification results, and any blockers concisely.
+
+A pasted task description, general coding instruction, or ordinary request to modify code must not start the autonomous issue workflow automatically.
 
 ## Repository rules
 
