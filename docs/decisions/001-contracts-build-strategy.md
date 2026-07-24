@@ -20,11 +20,23 @@ development command builds once and then runs the contracts watcher beside the A
 The root product version is injected while contracts are built, so every consumer receives the
 same version without reading files outside its runtime boundary.
 
+Contracts builds do not clean `packages/contracts/dist`, and NestJS builds do not delete
+`apps/api/dist`. Development watchers and verification commands share these output directories,
+so deleting either directory while another process consumes it can leave the API watcher alive
+without a running API process. Successful builds overwrite their owned artifacts in place instead.
+The root development command stops all watchers when any one of them exits, including an
+unexpected successful exit, so it cannot leave a misleading partial development environment.
+
 ## Consequences
 
 Consumers use stable package exports and remain independent of the contracts source layout.
 Commands that consume contracts have a small initial build cost. Product-version changes require
 rebuilding contracts, which the supported root commands enforce.
+
+Builds may leave an obsolete generated file after a source file is removed or renamed. Generated
+output is not committed, and a fresh dependency installation or manual removal of the affected
+`dist` directory restores a clean output tree. Avoid cleaning either directory while development
+watchers are active.
 
 ## Alternatives considered
 

@@ -15,7 +15,7 @@ if (
 }
 
 export default defineConfig({
-  clean: true,
+  clean: false,
   define: {
     __NESTRA_APPLICATION_VERSION__: JSON.stringify(rootPackageJson.version),
   },
