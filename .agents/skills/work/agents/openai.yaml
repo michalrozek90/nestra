@@ -1,4 +1,4 @@
 interface:
-  display_name: "Work"
-  short_description: "Start or resume a GitHub issue workflow"
-  default_prompt: "Use $work to start or resume the autonomous GitHub issue workflow with /work <issue-number-or-url>."
+  display_name: 'Work'
+  short_description: 'Start or resume a GitHub issue workflow'
+  default_prompt: 'Use $work to start or resume the autonomous GitHub issue workflow with /work <issue-number-or-url>.'

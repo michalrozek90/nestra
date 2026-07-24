@@ -156,6 +156,14 @@ For simultaneous contracts watch, API watch, and Expo Web development:
 pnpm dev
 ```
 
+Formatting, linting, type-checking, and build commands can run while `pnpm dev` remains active.
+The development and verification processes overwrite their generated artifacts without deleting
+the shared contracts or API output directories. Do not manually remove either `dist` directory
+while the development watchers are running. If any development watcher exits, the root command
+stops the remaining watchers instead of leaving a partially running environment. The command also
+exits if the API does not start within 30 seconds or remains unavailable for 15 seconds after it
+has started.
+
 Native development commands are:
 
 ```bash
