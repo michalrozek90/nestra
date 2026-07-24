@@ -26,6 +26,9 @@ so deleting either directory while another process consumes it can leave the API
 without a running API process. Successful builds overwrite their owned artifacts in place instead.
 The root development command stops all watchers when any one of them exits, including an
 unexpected successful exit, so it cannot leave a misleading partial development environment.
+Because Nest CLI deliberately keeps its watcher alive when the spawned API process exits, the root
+command also monitors the API port. It allows 30 seconds for initial startup and 15 seconds for a
+normal hot reload, then exits with an error when the API remains unavailable.
 
 ## Consequences
 
