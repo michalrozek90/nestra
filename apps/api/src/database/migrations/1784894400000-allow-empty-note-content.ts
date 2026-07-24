@@ -11,10 +11,12 @@ export class AllowEmptyNoteContent1784894400000 implements MigrationInterface {
   }
 
   async down(queryRunner: QueryRunner): Promise<void> {
+    // A downgrade must preserve title-only notes created while this migration was active.
     await queryRunner.query(`
       ALTER TABLE notes
         ADD CONSTRAINT notes_content_not_blank_check
           CHECK (char_length(btrim(content)) BETWEEN 1 AND 20000)
+          NOT VALID
     `);
   }
 }
