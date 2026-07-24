@@ -10,6 +10,16 @@ Implementation work is tracked in the private
 [Nestra GitHub Project](https://github.com/users/michalrozek90/projects/1). Work-item titles are
 descriptive and are not required to contain `Stage` or follow any other naming convention.
 
+## Autonomous issue workflow
+
+When the user asks an agent to implement a GitHub issue or Project work item, the mandatory lifecycle is defined in:
+
+```text
+docs/workflows/agent-task-workflow.md
+```
+
+Read and follow that document in addition to this file, the active specification, the selected issue, and `docs/code-review.md`. The workflow applies regardless of whether the agent runs through Codex, Cursor, or another compatible coding environment.
+
 ## Required workflow
 
 Before every implementation run:
