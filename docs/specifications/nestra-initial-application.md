@@ -1063,10 +1063,11 @@ Note
 
 Validation:
 
-- title required, max 120;
-- content required, max 20,000;
+- title required, trimmed, non-empty, max 120;
+- content optional on create and update, defaults to an empty string when omitted, max 20,000;
 - trim leading/trailing whitespace from both;
-- whitespace-only values invalid;
+- whitespace-only title values are invalid;
+- whitespace-only content is valid and normalizes to an empty string;
 - PATCH must contain at least one supported field;
 - reject unknown fields;
 - no tags, rich text, collaboration, pagination, soft delete, or `deletedAt`.
@@ -1142,7 +1143,7 @@ Local drafts:
 New note:
 
 - starts as a local draft;
-- server POST only after normalized title and content are valid;
+- server POST after the normalized title is valid and content, when present, is within its limit;
 - after first POST, replace route with `/notes/:noteId`;
 - continue with PATCH autosave.
 

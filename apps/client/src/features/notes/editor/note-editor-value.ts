@@ -5,9 +5,10 @@ export type NoteEditorValue = {
   readonly content: string;
 };
 
-export type NoteEditorField = keyof NoteEditorValue;
-
-export type NoteEditorValidationErrors = Partial<Record<NoteEditorField, 'required' | 'tooLong'>>;
+export type NoteEditorValidationErrors = {
+  title?: 'required' | 'tooLong';
+  content?: 'tooLong';
+};
 
 export function validateNoteEditorValue(value: NoteEditorValue): NoteEditorValidationErrors {
   const parsedValue = createNoteSchema.safeParse(value);
@@ -18,11 +19,11 @@ export function validateNoteEditorValue(value: NoteEditorValue): NoteEditorValid
   const errors: NoteEditorValidationErrors = {};
   for (const issue of parsedValue.error.issues) {
     const field = issue.path[0];
-    if (field !== 'title' && field !== 'content') {
-      continue;
+    if (field === 'title') {
+      errors.title = value.title.trim().length === 0 ? 'required' : 'tooLong';
+    } else if (field === 'content') {
+      errors.content = 'tooLong';
     }
-
-    errors[field] = value[field].trim().length === 0 ? 'required' : 'tooLong';
   }
   return errors;
 }
