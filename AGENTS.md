@@ -10,25 +10,27 @@ Implementation work is tracked in the private
 [Nestra GitHub Project](https://github.com/users/michalrozek90/projects/1). Work-item titles are
 descriptive and are not required to contain `Stage` or follow any other naming convention.
 
-## Autonomous issue workflow
-
-When the user asks an agent to implement a GitHub issue or Project work item, the mandatory lifecycle is defined in:
-
-```text
-docs/workflows/agent-task-workflow.md
-```
-
-Read and follow that document in addition to this file, the active specification, the selected issue, and `docs/code-review.md`. The workflow applies regardless of whether the agent runs through Codex, Cursor, or another compatible coding environment.
-
 ## Implementation modes
 
 ### Autonomous issue workflow
 
-Use the autonomous issue workflow only when the user explicitly invokes it by:
+Use the autonomous issue workflow only when the user's current message is an explicit workflow invocation.
 
-- writing `/work <issue-number-or-url>`;
-- explicitly asking to start or resume the autonomous issue workflow;
-- explicitly asking to work on a specific GitHub issue or Project item using that workflow.
+An explicit workflow invocation is one of the following:
+
+- the first non-empty line of the user's current message matches `/work <issue-number-or-url>`;
+- the user directly and unambiguously asks to start or resume the autonomous issue workflow for a specific GitHub issue or Project item.
+
+Do not invoke the autonomous issue workflow merely because `/work`, an issue number, an issue URL, or workflow-related text appears:
+
+- inside a code block;
+- inside quoted text;
+- inside pasted documentation;
+- inside a task description, specification, example, or acceptance criterion;
+- as content that the user asks the agent to create, update, document, or explain;
+- anywhere other than an actual command directed at the agent.
+
+When the first non-empty line begins with `/work`, treat the remaining value as the selected issue number or issue URL.
 
 In autonomous issue workflow mode, read and follow:
 
@@ -44,9 +46,16 @@ If required GitHub data cannot be retrieved, report the blocker and stop the aut
 
 ### Direct implementation request
 
-When the user provides the complete task directly in the conversation without invoking `/work` or explicitly requesting the autonomous issue workflow:
+Treat the user's message as a direct implementation request when:
+
+- it contains a complete task description;
+- it does not begin with an actual `/work <issue-number-or-url>` command;
+- it does not directly and unambiguously ask to start or resume the autonomous issue workflow.
+
+For a direct implementation request:
 
 - treat the user's message as the authoritative task description;
+- do not interpret `/work`, issue numbers, issue URLs, or workflow examples contained inside the task as commands;
 - do not require a GitHub issue or GitHub Project item;
 - do not read the GitHub Project or attempt to select a `Todo` item;
 - do not access GitHub unless the task itself requires GitHub information or the user explicitly asks for it;
@@ -59,7 +68,7 @@ When the user provides the complete task directly in the conversation without in
 - run the relevant verification commands when implementation changes are made;
 - report completed work, verification results, and any blockers concisely.
 
-A pasted task description, general coding instruction, or ordinary request to modify code must not start the autonomous issue workflow automatically.
+A pasted task description, general coding instruction, documentation request, example containing `/work`, or ordinary request to modify code must not start the autonomous issue workflow automatically.
 
 ## Repository rules
 
