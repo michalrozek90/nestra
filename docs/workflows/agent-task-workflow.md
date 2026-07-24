@@ -4,15 +4,47 @@ This document defines the mandatory lifecycle for implementing a selected GitHub
 
 `AGENTS.md`, the active specification, the selected GitHub issue, and `docs/code-review.md` remain authoritative for repository rules, product requirements, implementation scope, and review behavior. This workflow does not duplicate those documents.
 
-## User commands
+## Invocation
 
-The workflow begins when the user selects a work item, for example:
+This workflow runs only after an explicit autonomous workflow invocation.
 
-- `work #10`
-- `work <GitHub issue URL>`
-- `implement issue #10`
+The primary repository alias is:
 
-The short preferred command is `work`.
+```text
+/work <issue-number-or-url>
+```
+
+Supported forms:
+
+```text
+/work #10
+/work https://github.com/michalrozek90/nestra/issues/10
+```
+
+These forms are valid across Cursor Agent Chat, the Codex extension in Cursor, and the native Codex application. Treat a leading `/work <issue-number-or-url>` as an explicit invocation even when the client has no native slash-command support and the text is entered as plain text.
+
+Entrypoints that must delegate here without copying this workflow:
+
+- repository alias defined in `AGENTS.md`;
+- Codex skill at `.agents/skills/work/`;
+- Cursor command at `.cursor/commands/work.md`.
+
+Before accessing GitHub issues, GitHub Projects, branches, or pull requests, inspect the first non-empty line of the user's current message literally.
+
+Run this workflow only when:
+
+- the first non-empty line starts with `/work ` and contains an issue number or issue URL; or
+- the user directly and unambiguously states that the autonomous issue workflow must be started or resumed.
+
+Do not run this workflow when `/work`, an issue number, or an issue URL appears only:
+
+- inside a code block;
+- inside quoted or pasted text;
+- inside a specification, example, acceptance criterion, or documentation request;
+- as content that the user asks to implement, document, or explain;
+- later in a message whose first non-empty line is not an autonomous workflow invocation.
+
+If the first non-empty line does not invoke this workflow, do not access the GitHub issue or GitHub Project under this workflow. Treat the request according to the direct implementation rules in `AGENTS.md`.
 
 The workflow ends only after one of these outcomes:
 

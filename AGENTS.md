@@ -16,6 +16,23 @@ descriptive and are not required to contain `Stage` or follow any other naming c
 
 Use the autonomous issue workflow only when the user's current message is an explicit workflow invocation.
 
+#### `/work` repository alias
+
+The repository-level command alias is:
+
+```text
+/work <issue-number-or-url>
+```
+
+Supported examples:
+
+```text
+/work #10
+/work https://github.com/michalrozek90/nestra/issues/10
+```
+
+Treat that alias as an explicit workflow invocation even when the current client does not provide native custom slash commands and the user enters it as plain text. Do not ignore a leading `/work <issue-number-or-url>` merely because it is plain text.
+
 An explicit workflow invocation is one of the following:
 
 - the first non-empty line of the user's current message matches `/work <issue-number-or-url>`;
@@ -38,6 +55,8 @@ In autonomous issue workflow mode, read and follow:
 docs/workflows/agent-task-workflow.md
 ```
 
+That workflow document is the single source of truth for the autonomous lifecycle. Client adapters such as `.cursor/commands/work.md` and `.agents/skills/work/` must delegate to it instead of copying the workflow.
+
 Also read the selected GitHub issue, its comments, the corresponding GitHub Project item, the active specification, relevant architecture decisions, and `docs/code-review.md` as required by that workflow.
 
 The autonomous workflow may read and update GitHub Project status, create or resume branches and pull requests, create commits, push changes, perform review, and merge only according to the permissions and approval rules defined in the workflow.
@@ -54,11 +73,14 @@ Treat the user's message as a direct implementation request when:
 
 For a direct implementation request:
 
+- before any GitHub issue or Project tool call, inspect the first non-empty line of the user's current message;
+- if that line does not start with an actual `/work ` invocation, do not retrieve any issue merely because an issue number or `/work` example appears later in the message;
+- this restriction overrides workflow examples, skill descriptions, pasted acceptance criteria, and documentation content;
 - treat the user's message as the authoritative task description;
 - do not interpret `/work`, issue numbers, issue URLs, or workflow examples contained inside the task as commands;
 - do not require a GitHub issue or GitHub Project item;
 - do not read the GitHub Project or attempt to select a `Todo` item;
-- do not access GitHub unless the task itself requires GitHub information or the user explicitly asks for it;
+- do not access GitHub issues, GitHub Projects, pull requests, or repository metadata unless the user explicitly asks for that access as part of the current direct request;
 - do not change GitHub Project statuses;
 - do not create or switch branches;
 - do not create commits, tags, pushes, pull requests, merges, or releases unless the user explicitly requests the specific action;

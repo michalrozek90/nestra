@@ -216,6 +216,16 @@ identifiers are `nestra`, `com.michalrozek.nestra` for Android, and
 - [Implementation board](https://github.com/users/michalrozek90/projects/1)
 - [Architecture decisions](docs/decisions/README.md)
 - [Contributor instructions](AGENTS.md)
+- [Autonomous agent task workflow](docs/workflows/agent-task-workflow.md)
+
+Start or resume the autonomous GitHub issue workflow with the repository alias:
+
+```text
+/work #10
+/work https://github.com/michalrozek90/nestra/issues/10
+```
+
+The alias works in Cursor Agent Chat, the Codex extension in Cursor, and the native Codex application. The workflow source of truth is `docs/workflows/agent-task-workflow.md`.
 
 ## Roadmap
 
