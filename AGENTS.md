@@ -197,6 +197,11 @@ Log safe identifiers, request IDs, error codes, operation names, and durations w
 
 Do not silently ignore caught errors. Handle them, convert them into an expected error, or log them safely and rethrow them.
 
+## User communication
+
+- Communicate with the user in Polish.
+- Keep code, code comments, technical documentation, commit messages, and ADRs in English.
+
 ## Documentation and decisions
 
 - Write code, comments, technical documentation, commit messages, and ADRs in English.
