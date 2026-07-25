@@ -40,6 +40,36 @@ project will not create one-to-one wrappers for the entire Paper API. React Nati
 native layout APIs remain available for layout and platform-specific styling that Paper does not
 replace.
 
+### React Native Web compatibility patch
+
+React Native Paper `5.15.3` still passes deprecated or unsupported props to React Native Web
+`0.21.2` when used with the pinned Expo SDK 57 and React Native `0.86.0` stack. The affected
+Nestra flows and Paper call paths are:
+
+- authentication and Notes surfaces: `Button`, `Card`, `Dialog`, and `Modal` through `Surface`
+  legacy `shadow*` styles;
+- Notes portals and dialogs: `PortalHost`, `PortalManager`, and `Modal` legacy `pointerEvents`
+  props;
+- login and note editor fields: `TextInput` outline, label, label background, and multiline patch
+  views using legacy `pointerEvents` props;
+- application and note action icons: `MaterialCommunityIcon` forwarding the legacy
+  `pointerEvents` prop to React Native Web `Text`;
+- loading, field, dialog, button, segmented-button, and cross-fade animations:
+  `ActivityIndicator`, `TextInput`, `Modal`, `Button`, `SegmentedButtonItem`, and `CrossFadeIcon`
+  requesting the unsupported Web native animation driver.
+
+Nestra applies `patches/react-native-paper@5.15.3.patch` through pnpm. The patch moves Web pointer
+event values into styles, represents Web elevation with `boxShadow`, and disables the native
+animation driver only on Web. Native elevation, shadow, pointer-event, and animation-driver
+behavior remains unchanged. The package's `src`, `lib/module`, and `lib/commonjs` variants stay
+aligned because Metro resolves the module build while other tooling may resolve a different
+variant. Warning filtering or console suppression is not part of the solution.
+
+The related Expo ecosystem warning is tracked in
+[expo/expo#33248](https://github.com/expo/expo/issues/33248). Remove the patch after a stable Paper
+release implements equivalent behavior and that release passes Nestra's Web, Android, and iOS
+interaction checks on the pinned Expo stack.
+
 ## Consequences
 
 - Common interactive controls, theming behavior, and accessibility foundations do not need to be
@@ -49,6 +79,8 @@ replace.
   accepting Material Design 3 as the base component model.
 - The client gains a runtime dependency and some coupling to the React Native Paper theme and
   component APIs.
+- Paper updates must be checked against the local pnpm patch and must keep all distributed module
+  variants synchronized until the patch can be removed.
 - Future Paper upgrades require compatibility checks and visual regression review on Android, iOS,
   and Web.
 
