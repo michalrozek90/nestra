@@ -1,6 +1,6 @@
 import type { Note } from '@nestra/contracts';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import {
@@ -20,15 +20,9 @@ import { spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
 import { getNoteErrorTranslationKey } from '../api/note-error';
 import { useNoteActionMutation, type NoteAction } from '../api/use-note-action-mutation';
-import {
-  consumeNoteEditorFocusTransfer,
-  queueNoteEditorFocusTransfer,
-  readNoteEditorFocusTransfer,
-  type NoteEditorField,
-  type NoteEditorSelection,
-} from '../editor/note-editor-focus-transfer';
 import { validateNoteEditorValue } from '../editor/note-editor-value';
-import { useNoteEditor, type NoteSaveStatus } from '../editor/use-note-editor';
+import type { NoteSaveStatus } from '../editor/use-note-editor';
+import { useNoteEditorWithFocusTransfer } from '../editor/use-note-editor-with-focus-transfer';
 import { ConfirmationDialog } from './confirmation-dialog';
 import { NoteActionTooltip } from './note-action-tooltip';
 
@@ -49,60 +43,17 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
   const router = useRouter();
   const theme = useNestraTheme();
   const { user } = useAuth();
-  const focusedFieldRef = useRef<NoteEditorField | null>(null);
-  const titleSelectionRef = useRef<NoteEditorSelection>({
-    start: note?.title.length ?? 0,
-    end: note?.title.length ?? 0,
-  });
-  const contentSelectionRef = useRef<NoteEditorSelection>({
-    start: note?.content.length ?? 0,
-    end: note?.content.length ?? 0,
-  });
-  const [focusTransfer] = useState(() =>
-    mode === 'existing' && note ? readNoteEditorFocusTransfer(note.id) : null,
-  );
-  const [isFocusRestorationComplete, setIsFocusRestorationComplete] = useState(
-    focusTransfer === null,
-  );
   const [hasEditedTitle, setHasEditedTitle] = useState(false);
   const [hasEditedContent, setHasEditedContent] = useState(false);
   const [isDeleteDialogVisible, setIsDeleteDialogVisible] = useState(false);
-  const editor = useNoteEditor({
+  const { contentFocus, editor, titleFocus } = useNoteEditorWithFocusTransfer({
     userId: user?.id ?? '',
     initialNote: note,
-    onCreated: (noteId) => {
-      const focusedField = focusedFieldRef.current;
-      if (focusedField) {
-        queueNoteEditorFocusTransfer({
-          noteId,
-          field: focusedField,
-          selection:
-            focusedField === 'title' ? titleSelectionRef.current : contentSelectionRef.current,
-        });
-      }
-      router.replace({ pathname: '../notes/[noteId]', params: { noteId } });
-    },
+    mode,
+    onCreated: (noteId) => router.replace({ pathname: '../notes/[noteId]', params: { noteId } }),
   });
   const validationErrors = useMemo(() => validateNoteEditorValue(editor.value), [editor.value]);
   const actionMutation = useNoteActionMutation();
-
-  useEffect(() => {
-    if (focusTransfer) {
-      consumeNoteEditorFocusTransfer(focusTransfer.noteId);
-    }
-  }, [focusTransfer]);
-
-  useEffect(() => {
-    if (!editor.isInitialized || !focusTransfer || isFocusRestorationComplete) {
-      return;
-    }
-
-    const animationFrame = requestAnimationFrame(() => {
-      setIsFocusRestorationComplete(true);
-    });
-
-    return () => cancelAnimationFrame(animationFrame);
-  }, [editor.isInitialized, focusTransfer, isFocusRestorationComplete]);
 
   async function performNoteAction(kind: NoteAction['kind']): Promise<void> {
     if (!note) {
@@ -141,20 +92,6 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
       : editor.saveStatus === 'saved'
         ? theme.colors.primary
         : theme.colors.onSurfaceVariant;
-  const titleFocusSelection =
-    !isFocusRestorationComplete && focusTransfer?.field === 'title'
-      ? {
-          start: Math.min(focusTransfer.selection.start, editor.value.title.length),
-          end: Math.min(focusTransfer.selection.end, editor.value.title.length),
-        }
-      : undefined;
-  const contentFocusSelection =
-    !isFocusRestorationComplete && focusTransfer?.field === 'content'
-      ? {
-          start: Math.min(focusTransfer.selection.start, editor.value.content.length),
-          end: Math.min(focusTransfer.selection.end, editor.value.content.length),
-        }
-      : undefined;
 
   return (
     <Screen>
@@ -209,28 +146,24 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
       <View style={styles.form}>
         <TextInput
           accessibilityLabel={t('editor.titleLabel')}
-          autoFocus={titleFocusSelection !== undefined}
+          autoFocus={titleFocus.autoFocus}
           error={Boolean(titleError)}
           label={t('editor.titleLabel')}
           maxLength={120}
           mode="outlined"
           onBlur={() => {
             setHasEditedTitle(true);
-            if (focusedFieldRef.current === 'title') {
-              focusedFieldRef.current = null;
-            }
+            titleFocus.onBlur();
           }}
           onChangeText={(title) => {
             setHasEditedTitle(true);
             editor.setTitle(title);
           }}
-          onFocus={() => {
-            focusedFieldRef.current = 'title';
-          }}
+          onFocus={titleFocus.onFocus}
           onSelectionChange={({ nativeEvent }) => {
-            titleSelectionRef.current = nativeEvent.selection;
+            titleFocus.onSelectionChange(nativeEvent.selection);
           }}
-          selection={titleFocusSelection}
+          selection={titleFocus.selection}
           value={editor.value.title}
         />
         {titleError ? (
@@ -241,7 +174,7 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
 
         <TextInput
           accessibilityLabel={t('editor.contentLabel')}
-          autoFocus={contentFocusSelection !== undefined}
+          autoFocus={contentFocus.autoFocus}
           error={Boolean(contentError)}
           label={t('editor.contentLabel')}
           maxLength={20_000}
@@ -249,21 +182,17 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
           multiline
           onBlur={() => {
             setHasEditedContent(true);
-            if (focusedFieldRef.current === 'content') {
-              focusedFieldRef.current = null;
-            }
+            contentFocus.onBlur();
           }}
           onChangeText={(content) => {
             setHasEditedContent(true);
             editor.setContent(content);
           }}
-          onFocus={() => {
-            focusedFieldRef.current = 'content';
-          }}
+          onFocus={contentFocus.onFocus}
           onSelectionChange={({ nativeEvent }) => {
-            contentSelectionRef.current = nativeEvent.selection;
+            contentFocus.onSelectionChange(nativeEvent.selection);
           }}
-          selection={contentFocusSelection}
+          selection={contentFocus.selection}
           style={styles.contentInput}
           value={editor.value.content}
         />
