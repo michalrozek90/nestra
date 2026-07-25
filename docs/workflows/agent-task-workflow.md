@@ -77,6 +77,8 @@ The expected GitHub Project states are:
 
 Do not create or require a separate clarification state. When clarification is required, leave a concise issue comment describing what is missing and report it to the user.
 
+Codex status changes to `Review` and `Blocked` trigger the repository notification hook described in `docs/workflows/agent-task-notifications.md`. Use the GitHub Projects integration for these transitions so the hook can observe the successful update. Do not send a duplicate manual notification.
+
 ## 1. Resolve the selected work item
 
 1. Read `AGENTS.md`.

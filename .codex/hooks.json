@@ -1,0 +1,19 @@
+{
+  "description": "Notify the project owner when Codex moves a Nestra task to Review or Blocked.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "^mcp__github__projects_write$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoLogo -NoProfile -NonInteractive -File .codex/hooks/notify-project-status.ps1",
+            "commandWindows": "powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .codex/hooks/notify-project-status.ps1",
+            "timeout": 15,
+            "statusMessage": "Sending the project status notification"
+          }
+        ]
+      }
+    ]
+  }
+}
