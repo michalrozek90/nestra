@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterMCPExecution": [
+      {
+        "command": "powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .codex/hooks/notify-project-status.ps1"
+      }
+    ]
+  }
+}

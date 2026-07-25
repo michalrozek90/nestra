@@ -1,16 +1,19 @@
 # Agent task notifications
 
-Nestra uses a repository-level Codex `PostToolUse` hook to send a Discord
-notification when Codex moves a GitHub Project item to either `Review` or
+Nestra uses repository-level Codex and Cursor hooks to send a Discord
+notification when an agent moves a GitHub Project item to either `Review` or
 `Blocked`.
 
-The hook runs immediately after the GitHub Projects MCP tool returns. It does
-not poll GitHub, run a model, or consume agent tokens.
+The Codex `PostToolUse` hook is configured in `.codex/hooks.json`. The Cursor
+`afterMCPExecution` hook is configured in `.cursor/hooks.json`. Both run the
+same notification script immediately after the GitHub Projects MCP tool
+returns. They do not poll GitHub, run a model, or consume agent tokens.
 
 ## Scope
 
-The hook matches the `mcp__github__projects_write` tool and sends a notification
-only when all of these conditions are true:
+The script accepts the Codex `mcp__github__projects_write` tool name and Cursor
+MCP tool names ending in `projects_write` or `projects-write`. It sends a
+notification only when all of these conditions are true:
 
 - the method is `update_project_item`;
 - the project owner is `michalrozek90`;
@@ -20,7 +23,7 @@ only when all of these conditions are true:
 - the tool response is not marked as an error.
 
 Manual Project changes made in the GitHub UI and changes made by clients that do
-not run Codex repository hooks are outside this mechanism.
+not run either repository hook are outside this mechanism.
 
 ## Configure Discord
 
@@ -34,9 +37,9 @@ not run Codex repository hooks are outside this mechanism.
    your own Discord user, and select **Copy User ID**.
 5. Store the numeric ID in the Windows user environment variable
    `NESTRA_DISCORD_USER_ID`.
-6. Restart the active Codex client so it inherits the updated environment. For
-   Cursor, restart Cursor. For the Codex app or CLI, close all active Codex
-   processes and start a new one.
+6. Restart the active client so it inherits the updated environment. For
+   Cursor, close all Cursor windows and start Cursor again. For another Codex
+   client, close all active Codex processes and start a new one.
 
 The equivalent PowerShell command is shown below. Prefer the Windows environment
 variable UI if you do not want the webhook URL in PowerShell history.
@@ -55,20 +58,25 @@ variable UI if you do not want the webhook URL in PowerShell history.
 )
 ```
 
-## Trust the hook
+## Enable the hooks
 
 Codex skips new or modified repository command hooks until they are reviewed and
 trusted.
 
-From a Codex CLI session opened in the repository:
+In the Codex extension inside Cursor:
 
-1. Run `/hooks`.
-2. Locate `.codex/hooks.json`.
-3. Review and trust the `PostToolUse` hook.
-4. Start a new Codex conversation in Cursor.
+1. Open the Codex panel settings.
+2. Open **Hooks**.
+3. Select the `nestra` project source.
+4. Review and trust the `PostToolUse` hook.
+5. Start a new Codex conversation.
 
 Changing the hook definition or command invalidates the stored trust decision
 and requires another review.
+
+Cursor loads `.cursor/hooks.json` for the workspace. After adding or changing
+that file, close all Cursor windows and start Cursor again before testing the
+native Cursor Agent.
 
 ## Check the active process configuration
 
@@ -86,8 +94,10 @@ be `true` before testing delivery.
 
 ## Test message generation and Discord delivery
 
-After setting the environment variables and restarting the active Codex client,
-run this command from the repository root:
+After setting the environment variables and restarting the active client, run
+the relevant command from the repository root.
+
+Codex payload:
 
 ```powershell
 @'
@@ -118,18 +128,38 @@ run this command from the repository root:
 This dry run validates input matching and message generation. It does not prove
 that Codex loaded the hook or that Discord accepted the message.
 
+Cursor payload:
+
+```powershell
+@'
+{
+  "hook_event_name": "afterMCPExecution",
+  "tool_name": "github-projects-write",
+  "tool_input": "{\"method\":\"update_project_item\",\"owner\":\"michalrozek90\",\"project_number\":1,\"item_owner\":\"michalrozek90\",\"item_repo\":\"nestra\",\"issue_number\":1,\"updated_field\":{\"name\":\"Status\",\"value\":\"Blocked\"}}",
+  "result_json": "{\"content\":[],\"isError\":false}"
+}
+'@ | powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
+    -File .codex/hooks/notify-project-status.ps1 `
+    -DryRun
+```
+
+This dry run validates Cursor's nested JSON payload format. It does not prove
+that Cursor loaded the lifecycle hook.
+
 Remove `-DryRun` to test Discord delivery directly. A successful direct
-delivery still does not prove that Codex loaded and trusted the lifecycle hook.
+delivery still does not prove that the active client loaded its lifecycle hook.
 
-## Test the complete lifecycle hook
+## Test the complete lifecycle hooks
 
-An end-to-end test must originate from a real Codex tool call:
+An end-to-end test must originate from a real GitHub Projects MCP tool call:
 
-1. Run `/hooks`, review the current `.codex/hooks.json`, and trust it.
-2. Start a new Codex conversation from the repository root.
-3. Ask Codex explicitly to use the GitHub Projects integration to update a test
-   item to `Review` or `Blocked`. Updating an item to its existing value is
-   sufficient to exercise the hook without changing its visible status.
+1. For Codex, review and trust `.codex/hooks.json` in the Codex panel's
+   **Hooks** settings.
+2. Restart Cursor and start a new conversation in the client being tested.
+3. Ask the agent explicitly to use the GitHub Projects MCP integration to
+   update a test item to `Review` or `Blocked`. Updating an item to its existing
+   value is sufficient to exercise the hook without changing its visible
+   status.
 4. Confirm the Discord message and mention.
 5. Inspect the latest diagnostic events:
 

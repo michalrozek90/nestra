@@ -32,6 +32,38 @@ function Get-ObjectProperty {
     return $property.Value
 }
 
+function ConvertFrom-NestedJson {
+    param(
+        [AllowNull()]
+        [object] $InputObject
+    )
+
+    if ($InputObject -isnot [string]) {
+        return $InputObject
+    }
+
+    if ([string]::IsNullOrWhiteSpace($InputObject)) {
+        return $null
+    }
+
+    try {
+        return $InputObject | ConvertFrom-Json -ErrorAction Stop
+    }
+    catch {
+        return $null
+    }
+}
+
+function Test-GitHubProjectsWriteTool {
+    param(
+        [AllowNull()]
+        [string] $ToolName
+    )
+
+    return $ToolName -eq 'mcp__github__projects_write' `
+        -or $ToolName -match '(?i)(^|[_-])projects[_-]write$'
+}
+
 function Write-NotificationDiagnostic {
     param(
         [Parameter(Mandatory)]
@@ -159,20 +191,47 @@ catch {
 $hookEventName = [string] (Get-ObjectProperty -InputObject $hookPayload -Name 'hook_event_name')
 $toolName = [string] (Get-ObjectProperty -InputObject $hookPayload -Name 'tool_name')
 
-if ($hookEventName -ne 'PostToolUse' -or $toolName -ne 'mcp__github__projects_write') {
+$isCodexHook = $hookEventName -eq 'PostToolUse' `
+    -and $toolName -eq 'mcp__github__projects_write'
+$isCursorHook = $hookEventName -eq 'afterMCPExecution' `
+    -and (Test-GitHubProjectsWriteTool -ToolName $toolName)
+
+if (-not $isCodexHook -and -not $isCursorHook) {
     Write-NotificationDiagnostic -Outcome 'ignored_unexpected_event'
     exit 0
 }
 
-$toolInput = Get-ObjectProperty -InputObject $hookPayload -Name 'tool_input'
-$toolResponse = Get-ObjectProperty -InputObject $hookPayload -Name 'tool_response'
+$toolInput = ConvertFrom-NestedJson -InputObject (
+    Get-ObjectProperty -InputObject $hookPayload -Name 'tool_input'
+)
+
+if ($isCursorHook) {
+    $toolResponse = ConvertFrom-NestedJson -InputObject (
+        Get-ObjectProperty -InputObject $hookPayload -Name 'result_json'
+    )
+    $agentName = 'Cursor Agent'
+}
+else {
+    $toolResponse = Get-ObjectProperty -InputObject $hookPayload -Name 'tool_response'
+    $agentName = 'Codex'
+}
+
 $itemOwner = [string] (Get-ObjectProperty -InputObject $toolInput -Name 'item_owner')
 $itemRepository = [string] (Get-ObjectProperty -InputObject $toolInput -Name 'item_repo')
 $issueNumber = [string] (Get-ObjectProperty -InputObject $toolInput -Name 'issue_number')
 
 $responseIsError = Get-ObjectProperty -InputObject $toolResponse -Name 'isError'
 $responseIsErrorAlias = Get-ObjectProperty -InputObject $toolResponse -Name 'is_error'
-if ($responseIsError -eq $true -or $responseIsErrorAlias -eq $true) {
+$responseError = [string] (Get-ObjectProperty -InputObject $toolResponse -Name 'error')
+$responseWasRejected = Get-ObjectProperty -InputObject $toolResponse -Name 'rejected'
+$responsePermissionDenied = Get-ObjectProperty -InputObject $toolResponse -Name 'permissionDenied'
+if (
+    $responseIsError -eq $true `
+        -or $responseIsErrorAlias -eq $true `
+        -or -not [string]::IsNullOrWhiteSpace($responseError) `
+        -or $responseWasRejected -eq $true `
+        -or $responsePermissionDenied -eq $true
+) {
     Write-NotificationDiagnostic `
         -Outcome 'ignored_tool_error' `
         -IssueNumber $issueNumber
@@ -228,7 +287,7 @@ if ($discordUserId -match '^\d{17,20}$') {
 }
 
 $notificationLines = @(
-    "${notificationPrefix}Nestra task moved to $status by Codex."
+    "${notificationPrefix}Nestra task moved to $status by $agentName."
 )
 
 if (
@@ -244,7 +303,7 @@ else {
 }
 
 $notificationPayload = @{
-    username         = 'Nestra Codex'
+    username         = 'Nestra Agent'
     content          = $notificationLines -join "`n"
     allowed_mentions = $allowedMentions
 }
