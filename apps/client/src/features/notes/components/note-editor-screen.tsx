@@ -6,13 +6,12 @@ import { StyleSheet, View } from 'react-native';
 import {
   ActivityIndicator,
   Button as PaperButton,
-  Dialog,
   IconButton,
-  Portal,
   Text,
   TextInput,
 } from 'react-native-paper';
 
+import { ActionDialog } from '@/components/action-dialog';
 import { Header } from '@/components/header';
 import { Screen } from '@/components/screen';
 import { useAuth } from '@/infrastructure/auth/auth-provider';
@@ -225,22 +224,19 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
         title={t('delete.title')}
       />
 
-      <Portal>
-        <Dialog dismissable={false} visible={editor.invalidRecoveredDraft !== null}>
-          <Dialog.Title>{t('draftRecovery.invalidTitle')}</Dialog.Title>
-          <Dialog.Content>
-            <Text>{t('draftRecovery.invalidDescription')}</Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <PaperButton onPress={editor.discardInvalidRecoveredDraft}>
-              {t('actions.discardDraft')}
-            </PaperButton>
-            <PaperButton onPress={editor.keepInvalidRecoveredDraft}>
-              {t('actions.keepDraft')}
-            </PaperButton>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
+      <ActionDialog
+        description={t('draftRecovery.invalidDescription')}
+        dismissable={false}
+        title={t('draftRecovery.invalidTitle')}
+        visible={editor.invalidRecoveredDraft !== null}
+      >
+        <PaperButton onPress={editor.discardInvalidRecoveredDraft}>
+          {t('actions.discardDraft')}
+        </PaperButton>
+        <PaperButton onPress={editor.keepInvalidRecoveredDraft}>
+          {t('actions.keepDraft')}
+        </PaperButton>
+      </ActionDialog>
     </Screen>
   );
 }

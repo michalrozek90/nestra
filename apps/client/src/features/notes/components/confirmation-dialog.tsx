@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Dialog, Portal, Text } from 'react-native-paper';
+import { Button } from 'react-native-paper';
 
+import { ActionDialog } from '@/components/action-dialog';
 import { useNestraTheme } from '@/theme/themes';
 
 type ConfirmationDialogProps = {
@@ -26,21 +27,19 @@ export function ConfirmationDialog({
   const theme = useNestraTheme();
 
   return (
-    <Portal>
-      <Dialog dismissable={!isConfirming} onDismiss={onCancel} visible={isVisible}>
-        <Dialog.Title>{title}</Dialog.Title>
-        <Dialog.Content>
-          <Text>{description}</Text>
-        </Dialog.Content>
-        <Dialog.Actions>
-          <Button disabled={isConfirming} onPress={onCancel}>
-            {t('actions.cancel')}
-          </Button>
-          <Button loading={isConfirming} onPress={onConfirm} textColor={theme.colors.error}>
-            {confirmLabel}
-          </Button>
-        </Dialog.Actions>
-      </Dialog>
-    </Portal>
+    <ActionDialog
+      description={description}
+      dismissable={!isConfirming}
+      onDismiss={onCancel}
+      title={title}
+      visible={isVisible}
+    >
+      <Button disabled={isConfirming} onPress={onCancel}>
+        {t('actions.cancel')}
+      </Button>
+      <Button loading={isConfirming} onPress={onConfirm} textColor={theme.colors.error}>
+        {confirmLabel}
+      </Button>
+    </ActionDialog>
   );
 }
