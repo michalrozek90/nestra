@@ -1,8 +1,8 @@
 # Agent task notifications
 
 Nestra uses repository-level Codex and Cursor hooks to send a Discord
-notification when an agent moves a GitHub Project item to either `Review` or
-`Blocked`.
+notification when an agent moves a GitHub Project item to `Review`, `Blocked`,
+or `Done`.
 
 The Codex `PostToolUse` hook is configured in `.codex/hooks.json`. The Cursor
 `afterMCPExecution` hook is configured in `.cursor/hooks.json`. Both run the
@@ -19,11 +19,20 @@ notification only when all of these conditions are true:
 - the project owner is `michalrozek90`;
 - the project number is `1`;
 - the updated field is `Status`;
-- the new value is `Review` or `Blocked`;
+- the new value is `Review`, `Blocked`, or `Done`;
 - the tool response is not marked as an error.
 
 Manual Project changes made in the GitHub UI and changes made by clients that do
 not run either repository hook are outside this mechanism.
+
+GitHub automation normally moves an item to `Done` after its pull request is
+merged. Because that automation does not execute a client hook, the autonomous
+agent workflow follows the merge with exactly one idempotent GitHub Projects
+write setting the same item to `Done`. The write completes the transition when
+automation did not do so and gives Codex or Cursor one observable tool event
+when automation already completed it. The workflow addresses the item by
+repository and issue number so the Discord message can link directly to the
+issue.
 
 ## Configure Discord
 
@@ -113,7 +122,7 @@ Codex payload:
     "issue_number": 1,
     "updated_field": {
       "name": "Status",
-      "value": "Review"
+      "value": "Done"
     }
   },
   "tool_response": {
@@ -135,7 +144,7 @@ Cursor payload:
 {
   "hook_event_name": "afterMCPExecution",
   "tool_name": "github-projects-write",
-  "tool_input": "{\"method\":\"update_project_item\",\"owner\":\"michalrozek90\",\"project_number\":1,\"item_owner\":\"michalrozek90\",\"item_repo\":\"nestra\",\"issue_number\":1,\"updated_field\":{\"name\":\"Status\",\"value\":\"Blocked\"}}",
+  "tool_input": "{\"method\":\"update_project_item\",\"owner\":\"michalrozek90\",\"project_number\":1,\"item_owner\":\"michalrozek90\",\"item_repo\":\"nestra\",\"issue_number\":1,\"updated_field\":{\"name\":\"Status\",\"value\":\"Done\"}}",
   "result_json": "{\"content\":[],\"isError\":false}"
 }
 '@ | powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
@@ -157,9 +166,9 @@ An end-to-end test must originate from a real GitHub Projects MCP tool call:
    **Hooks** settings.
 2. Restart Cursor and start a new conversation in the client being tested.
 3. Ask the agent explicitly to use the GitHub Projects MCP integration to
-   update a test item to `Review` or `Blocked`. Updating an item to its existing
-   value is sufficient to exercise the hook without changing its visible
-   status.
+   update a test item to `Review`, `Blocked`, or `Done`. Updating an item to its
+   existing value is sufficient to exercise the hook without changing its
+   visible status.
 4. Confirm the Discord message and mention.
 5. Inspect the latest diagnostic events:
 

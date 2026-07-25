@@ -260,6 +260,7 @@ if (
 $status = switch ($requestedStatus) {
     'Review' { 'Review' }
     'Blocked' { 'Blocked' }
+    'Done' { 'Done' }
     default { $null }
 }
 
@@ -286,9 +287,14 @@ if ($discordUserId -match '^\d{17,20}$') {
     $isMentionIncluded = $true
 }
 
-$notificationLines = @(
+$notificationSummary = if ($status -eq 'Done') {
+    "${notificationPrefix}Nestra task is Done after merge (confirmed by $agentName)."
+}
+else {
     "${notificationPrefix}Nestra task moved to $status by $agentName."
-)
+}
+
+$notificationLines = @($notificationSummary)
 
 if (
     -not [string]::IsNullOrWhiteSpace($itemOwner) `

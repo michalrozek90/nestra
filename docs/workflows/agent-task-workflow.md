@@ -77,7 +77,7 @@ The expected GitHub Project states are:
 
 Do not create or require a separate clarification state. When clarification is required, leave a concise issue comment describing what is missing and report it to the user.
 
-Codex status changes to `Review` and `Blocked` trigger the repository notification hook described in `docs/workflows/agent-task-notifications.md`. Use the GitHub Projects integration for these transitions so the hook can observe the successful update. Do not send a duplicate manual notification.
+Agent writes setting the status to `Review`, `Blocked`, or the post-merge `Done` value trigger the repository notification hook described in `docs/workflows/agent-task-notifications.md`. Use the GitHub Projects integration for these writes so the hook can observe the successful update. Do not send a duplicate manual notification.
 
 ## 1. Resolve the selected work item
 
@@ -277,12 +277,13 @@ Before merge:
 Then:
 
 1. Merge the pull request using the repository's established merge method.
-2. Confirm the linked issue closes and the Project item reaches `Done` through automation.
-3. If automation does not update the item, move it to `Done` explicitly.
-4. Switch the local repository to `main`.
-5. Run `git pull --ff-only`.
-6. Do not delete the local task branch.
-7. Return a short confirmation containing the merged PR and updated `main` state.
+2. Confirm the linked issue closes and inspect whether automation moved the Project item to `Done`.
+3. Perform exactly one `update_project_item` call through the GitHub Projects integration that sets the item status to `Done`, even when automation already set that value. Resolve the item with `item_owner`, `item_repo`, and `issue_number` so the notification can link to the issue. This idempotent write both completes a missing automation transition and triggers the client notification hook.
+4. Confirm the Project item is `Done`.
+5. Switch the local repository to `main`.
+6. Run `git pull --ff-only`.
+7. Do not delete the local task branch.
+8. Return a short confirmation containing the merged PR and updated `main` state.
 
 ## 11. Recovery and idempotency
 

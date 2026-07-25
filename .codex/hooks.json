@@ -1,5 +1,5 @@
 {
-  "description": "Notify the project owner when Codex moves a Nestra task to Review or Blocked.",
+  "description": "Notify the project owner when Codex moves a Nestra task to Review, Blocked, or Done.",
   "hooks": {
     "PostToolUse": [
       {
