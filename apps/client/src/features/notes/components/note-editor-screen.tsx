@@ -87,11 +87,16 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
   const actionMutation = useNoteActionMutation();
 
   useEffect(() => {
+    if (focusTransfer) {
+      consumeNoteEditorFocusTransfer(focusTransfer.noteId);
+    }
+  }, [focusTransfer]);
+
+  useEffect(() => {
     if (!editor.isInitialized || !focusTransfer || isFocusRestorationComplete) {
       return;
     }
 
-    consumeNoteEditorFocusTransfer(focusTransfer.noteId);
     const animationFrame = requestAnimationFrame(() => {
       setIsFocusRestorationComplete(true);
     });
