@@ -21,7 +21,8 @@ import { useNestraTheme } from '@/theme/themes';
 import { getNoteErrorTranslationKey } from '../api/note-error';
 import { useNoteActionMutation, type NoteAction } from '../api/use-note-action-mutation';
 import { validateNoteEditorValue } from '../editor/note-editor-value';
-import { useNoteEditor, type NoteSaveStatus } from '../editor/use-note-editor';
+import type { NoteSaveStatus } from '../editor/use-note-editor';
+import { useNoteEditorWithFocusTransfer } from '../editor/use-note-editor-with-focus-transfer';
 import { ConfirmationDialog } from './confirmation-dialog';
 import { NoteActionTooltip } from './note-action-tooltip';
 
@@ -45,12 +46,11 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
   const [hasEditedTitle, setHasEditedTitle] = useState(false);
   const [hasEditedContent, setHasEditedContent] = useState(false);
   const [isDeleteDialogVisible, setIsDeleteDialogVisible] = useState(false);
-  const editor = useNoteEditor({
+  const { contentFocus, editor, titleFocus } = useNoteEditorWithFocusTransfer({
     userId: user?.id ?? '',
     initialNote: note,
-    onCreated: (noteId) => {
-      router.replace({ pathname: '../notes/[noteId]', params: { noteId } });
-    },
+    mode,
+    onCreated: (noteId) => router.replace({ pathname: '../notes/[noteId]', params: { noteId } }),
   });
   const validationErrors = useMemo(() => validateNoteEditorValue(editor.value), [editor.value]);
   const actionMutation = useNoteActionMutation();
@@ -146,15 +146,24 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
       <View style={styles.form}>
         <TextInput
           accessibilityLabel={t('editor.titleLabel')}
+          autoFocus={titleFocus.autoFocus}
           error={Boolean(titleError)}
           label={t('editor.titleLabel')}
           maxLength={120}
           mode="outlined"
-          onBlur={() => setHasEditedTitle(true)}
+          onBlur={() => {
+            setHasEditedTitle(true);
+            titleFocus.onBlur();
+          }}
           onChangeText={(title) => {
             setHasEditedTitle(true);
             editor.setTitle(title);
           }}
+          onFocus={titleFocus.onFocus}
+          onSelectionChange={({ nativeEvent }) => {
+            titleFocus.onSelectionChange(nativeEvent.selection);
+          }}
+          selection={titleFocus.selection}
           value={editor.value.title}
         />
         {titleError ? (
@@ -165,16 +174,25 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
 
         <TextInput
           accessibilityLabel={t('editor.contentLabel')}
+          autoFocus={contentFocus.autoFocus}
           error={Boolean(contentError)}
           label={t('editor.contentLabel')}
           maxLength={20_000}
           mode="outlined"
           multiline
-          onBlur={() => setHasEditedContent(true)}
+          onBlur={() => {
+            setHasEditedContent(true);
+            contentFocus.onBlur();
+          }}
           onChangeText={(content) => {
             setHasEditedContent(true);
             editor.setContent(content);
           }}
+          onFocus={contentFocus.onFocus}
+          onSelectionChange={({ nativeEvent }) => {
+            contentFocus.onSelectionChange(nativeEvent.selection);
+          }}
+          selection={contentFocus.selection}
           style={styles.contentInput}
           value={editor.value.content}
         />
