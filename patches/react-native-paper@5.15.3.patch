@@ -1,0 +1,1443 @@
+diff --git a/lib/commonjs/components/ActivityIndicator.js b/lib/commonjs/components/ActivityIndicator.js
+index 3a1cd66654dcb85e7c215ec809da9592bf080429..cc336fb741e365c69233518286f8197db87a5675 100644
+--- a/lib/commonjs/components/ActivityIndicator.js
++++ b/lib/commonjs/components/ActivityIndicator.js
+@@ -56,7 +56,7 @@ const ActivityIndicator = ({
+       duration: 200 * scale,
+       toValue: 1,
+       isInteraction: false,
+-      useNativeDriver: true
++      useNativeDriver: _reactNative.Platform.OS !== 'web'
+     }).start();
+ 
+     // Circular animation in loop
+@@ -90,7 +90,7 @@ const ActivityIndicator = ({
+       _reactNative.Animated.timing(fade, {
+         duration: 200 * scale,
+         toValue: 0,
+-        useNativeDriver: true,
++        useNativeDriver: _reactNative.Platform.OS !== 'web',
+         isInteraction: false
+       }).start(stopRotation);
+     } else {
+diff --git a/lib/commonjs/components/Button/Button.js b/lib/commonjs/components/Button/Button.js
+index f855f4019180ab01d05b688c218bad380c342c0d..fb6faaf0fb83055767cacb036120a9646a848c78 100644
+--- a/lib/commonjs/components/Button/Button.js
++++ b/lib/commonjs/components/Button/Button.js
+@@ -99,7 +99,7 @@ const Button = ({
+     _reactNative.Animated.timing(elevation, {
+       toValue: isElevationEntitled ? initialElevation : 0,
+       duration: 0,
+-      useNativeDriver: true
++      useNativeDriver: !isWeb
+     });
+   }, [isElevationEntitled, elevation, initialElevation]);
+   const handlePressIn = e => {
+@@ -111,7 +111,7 @@ const Button = ({
+       _reactNative.Animated.timing(elevation, {
+         toValue: activeElevation,
+         duration: 200 * scale,
+-        useNativeDriver: isWeb || _reactNative.Platform.constants.reactNativeVersion.minor <= 72
++        useNativeDriver: !isWeb && _reactNative.Platform.constants.reactNativeVersion.minor <= 72
+       }).start();
+     }
+   };
+@@ -124,7 +124,7 @@ const Button = ({
+       _reactNative.Animated.timing(elevation, {
+         toValue: initialElevation,
+         duration: 150 * scale,
+-        useNativeDriver: isWeb || _reactNative.Platform.constants.reactNativeVersion.minor <= 72
++        useNativeDriver: !isWeb && _reactNative.Platform.constants.reactNativeVersion.minor <= 72
+       }).start();
+     }
+   };
+diff --git a/lib/commonjs/components/Card/Card.js b/lib/commonjs/components/Card/Card.js
+index 0d46b34bc5a86443c056d274bbef1b015c619d19..208c13a43176a3066e004471e07d241d2b54b308 100644
+--- a/lib/commonjs/components/Card/Card.js
++++ b/lib/commonjs/components/Card/Card.js
+@@ -181,11 +181,10 @@ const Card = ({
+     testID: `${testID}-container`,
+     container: true
+   }, rest), isMode('outlined') && /*#__PURE__*/React.createElement(_reactNative.View, {
+-    pointerEvents: "none",
+     testID: `${testID}-outline`,
+     style: [{
+       borderColor
+-    }, styles.outline, borderRadiusCombinedStyles]
++    }, styles.outline, borderRadiusCombinedStyles, styles.pointerEventsNone]
+   }), hasPassedTouchHandler ? /*#__PURE__*/React.createElement(_reactNative.Pressable, {
+     accessible: accessible,
+     unstable_pressDelay: 0,
+@@ -220,6 +219,9 @@ const styles = _reactNative.StyleSheet.create({
+     height: '100%',
+     zIndex: 2
+   },
++  pointerEventsNone: {
++    pointerEvents: 'none'
++  },
+   resetElevation: {
+     elevation: 0
+   }
+diff --git a/lib/commonjs/components/CrossFadeIcon.js b/lib/commonjs/components/CrossFadeIcon.js
+index 774ac30c1ff174c700174528dfee8e168a5d792d..2450d8f850d8ac98d92009e493e84c0e41887c3b 100644
+--- a/lib/commonjs/components/CrossFadeIcon.js
++++ b/lib/commonjs/components/CrossFadeIcon.js
+@@ -35,7 +35,7 @@ const CrossFadeIcon = ({
+       _reactNative.Animated.timing(fade, {
+         duration: scale * 200,
+         toValue: 0,
+-        useNativeDriver: true
++        useNativeDriver: _reactNative.Platform.OS !== 'web'
+       }).start();
+     }
+   }, [currentIcon, previousIcon, fade, scale]);
+diff --git a/lib/commonjs/components/Modal.js b/lib/commonjs/components/Modal.js
+index d28100cdd98de7c3c6c7917670606307d42bd4d0..5bf80d64474577cf6a333ec0bdf16685e31d015d 100644
+--- a/lib/commonjs/components/Modal.js
++++ b/lib/commonjs/components/Modal.js
+@@ -81,7 +81,7 @@ function Modal({
+       toValue: 1,
+       duration: scale * DEFAULT_DURATION,
+       easing: _reactNative.Easing.out(_reactNative.Easing.cubic),
+-      useNativeDriver: true
++      useNativeDriver: _reactNative.Platform.OS !== 'web'
+     }).start();
+   }, [opacity, scale]);
+   const hideModalAnimation = React.useCallback(() => {
+@@ -89,7 +89,7 @@ function Modal({
+       toValue: 0,
+       duration: scale * DEFAULT_DURATION,
+       easing: _reactNative.Easing.out(_reactNative.Easing.cubic),
+-      useNativeDriver: true
++      useNativeDriver: _reactNative.Platform.OS !== 'web'
+     }).start(({
+       finished
+     }) => {
+@@ -128,10 +128,11 @@ function Modal({
+     return null;
+   }
+   return /*#__PURE__*/React.createElement(_reactNative.Animated.View, {
+-    pointerEvents: visible ? 'auto' : 'none',
+     accessibilityViewIsModal: true,
+     accessibilityLiveRegion: "polite",
+-    style: _reactNative.StyleSheet.absoluteFill,
++    style: [_reactNative.StyleSheet.absoluteFill, {
++      pointerEvents: visible ? 'auto' : 'none'
++    }],
+     onAccessibilityEscape: onDismissCallback,
+     testID: testID
+   }, /*#__PURE__*/React.createElement(AnimatedPressable, {
+@@ -149,8 +150,7 @@ function Modal({
+     style: [styles.wrapper, {
+       marginTop: top,
+       marginBottom: bottom
+-    }, style],
+-    pointerEvents: "box-none",
++    }, style, styles.pointerEventsBoxNone],
+     testID: `${testID}-wrapper`
+   }, /*#__PURE__*/React.createElement(_Surface.default, {
+     testID: `${testID}-surface`,
+@@ -170,6 +170,9 @@ const styles = _reactNative.StyleSheet.create({
+     ..._reactNative.StyleSheet.absoluteFill,
+     justifyContent: 'center'
+   },
++  pointerEventsBoxNone: {
++    pointerEvents: 'box-none'
++  },
+   // eslint-disable-next-line react-native/no-color-literals
+   content: {
+     backgroundColor: 'transparent',
+diff --git a/lib/commonjs/components/Portal/PortalHost.js b/lib/commonjs/components/Portal/PortalHost.js
+index 7328a40d4a780d841ae5a60241a13db7827d9e17..084066843d5f2072661dcd6977112969cf6358e9 100644
+--- a/lib/commonjs/components/Portal/PortalHost.js
++++ b/lib/commonjs/components/Portal/PortalHost.js
+@@ -109,9 +109,8 @@ class PortalHost extends React.Component {
+         unmount: this.unmount
+       }
+     }, /*#__PURE__*/React.createElement(_reactNative.View, {
+-      style: styles.container,
+-      collapsable: false,
+-      pointerEvents: "box-none"
++      style: [styles.container, styles.pointerEventsBoxNone],
++      collapsable: false
+     }, this.props.children), /*#__PURE__*/React.createElement(_PortalManager.default, {
+       ref: this.setManager
+     }));
+@@ -121,6 +120,9 @@ exports.default = PortalHost;
+ const styles = _reactNative.StyleSheet.create({
+   container: {
+     flex: 1
++  },
++  pointerEventsBoxNone: {
++    pointerEvents: 'box-none'
+   }
+ });
+ //# sourceMappingURL=PortalHost.js.map
+diff --git a/lib/commonjs/components/Portal/PortalManager.js b/lib/commonjs/components/Portal/PortalManager.js
+index cbaeacce1c5cba29821fd53685188afbfb82aec6..0133e107bc6260aaeceea900550dc73665acd402 100644
+--- a/lib/commonjs/components/Portal/PortalManager.js
++++ b/lib/commonjs/components/Portal/PortalManager.js
+@@ -43,10 +43,14 @@ class PortalManager extends React.PureComponent {
+     }) => /*#__PURE__*/React.createElement(_reactNative.View, {
+       key: key,
+       collapsable: false /* Need collapsable=false here to clip the elevations, otherwise they appear above sibling components */,
+-      pointerEvents: "box-none",
+-      style: _reactNative.StyleSheet.absoluteFill
++      style: [_reactNative.StyleSheet.absoluteFill, styles.pointerEventsBoxNone]
+     }, children));
+   }
+ }
++const styles = _reactNative.StyleSheet.create({
++  pointerEventsBoxNone: {
++    pointerEvents: 'box-none'
++  }
++});
+ exports.default = PortalManager;
+ //# sourceMappingURL=PortalManager.js.map
+diff --git a/lib/commonjs/components/SegmentedButtons/SegmentedButtonItem.js b/lib/commonjs/components/SegmentedButtons/SegmentedButtonItem.js
+index df366d34ef5d07639f333f07beb94cf4c015297f..6d3155f0fe6726268f92090460ed2b826c3bf334 100644
+--- a/lib/commonjs/components/SegmentedButtons/SegmentedButtonItem.js
++++ b/lib/commonjs/components/SegmentedButtons/SegmentedButtonItem.js
+@@ -44,12 +44,12 @@ const SegmentedButtonItem = ({
+     if (checked) {
+       _reactNative.Animated.spring(checkScale, {
+         toValue: 1,
+-        useNativeDriver: true
++        useNativeDriver: _reactNative.Platform.OS !== 'web'
+       }).start();
+     } else {
+       _reactNative.Animated.spring(checkScale, {
+         toValue: 0,
+-        useNativeDriver: true
++        useNativeDriver: _reactNative.Platform.OS !== 'web'
+       }).start();
+     }
+   }, [checked, checkScale, showSelectedCheck]);
+diff --git a/lib/commonjs/components/Surface.js b/lib/commonjs/components/Surface.js
+index 548d67142b591b5d2ef33100f892b1b73c9c0e1f..21708cf176df7c8775427864bf18e682b44ba893 100644
+--- a/lib/commonjs/components/Surface.js
++++ b/lib/commonjs/components/Surface.js
+@@ -187,15 +187,17 @@ const Surface = (0, _forwardRef.forwardRef)(({
+   const isElevated = mode === 'elevated';
+   if (_reactNative.Platform.OS === 'web') {
+     const {
+-      pointerEvents = 'auto'
++      pointerEvents,
++      ...webProps
+     } = props;
+-    return /*#__PURE__*/React.createElement(_reactNative.Animated.View, _extends({}, props, {
+-      pointerEvents: pointerEvents,
++    return /*#__PURE__*/React.createElement(_reactNative.Animated.View, _extends({}, webProps, {
+       ref: ref,
+       testID: testID,
+       style: [{
+         backgroundColor
+-      }, elevation && isElevated ? (0, _shadow.default)(elevation, theme.isV3) : null, style]
++      }, elevation && isElevated ? (0, _shadow.default)(elevation, theme.isV3) : null, style, pointerEvents ? {
++        pointerEvents
++      } : null]
+     }), children);
+   }
+   if (_reactNative.Platform.OS === 'android') {
+diff --git a/lib/commonjs/components/TextInput/Addons/Outline.js b/lib/commonjs/components/TextInput/Addons/Outline.js
+index 4fbdff5447ba7591d148da3f9d7bb3e04c72a083..991328514bf1d3ed20221cb27cd4f15ca1df3e72 100644
+--- a/lib/commonjs/components/TextInput/Addons/Outline.js
++++ b/lib/commonjs/components/TextInput/Addons/Outline.js
+@@ -19,7 +19,6 @@ const Outline = ({
+   style
+ }) => /*#__PURE__*/React.createElement(_reactNative.View, {
+   testID: "text-input-outline",
+-  pointerEvents: "none",
+   style: [styles.outline, !label && styles.noLabelOutline,
+   // eslint-disable-next-line react-native/no-inline-styles
+   {
+@@ -27,7 +26,7 @@ const Outline = ({
+     borderRadius: roundness,
+     borderWidth: (isV3 ? hasActiveOutline : focused) ? 2 : 1,
+     borderColor: hasActiveOutline ? activeColor : outlineColor
+-  }, style]
++  }, style, styles.pointerEventsNone]
+ });
+ exports.Outline = Outline;
+ const styles = _reactNative.StyleSheet.create({
+@@ -40,6 +39,9 @@ const styles = _reactNative.StyleSheet.create({
+   },
+   noLabelOutline: {
+     top: 0
++  },
++  pointerEventsNone: {
++    pointerEvents: 'none'
+   }
+ });
+ //# sourceMappingURL=Outline.js.map
+diff --git a/lib/commonjs/components/TextInput/Label/InputLabel.js b/lib/commonjs/components/TextInput/Label/InputLabel.js
+index d2508c8cca3586745dec4ee6e85e31cc433c9787..507cef736d06ecf5dc8f15187413925d9d400b24 100644
+--- a/lib/commonjs/components/TextInput/Label/InputLabel.js
++++ b/lib/commonjs/components/TextInput/Label/InputLabel.js
+@@ -110,15 +110,13 @@ const InputLabel = props => {
+     // Position colored placeholder and gray placeholder on top of each other and crossfade them
+     // This gives the effect of animating the color, but allows us to use native driver
+     _react.default.createElement(_reactNative.View, {
+-      pointerEvents: "none",
+-      style: [_reactNative.StyleSheet.absoluteFill, styles.overflow, styles.labelContainer]
++      style: [_reactNative.StyleSheet.absoluteFill, styles.overflow, styles.labelContainer, styles.pointerEventsNone]
+     }, /*#__PURE__*/_react.default.createElement(_reactNative.Animated.View, {
+-      pointerEvents: "none",
+       style: [_reactNative.StyleSheet.absoluteFill, !isWeb && {
+         width
+       }, {
+         opacity
+-      }, labelTranslationX]
++      }, labelTranslationX, styles.pointerEventsNone]
+     }, /*#__PURE__*/_react.default.createElement(_reactNative.View, {
+       style: {
+         width: labelWidth
+@@ -164,6 +162,9 @@ const styles = _reactNative.StyleSheet.create({
+   },
+   labelContainer: {
+     zIndex: 3
++  },
++  pointerEventsNone: {
++    pointerEvents: 'none'
+   }
+ });
+ var _default = exports.default = /*#__PURE__*/_react.default.memo(InputLabel);
+diff --git a/lib/commonjs/components/TextInput/Label/LabelBackground.js b/lib/commonjs/components/TextInput/Label/LabelBackground.js
+index 6ecbb2c01ae7175045ca32a3b0ef57df55a53d51..18c9a9cc6f51d427e19f6a9eef1e641df7365ebb 100644
+--- a/lib/commonjs/components/TextInput/Label/LabelBackground.js
++++ b/lib/commonjs/components/TextInput/Label/LabelBackground.js
+@@ -42,14 +42,13 @@ const LabelBackground = ({
+   const isRounded = roundness > 6;
+   const roundedEdgeCover = isRounded ? /*#__PURE__*/React.createElement(_reactNative.Animated.View, {
+     key: "labelBackground-view",
+-    pointerEvents: "none",
+     style: [_reactNative.StyleSheet.absoluteFill, styles.view, {
+       backgroundColor,
+       maxHeight: Math.max(roundness / 3, 2),
+       bottom: Math.max(roundness, 2),
+       transform: [labelTranslationX],
+       opacity
+-    }]
++    }, styles.pointerEventsNone]
+   }) : null;
+   return [roundedEdgeCover, /*#__PURE__*/React.createElement(_AnimatedText.default, {
+     key: "labelBackground-text",
+@@ -74,6 +73,9 @@ const styles = _reactNative.StyleSheet.create({
+     left: 10,
+     width: 12
+   },
++  pointerEventsNone: {
++    pointerEvents: 'none'
++  },
+   // eslint-disable-next-line react-native/no-color-literals
+   outlinedLabel: {
+     position: 'absolute',
+diff --git a/lib/commonjs/components/TextInput/TextInput.js b/lib/commonjs/components/TextInput/TextInput.js
+index 8c8c920dbad6827adfd12249b1bce7f5843a3c3f..2d7194ebc63885597aa2ed0f7e3c01bd882d1fde 100644
+--- a/lib/commonjs/components/TextInput/TextInput.js
++++ b/lib/commonjs/components/TextInput/TextInput.js
+@@ -133,7 +133,7 @@ const TextInput = (0, _forwardRef.forwardRef)(({
+         toValue: 1,
+         duration: FOCUS_ANIMATION_DURATION * scale,
+         // To prevent this - https://github.com/callstack/react-native-paper/issues/941
+-        useNativeDriver: true
++        useNativeDriver: _reactNative.Platform.OS !== 'web'
+       }).start();
+     } else {
+       // hide error
+@@ -142,7 +142,7 @@ const TextInput = (0, _forwardRef.forwardRef)(({
+           toValue: 0,
+           duration: BLUR_ANIMATION_DURATION * scale,
+           // To prevent this - https://github.com/callstack/react-native-paper/issues/941
+-          useNativeDriver: true
++          useNativeDriver: _reactNative.Platform.OS !== 'web'
+         }).start();
+       }
+     }
+@@ -181,7 +181,7 @@ const TextInput = (0, _forwardRef.forwardRef)(({
+         toValue: 0,
+         duration: BLUR_ANIMATION_DURATION * scale,
+         // To prevent this - https://github.com/callstack/react-native-paper/issues/941
+-        useNativeDriver: true
++        useNativeDriver: _reactNative.Platform.OS !== 'web'
+       }).start();
+     } else {
+       // restore label
+@@ -189,7 +189,7 @@ const TextInput = (0, _forwardRef.forwardRef)(({
+         toValue: 1,
+         duration: FOCUS_ANIMATION_DURATION * scale,
+         // To prevent this - https://github.com/callstack/react-native-paper/issues/941
+-        useNativeDriver: true
++        useNativeDriver: _reactNative.Platform.OS !== 'web'
+       }).start();
+     }
+   }, [focused, value, labeled, scale]);
+diff --git a/lib/commonjs/styles/shadow.js b/lib/commonjs/styles/shadow.js
+index 9e020d076223654f918346d7e1bd7e23cf5cb63a..5a0e4ae95407607d4cff9a8fbac52cd480774217 100644
+--- a/lib/commonjs/styles/shadow.js
++++ b/lib/commonjs/styles/shadow.js
+@@ -13,8 +13,37 @@ const SHADOW_OPACITY = 0.24;
+ const MD3_SHADOW_OPACITY = 0.3;
+ const MD3_SHADOW_COLOR = _tokens.MD3Colors.primary0;
+ function shadow(elevation = 0, isV3 = false) {
++  if (_reactNative.Platform.OS === 'web') {
++    return webShadow(elevation, isV3);
++  }
+   return isV3 ? v3Shadow(elevation) : v2Shadow(elevation);
+ }
++function webShadow(elevation, isV3) {
++  const inputRange = isV3 ? [0, 1, 2, 3, 4, 5] : [0, 1, 2, 3, 8, 24];
++  const outputRange = inputRange.map(level => isV3 ? v3BoxShadow(level) : v2BoxShadow(level));
++  return {
++    boxShadow: elevation instanceof _reactNative.Animated.Value ? elevation.interpolate({
++      inputRange,
++      outputRange
++    }) : isV3 ? v3BoxShadow(elevation) : v2BoxShadow(elevation)
++  };
++}
++function v2BoxShadow(elevation) {
++  if (elevation === 0) {
++    return '0px 0px 0px rgba(0, 0, 0, 0)';
++  }
++  const height = elevation <= 1 ? 0.5 : elevation === 2 ? 0.75 : elevation - 1;
++  const radius = elevation <= 1 ? 0.75 : elevation === 2 ? 1.5 : elevation;
++  return `0px ${height}px ${radius}px rgba(0, 0, 0, ${SHADOW_OPACITY})`;
++}
++function v3BoxShadow(elevation) {
++  if (elevation === 0) {
++    return '0px 0px 0px rgba(0, 0, 0, 0)';
++  }
++  const shadowHeight = [0, 1, 2, 4, 6, 8];
++  const shadowRadius = [0, 3, 6, 8, 10, 12];
++  return `0px ${shadowHeight[elevation]}px ${shadowRadius[elevation]}px rgba(0, 0, 0, ${MD3_SHADOW_OPACITY})`;
++}
+ function v2Shadow(elevation = 0) {
+   if (elevation instanceof _reactNative.Animated.Value) {
+     const inputRange = [0, 1, 2, 3, 8, 24];
+diff --git a/lib/module/components/ActivityIndicator.js b/lib/module/components/ActivityIndicator.js
+index 9fc1645eb307d4182a698468b39d3b3cf75b217f..eb155d2b5ee3eaacac17c0118d7421ee78f62c68 100644
+--- a/lib/module/components/ActivityIndicator.js
++++ b/lib/module/components/ActivityIndicator.js
+@@ -49,7 +49,7 @@ const ActivityIndicator = ({
+       duration: 200 * scale,
+       toValue: 1,
+       isInteraction: false,
+-      useNativeDriver: true
++      useNativeDriver: Platform.OS !== 'web'
+     }).start();
+ 
+     // Circular animation in loop
+@@ -83,7 +83,7 @@ const ActivityIndicator = ({
+       Animated.timing(fade, {
+         duration: 200 * scale,
+         toValue: 0,
+-        useNativeDriver: true,
++        useNativeDriver: Platform.OS !== 'web',
+         isInteraction: false
+       }).start(stopRotation);
+     } else {
+diff --git a/lib/module/components/Button/Button.js b/lib/module/components/Button/Button.js
+index f0be085652ff7691e9bc0be2268cd410599b6aba..42259228dd76a54ab726a7bb43b67808ea7e548c 100644
+--- a/lib/module/components/Button/Button.js
++++ b/lib/module/components/Button/Button.js
+@@ -91,7 +91,7 @@ const Button = ({
+     Animated.timing(elevation, {
+       toValue: isElevationEntitled ? initialElevation : 0,
+       duration: 0,
+-      useNativeDriver: true
++      useNativeDriver: !isWeb
+     });
+   }, [isElevationEntitled, elevation, initialElevation]);
+   const handlePressIn = e => {
+@@ -103,7 +103,7 @@ const Button = ({
+       Animated.timing(elevation, {
+         toValue: activeElevation,
+         duration: 200 * scale,
+-        useNativeDriver: isWeb || Platform.constants.reactNativeVersion.minor <= 72
++        useNativeDriver: !isWeb && Platform.constants.reactNativeVersion.minor <= 72
+       }).start();
+     }
+   };
+@@ -116,7 +116,7 @@ const Button = ({
+       Animated.timing(elevation, {
+         toValue: initialElevation,
+         duration: 150 * scale,
+-        useNativeDriver: isWeb || Platform.constants.reactNativeVersion.minor <= 72
++        useNativeDriver: !isWeb && Platform.constants.reactNativeVersion.minor <= 72
+       }).start();
+     }
+   };
+diff --git a/lib/module/components/Card/Card.js b/lib/module/components/Card/Card.js
+index 86647e61c457cfa0d94135ccf61e09c4ced8bff0..ad9cdcbe3889e78e00592d9963e5383e1a6bb78f 100644
+--- a/lib/module/components/Card/Card.js
++++ b/lib/module/components/Card/Card.js
+@@ -173,11 +173,10 @@ const Card = ({
+     testID: `${testID}-container`,
+     container: true
+   }, rest), isMode('outlined') && /*#__PURE__*/React.createElement(View, {
+-    pointerEvents: "none",
+     testID: `${testID}-outline`,
+     style: [{
+       borderColor
+-    }, styles.outline, borderRadiusCombinedStyles]
++    }, styles.outline, borderRadiusCombinedStyles, styles.pointerEventsNone]
+   }), hasPassedTouchHandler ? /*#__PURE__*/React.createElement(Pressable, {
+     accessible: accessible,
+     unstable_pressDelay: 0,
+@@ -212,6 +211,9 @@ const styles = StyleSheet.create({
+     height: '100%',
+     zIndex: 2
+   },
++  pointerEventsNone: {
++    pointerEvents: 'none'
++  },
+   resetElevation: {
+     elevation: 0
+   }
+diff --git a/lib/module/components/CrossFadeIcon.js b/lib/module/components/CrossFadeIcon.js
+index 621747a7c18f809176a890a8c46438f573fe5a74..502abfe98bb19d82276b283bbc8c096482099bbd 100644
+--- a/lib/module/components/CrossFadeIcon.js
++++ b/lib/module/components/CrossFadeIcon.js
+@@ -1,5 +1,5 @@
+ import * as React from 'react';
+-import { Animated, StyleSheet, View } from 'react-native';
++import { Animated, Platform, StyleSheet, View } from 'react-native';
+ import Icon, { isEqualIcon, isValidIcon } from './Icon';
+ import { useInternalTheme } from '../core/theming';
+ const CrossFadeIcon = ({
+@@ -28,7 +28,7 @@ const CrossFadeIcon = ({
+       Animated.timing(fade, {
+         duration: scale * 200,
+         toValue: 0,
+-        useNativeDriver: true
++        useNativeDriver: Platform.OS !== 'web'
+       }).start();
+     }
+   }, [currentIcon, previousIcon, fade, scale]);
+diff --git a/lib/module/components/Modal.js b/lib/module/components/Modal.js
+index ac9b4ab3f495388c99c03ff3cc6ebbb518bd102c..1a2fdbeacba372a9bd62cdf6e28a9d91b9656917 100644
+--- a/lib/module/components/Modal.js
++++ b/lib/module/components/Modal.js
+@@ -1,5 +1,5 @@
+ import * as React from 'react';
+-import { Animated, Easing, StyleSheet, Pressable, View } from 'react-native';
++import { Animated, Easing, Platform, StyleSheet, Pressable, View } from 'react-native';
+ import { useSafeAreaInsets } from 'react-native-safe-area-context';
+ import useLatestCallback from 'use-latest-callback';
+ import Surface from './Surface';
+@@ -73,7 +73,7 @@ function Modal({
+       toValue: 1,
+       duration: scale * DEFAULT_DURATION,
+       easing: Easing.out(Easing.cubic),
+-      useNativeDriver: true
++      useNativeDriver: Platform.OS !== 'web'
+     }).start();
+   }, [opacity, scale]);
+   const hideModalAnimation = React.useCallback(() => {
+@@ -81,7 +81,7 @@ function Modal({
+       toValue: 0,
+       duration: scale * DEFAULT_DURATION,
+       easing: Easing.out(Easing.cubic),
+-      useNativeDriver: true
++      useNativeDriver: Platform.OS !== 'web'
+     }).start(({
+       finished
+     }) => {
+@@ -120,10 +120,11 @@ function Modal({
+     return null;
+   }
+   return /*#__PURE__*/React.createElement(Animated.View, {
+-    pointerEvents: visible ? 'auto' : 'none',
+     accessibilityViewIsModal: true,
+     accessibilityLiveRegion: "polite",
+-    style: StyleSheet.absoluteFill,
++    style: [StyleSheet.absoluteFill, {
++      pointerEvents: visible ? 'auto' : 'none'
++    }],
+     onAccessibilityEscape: onDismissCallback,
+     testID: testID
+   }, /*#__PURE__*/React.createElement(AnimatedPressable, {
+@@ -141,8 +142,7 @@ function Modal({
+     style: [styles.wrapper, {
+       marginTop: top,
+       marginBottom: bottom
+-    }, style],
+-    pointerEvents: "box-none",
++    }, style, styles.pointerEventsBoxNone],
+     testID: `${testID}-wrapper`
+   }, /*#__PURE__*/React.createElement(Surface, {
+     testID: `${testID}-surface`,
+@@ -162,6 +162,9 @@ const styles = StyleSheet.create({
+     ...StyleSheet.absoluteFill,
+     justifyContent: 'center'
+   },
++  pointerEventsBoxNone: {
++    pointerEvents: 'box-none'
++  },
+   // eslint-disable-next-line react-native/no-color-literals
+   content: {
+     backgroundColor: 'transparent',
+diff --git a/lib/module/components/Portal/PortalHost.js b/lib/module/components/Portal/PortalHost.js
+index 4dcd5041fbf0ea38d2829d9c3bc1941611e7acc4..841e0bab34951e75c5473853adaa65712ae01022 100644
+--- a/lib/module/components/Portal/PortalHost.js
++++ b/lib/module/components/Portal/PortalHost.js
+@@ -101,9 +101,8 @@ export default class PortalHost extends React.Component {
+         unmount: this.unmount
+       }
+     }, /*#__PURE__*/React.createElement(View, {
+-      style: styles.container,
+-      collapsable: false,
+-      pointerEvents: "box-none"
++      style: [styles.container, styles.pointerEventsBoxNone],
++      collapsable: false
+     }, this.props.children), /*#__PURE__*/React.createElement(PortalManager, {
+       ref: this.setManager
+     }));
+@@ -112,6 +111,9 @@ export default class PortalHost extends React.Component {
+ const styles = StyleSheet.create({
+   container: {
+     flex: 1
++  },
++  pointerEventsBoxNone: {
++    pointerEvents: 'box-none'
+   }
+ });
+ //# sourceMappingURL=PortalHost.js.map
+diff --git a/lib/module/components/Portal/PortalManager.js b/lib/module/components/Portal/PortalManager.js
+index aa926422d61b1daee9ce319b790dc13c8d2ea1d4..67f6ff307f1d59578aaaad4a925e5dc5a6ca9e22 100644
+--- a/lib/module/components/Portal/PortalManager.js
++++ b/lib/module/components/Portal/PortalManager.js
+@@ -36,9 +36,13 @@ export default class PortalManager extends React.PureComponent {
+     }) => /*#__PURE__*/React.createElement(View, {
+       key: key,
+       collapsable: false /* Need collapsable=false here to clip the elevations, otherwise they appear above sibling components */,
+-      pointerEvents: "box-none",
+-      style: StyleSheet.absoluteFill
++      style: [StyleSheet.absoluteFill, styles.pointerEventsBoxNone]
+     }, children));
+   }
+ }
++const styles = StyleSheet.create({
++  pointerEventsBoxNone: {
++    pointerEvents: 'box-none'
++  }
++});
+ //# sourceMappingURL=PortalManager.js.map
+diff --git a/lib/module/components/SegmentedButtons/SegmentedButtonItem.js b/lib/module/components/SegmentedButtons/SegmentedButtonItem.js
+index 72c3ad00c70a569267d9b4f0b32856055400e7cf..702526101e446197b7c02d306f7f4c0df39af959 100644
+--- a/lib/module/components/SegmentedButtons/SegmentedButtonItem.js
++++ b/lib/module/components/SegmentedButtons/SegmentedButtonItem.js
+@@ -1,5 +1,5 @@
+ import * as React from 'react';
+-import { Animated, StyleSheet, View } from 'react-native';
++import { Animated, Platform, StyleSheet, View } from 'react-native';
+ import color from 'color';
+ import { getSegmentedButtonBorderRadius, getSegmentedButtonColors, getSegmentedButtonDensityPadding } from './utils';
+ import { useInternalTheme } from '../../core/theming';
+@@ -36,12 +36,12 @@ const SegmentedButtonItem = ({
+     if (checked) {
+       Animated.spring(checkScale, {
+         toValue: 1,
+-        useNativeDriver: true
++        useNativeDriver: Platform.OS !== 'web'
+       }).start();
+     } else {
+       Animated.spring(checkScale, {
+         toValue: 0,
+-        useNativeDriver: true
++        useNativeDriver: Platform.OS !== 'web'
+       }).start();
+     }
+   }, [checked, checkScale, showSelectedCheck]);
+diff --git a/lib/module/components/Surface.js b/lib/module/components/Surface.js
+index df43fbb0bd1bdcf181821a3aa1ffd6e5f58f05f0..5b47b37008afbff664252a96e77570261ff6be1d 100644
+--- a/lib/module/components/Surface.js
++++ b/lib/module/components/Surface.js
+@@ -179,15 +179,17 @@ const Surface = forwardRef(({
+   const isElevated = mode === 'elevated';
+   if (Platform.OS === 'web') {
+     const {
+-      pointerEvents = 'auto'
++      pointerEvents,
++      ...webProps
+     } = props;
+-    return /*#__PURE__*/React.createElement(Animated.View, _extends({}, props, {
+-      pointerEvents: pointerEvents,
++    return /*#__PURE__*/React.createElement(Animated.View, _extends({}, webProps, {
+       ref: ref,
+       testID: testID,
+       style: [{
+         backgroundColor
+-      }, elevation && isElevated ? shadow(elevation, theme.isV3) : null, style]
++      }, elevation && isElevated ? shadow(elevation, theme.isV3) : null, style, pointerEvents ? {
++        pointerEvents
++      } : null]
+     }), children);
+   }
+   if (Platform.OS === 'android') {
+diff --git a/lib/module/components/TextInput/Addons/Outline.js b/lib/module/components/TextInput/Addons/Outline.js
+index c8339410ef6598d9c2e8d41631df20d2aa973b99..36c421cc6a9df2e7b7558f453ee6e90577d300df 100644
+--- a/lib/module/components/TextInput/Addons/Outline.js
++++ b/lib/module/components/TextInput/Addons/Outline.js
+@@ -12,7 +12,6 @@ export const Outline = ({
+   style
+ }) => /*#__PURE__*/React.createElement(View, {
+   testID: "text-input-outline",
+-  pointerEvents: "none",
+   style: [styles.outline, !label && styles.noLabelOutline,
+   // eslint-disable-next-line react-native/no-inline-styles
+   {
+@@ -20,7 +19,7 @@ export const Outline = ({
+     borderRadius: roundness,
+     borderWidth: (isV3 ? hasActiveOutline : focused) ? 2 : 1,
+     borderColor: hasActiveOutline ? activeColor : outlineColor
+-  }, style]
++  }, style, styles.pointerEventsNone]
+ });
+ const styles = StyleSheet.create({
+   outline: {
+@@ -32,6 +31,9 @@ const styles = StyleSheet.create({
+   },
+   noLabelOutline: {
+     top: 0
++  },
++  pointerEventsNone: {
++    pointerEvents: 'none'
+   }
+ });
+ //# sourceMappingURL=Outline.js.map
+diff --git a/lib/module/components/TextInput/Label/InputLabel.js b/lib/module/components/TextInput/Label/InputLabel.js
+index e189aaf0a2fe89154bcae48d93ebaf5f13cd7cb8..3421dd5b44f05b1cfd36452323ed381fa9831f69 100644
+--- a/lib/module/components/TextInput/Label/InputLabel.js
++++ b/lib/module/components/TextInput/Label/InputLabel.js
+@@ -103,15 +103,13 @@ const InputLabel = props => {
+     // Position colored placeholder and gray placeholder on top of each other and crossfade them
+     // This gives the effect of animating the color, but allows us to use native driver
+     React.createElement(View, {
+-      pointerEvents: "none",
+-      style: [StyleSheet.absoluteFill, styles.overflow, styles.labelContainer]
++      style: [StyleSheet.absoluteFill, styles.overflow, styles.labelContainer, styles.pointerEventsNone]
+     }, /*#__PURE__*/React.createElement(Animated.View, {
+-      pointerEvents: "none",
+       style: [StyleSheet.absoluteFill, !isWeb && {
+         width
+       }, {
+         opacity
+-      }, labelTranslationX]
++      }, labelTranslationX, styles.pointerEventsNone]
+     }, /*#__PURE__*/React.createElement(View, {
+       style: {
+         width: labelWidth
+@@ -157,6 +155,9 @@ const styles = StyleSheet.create({
+   },
+   labelContainer: {
+     zIndex: 3
++  },
++  pointerEventsNone: {
++    pointerEvents: 'none'
+   }
+ });
+ export default /*#__PURE__*/React.memo(InputLabel);
+diff --git a/lib/module/components/TextInput/Label/LabelBackground.js b/lib/module/components/TextInput/Label/LabelBackground.js
+index 9bf457ccbd48fb0019c63c048f63f718e39a3f69..6c5337032632eaa556d109a67a4c6cb2c678cff7 100644
+--- a/lib/module/components/TextInput/Label/LabelBackground.js
++++ b/lib/module/components/TextInput/Label/LabelBackground.js
+@@ -34,14 +34,13 @@ const LabelBackground = ({
+   const isRounded = roundness > 6;
+   const roundedEdgeCover = isRounded ? /*#__PURE__*/React.createElement(Animated.View, {
+     key: "labelBackground-view",
+-    pointerEvents: "none",
+     style: [StyleSheet.absoluteFill, styles.view, {
+       backgroundColor,
+       maxHeight: Math.max(roundness / 3, 2),
+       bottom: Math.max(roundness, 2),
+       transform: [labelTranslationX],
+       opacity
+-    }]
++    }, styles.pointerEventsNone]
+   }) : null;
+   return [roundedEdgeCover, /*#__PURE__*/React.createElement(AnimatedText, {
+     key: "labelBackground-text",
+@@ -66,6 +65,9 @@ const styles = StyleSheet.create({
+     left: 10,
+     width: 12
+   },
++  pointerEventsNone: {
++    pointerEvents: 'none'
++  },
+   // eslint-disable-next-line react-native/no-color-literals
+   outlinedLabel: {
+     position: 'absolute',
+diff --git a/lib/module/components/TextInput/TextInput.js b/lib/module/components/TextInput/TextInput.js
+index 21c21569f38a685b406e723d452c32f8a52b6d28..1cb401c7fc05d42e9bb4118b85cde576d873ea26 100644
+--- a/lib/module/components/TextInput/TextInput.js
++++ b/lib/module/components/TextInput/TextInput.js
+@@ -1,6 +1,6 @@
+ function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+ import * as React from 'react';
+-import { Animated, TextInput as NativeTextInput } from 'react-native';
++import { Animated, Platform, TextInput as NativeTextInput } from 'react-native';
+ import TextInputAffix from './Adornment/TextInputAffix';
+ import TextInputIcon from './Adornment/TextInputIcon';
+ import TextInputFlat from './TextInputFlat';
+@@ -125,7 +125,7 @@ const TextInput = forwardRef(({
+         toValue: 1,
+         duration: FOCUS_ANIMATION_DURATION * scale,
+         // To prevent this - https://github.com/callstack/react-native-paper/issues/941
+-        useNativeDriver: true
++        useNativeDriver: Platform.OS !== 'web'
+       }).start();
+     } else {
+       // hide error
+@@ -134,7 +134,7 @@ const TextInput = forwardRef(({
+           toValue: 0,
+           duration: BLUR_ANIMATION_DURATION * scale,
+           // To prevent this - https://github.com/callstack/react-native-paper/issues/941
+-          useNativeDriver: true
++          useNativeDriver: Platform.OS !== 'web'
+         }).start();
+       }
+     }
+@@ -173,7 +173,7 @@ const TextInput = forwardRef(({
+         toValue: 0,
+         duration: BLUR_ANIMATION_DURATION * scale,
+         // To prevent this - https://github.com/callstack/react-native-paper/issues/941
+-        useNativeDriver: true
++        useNativeDriver: Platform.OS !== 'web'
+       }).start();
+     } else {
+       // restore label
+@@ -181,7 +181,7 @@ const TextInput = forwardRef(({
+         toValue: 1,
+         duration: FOCUS_ANIMATION_DURATION * scale,
+         // To prevent this - https://github.com/callstack/react-native-paper/issues/941
+-        useNativeDriver: true
++        useNativeDriver: Platform.OS !== 'web'
+       }).start();
+     }
+   }, [focused, value, labeled, scale]);
+diff --git a/lib/module/styles/shadow.js b/lib/module/styles/shadow.js
+index 6ca5eed0ad6e3f7b76f358e314159f1190231edc..913519c0bd4ab3c8f90079993741ed75a7c3240c 100644
+--- a/lib/module/styles/shadow.js
++++ b/lib/module/styles/shadow.js
+@@ -1,4 +1,4 @@
+-import { Animated } from 'react-native';
++import { Animated, Platform } from 'react-native';
+ import * as MD2Colors from './themes/v2/colors';
+ import { MD3Colors } from './themes/v3/tokens';
+ const SHADOW_COLOR = MD2Colors.black;
+@@ -6,8 +6,37 @@ const SHADOW_OPACITY = 0.24;
+ const MD3_SHADOW_OPACITY = 0.3;
+ const MD3_SHADOW_COLOR = MD3Colors.primary0;
+ export default function shadow(elevation = 0, isV3 = false) {
++  if (Platform.OS === 'web') {
++    return webShadow(elevation, isV3);
++  }
+   return isV3 ? v3Shadow(elevation) : v2Shadow(elevation);
+ }
++function webShadow(elevation, isV3) {
++  const inputRange = isV3 ? [0, 1, 2, 3, 4, 5] : [0, 1, 2, 3, 8, 24];
++  const outputRange = inputRange.map(level => isV3 ? v3BoxShadow(level) : v2BoxShadow(level));
++  return {
++    boxShadow: elevation instanceof Animated.Value ? elevation.interpolate({
++      inputRange,
++      outputRange
++    }) : isV3 ? v3BoxShadow(elevation) : v2BoxShadow(elevation)
++  };
++}
++function v2BoxShadow(elevation) {
++  if (elevation === 0) {
++    return '0px 0px 0px rgba(0, 0, 0, 0)';
++  }
++  const height = elevation <= 1 ? 0.5 : elevation === 2 ? 0.75 : elevation - 1;
++  const radius = elevation <= 1 ? 0.75 : elevation === 2 ? 1.5 : elevation;
++  return `0px ${height}px ${radius}px rgba(0, 0, 0, ${SHADOW_OPACITY})`;
++}
++function v3BoxShadow(elevation) {
++  if (elevation === 0) {
++    return '0px 0px 0px rgba(0, 0, 0, 0)';
++  }
++  const shadowHeight = [0, 1, 2, 4, 6, 8];
++  const shadowRadius = [0, 3, 6, 8, 10, 12];
++  return `0px ${shadowHeight[elevation]}px ${shadowRadius[elevation]}px rgba(0, 0, 0, ${MD3_SHADOW_OPACITY})`;
++}
+ function v2Shadow(elevation = 0) {
+   if (elevation instanceof Animated.Value) {
+     const inputRange = [0, 1, 2, 3, 8, 24];
+diff --git a/src/components/ActivityIndicator.tsx b/src/components/ActivityIndicator.tsx
+index 893c49f5ee12ab3984a1a2a3a81e7e48398b3806..49f62d3cf53c85311ef4cf11487177e063928550 100644
+--- a/src/components/ActivityIndicator.tsx
++++ b/src/components/ActivityIndicator.tsx
+@@ -85,7 +85,7 @@ const ActivityIndicator = ({
+       duration: 200 * scale,
+       toValue: 1,
+       isInteraction: false,
+-      useNativeDriver: true,
++      useNativeDriver: Platform.OS !== 'web',
+     }).start();
+ 
+     // Circular animation in loop
+@@ -122,7 +122,7 @@ const ActivityIndicator = ({
+       Animated.timing(fade, {
+         duration: 200 * scale,
+         toValue: 0,
+-        useNativeDriver: true,
++        useNativeDriver: Platform.OS !== 'web',
+         isInteraction: false,
+       }).start(stopRotation);
+     } else {
+diff --git a/src/components/Button/Button.tsx b/src/components/Button/Button.tsx
+index 2e4d2cf5190edaf6a10cc30a78836e9a0076d2e5..4905ebb7ee0aaa48bb6da9465d3e50d4c8b41578 100644
+--- a/src/components/Button/Button.tsx
++++ b/src/components/Button/Button.tsx
+@@ -244,7 +244,7 @@ const Button = (
+     Animated.timing(elevation, {
+       toValue: isElevationEntitled ? initialElevation : 0,
+       duration: 0,
+-      useNativeDriver: true,
++      useNativeDriver: !isWeb,
+     });
+   }, [isElevationEntitled, elevation, initialElevation]);
+ 
+@@ -256,7 +256,7 @@ const Button = (
+         toValue: activeElevation,
+         duration: 200 * scale,
+         useNativeDriver:
+-          isWeb || Platform.constants.reactNativeVersion.minor <= 72,
++          !isWeb && Platform.constants.reactNativeVersion.minor <= 72,
+       }).start();
+     }
+   };
+@@ -269,7 +269,7 @@ const Button = (
+         toValue: initialElevation,
+         duration: 150 * scale,
+         useNativeDriver:
+-          isWeb || Platform.constants.reactNativeVersion.minor <= 72,
++          !isWeb && Platform.constants.reactNativeVersion.minor <= 72,
+       }).start();
+     }
+   };
+diff --git a/src/components/Card/Card.tsx b/src/components/Card/Card.tsx
+index 848be9fa13d446e08c54819164a5da6b2b8dd5af..556a657bcd015d9126b60ad4e2afd3b0e2bf5e39 100644
+--- a/src/components/Card/Card.tsx
++++ b/src/components/Card/Card.tsx
+@@ -310,7 +310,6 @@ const Card = (
+     >
+       {isMode('outlined') && (
+         <View
+-          pointerEvents="none"
+           testID={`${testID}-outline`}
+           style={[
+             {
+@@ -318,6 +317,7 @@ const Card = (
+             },
+             styles.outline,
+             borderRadiusCombinedStyles,
++            styles.pointerEventsNone,
+           ]}
+         />
+       )}
+@@ -367,6 +367,9 @@ const styles = StyleSheet.create({
+     height: '100%',
+     zIndex: 2,
+   },
++  pointerEventsNone: {
++    pointerEvents: 'none',
++  },
+   resetElevation: {
+     elevation: 0,
+   },
+diff --git a/src/components/CrossFadeIcon.tsx b/src/components/CrossFadeIcon.tsx
+index 4cf3748c7286b9d22ad0af0cc013e5864e370618..b9b6ddddefe63532962ebdab75b08c24b1a0a165 100644
+--- a/src/components/CrossFadeIcon.tsx
++++ b/src/components/CrossFadeIcon.tsx
+@@ -1,5 +1,5 @@
+ import * as React from 'react';
+-import { Animated, StyleSheet, View } from 'react-native';
++import { Animated, Platform, StyleSheet, View } from 'react-native';
+ 
+ import Icon, { IconSource, isEqualIcon, isValidIcon } from './Icon';
+ import { useInternalTheme } from '../core/theming';
+@@ -58,7 +58,7 @@ const CrossFadeIcon = ({
+       Animated.timing(fade, {
+         duration: scale * 200,
+         toValue: 0,
+-        useNativeDriver: true,
++        useNativeDriver: Platform.OS !== 'web',
+       }).start();
+     }
+   }, [currentIcon, previousIcon, fade, scale]);
+diff --git a/src/components/Modal.tsx b/src/components/Modal.tsx
+index 45bfcf676aead2c4143f946f95ed7480fe713355..ce2bd254ab570f9cbbac4c704e39f195055e027e 100644
+--- a/src/components/Modal.tsx
++++ b/src/components/Modal.tsx
+@@ -2,6 +2,7 @@ import * as React from 'react';
+ import {
+   Animated,
+   Easing,
++  Platform,
+   StyleProp,
+   StyleSheet,
+   Pressable,
+@@ -124,7 +125,7 @@ function Modal({
+       toValue: 1,
+       duration: scale * DEFAULT_DURATION,
+       easing: Easing.out(Easing.cubic),
+-      useNativeDriver: true,
++      useNativeDriver: Platform.OS !== 'web',
+     }).start();
+   }, [opacity, scale]);
+ 
+@@ -133,7 +134,7 @@ function Modal({
+       toValue: 0,
+       duration: scale * DEFAULT_DURATION,
+       easing: Easing.out(Easing.cubic),
+-      useNativeDriver: true,
++      useNativeDriver: Platform.OS !== 'web',
+     }).start(({ finished }) => {
+       if (!finished) {
+         return;
+@@ -185,10 +186,12 @@ function Modal({
+ 
+   return (
+     <Animated.View
+-      pointerEvents={visible ? 'auto' : 'none'}
+       accessibilityViewIsModal
+       accessibilityLiveRegion="polite"
+-      style={StyleSheet.absoluteFill}
++      style={[
++        StyleSheet.absoluteFill,
++        { pointerEvents: visible ? 'auto' : 'none' },
++      ]}
+       onAccessibilityEscape={onDismissCallback}
+       testID={testID}
+     >
+@@ -212,8 +215,8 @@ function Modal({
+           styles.wrapper,
+           { marginTop: top, marginBottom: bottom },
+           style,
++          styles.pointerEventsBoxNone,
+         ]}
+-        pointerEvents="box-none"
+         testID={`${testID}-wrapper`}
+       >
+         <Surface
+@@ -239,6 +242,9 @@ const styles = StyleSheet.create({
+     ...StyleSheet.absoluteFill,
+     justifyContent: 'center',
+   },
++  pointerEventsBoxNone: {
++    pointerEvents: 'box-none',
++  },
+   // eslint-disable-next-line react-native/no-color-literals
+   content: {
+     backgroundColor: 'transparent',
+diff --git a/src/components/Portal/PortalHost.tsx b/src/components/Portal/PortalHost.tsx
+index f884563999dc147bf15292796449506ea58184f8..ddecb73eb8800fea4121e31995774ce7c3d81bfe 100644
+--- a/src/components/Portal/PortalHost.tsx
++++ b/src/components/Portal/PortalHost.tsx
+@@ -124,9 +124,8 @@ export default class PortalHost extends React.Component<Props> {
+       >
+         {/* Need collapsable=false here to clip the elevations, otherwise they appear above Portal components */}
+         <View
+-          style={styles.container}
++          style={[styles.container, styles.pointerEventsBoxNone]}
+           collapsable={false}
+-          pointerEvents="box-none"
+         >
+           {this.props.children}
+         </View>
+@@ -140,4 +139,7 @@ const styles = StyleSheet.create({
+   container: {
+     flex: 1,
+   },
++  pointerEventsBoxNone: {
++    pointerEvents: 'box-none',
++  },
+ });
+diff --git a/src/components/Portal/PortalManager.tsx b/src/components/Portal/PortalManager.tsx
+index cc2bdbe1a799c436db4d52c153f58de17ba6ba9c..7364915ddbf1e938f9b1cf1ad9052a00e69eb332 100644
+--- a/src/components/Portal/PortalManager.tsx
++++ b/src/components/Portal/PortalManager.tsx
+@@ -44,11 +44,16 @@ export default class PortalManager extends React.PureComponent<{}, State> {
+         collapsable={
+           false /* Need collapsable=false here to clip the elevations, otherwise they appear above sibling components */
+         }
+-        pointerEvents="box-none"
+-        style={StyleSheet.absoluteFill}
++        style={[StyleSheet.absoluteFill, styles.pointerEventsBoxNone]}
+       >
+         {children}
+       </View>
+     ));
+   }
+ }
++
++const styles = StyleSheet.create({
++  pointerEventsBoxNone: {
++    pointerEvents: 'box-none',
++  },
++});
+diff --git a/src/components/SegmentedButtons/SegmentedButtonItem.tsx b/src/components/SegmentedButtons/SegmentedButtonItem.tsx
+index 92623d249ce7afc93085daf0168dc2889d3fee41..1c593a90ebb1d4b9c8e63fd06e52c36fa2debfe6 100644
+--- a/src/components/SegmentedButtons/SegmentedButtonItem.tsx
++++ b/src/components/SegmentedButtons/SegmentedButtonItem.tsx
+@@ -3,6 +3,7 @@ import {
+   Animated,
+   ColorValue,
+   GestureResponderEvent,
++  Platform,
+   PressableAndroidRippleConfig,
+   StyleProp,
+   StyleSheet,
+@@ -142,12 +143,12 @@ const SegmentedButtonItem = ({
+     if (checked) {
+       Animated.spring(checkScale, {
+         toValue: 1,
+-        useNativeDriver: true,
++        useNativeDriver: Platform.OS !== 'web',
+       }).start();
+     } else {
+       Animated.spring(checkScale, {
+         toValue: 0,
+-        useNativeDriver: true,
++        useNativeDriver: Platform.OS !== 'web',
+       }).start();
+     }
+   }, [checked, checkScale, showSelectedCheck]);
+diff --git a/src/components/Surface.tsx b/src/components/Surface.tsx
+index 3b46d099e111daf0a81856ff8ccf7986edc0a9ce..dbd67327bfbf53295e74dfd2b2e82d8d622d9b82 100644
+--- a/src/components/Surface.tsx
++++ b/src/components/Surface.tsx
+@@ -304,17 +304,17 @@ const Surface = forwardRef<View, Props>(
+     const isElevated = mode === 'elevated';
+ 
+     if (Platform.OS === 'web') {
+-      const { pointerEvents = 'auto' } = props;
++      const { pointerEvents, ...webProps } = props;
+       return (
+         <Animated.View
+-          {...props}
+-          pointerEvents={pointerEvents}
++          {...webProps}
+           ref={ref}
+           testID={testID}
+           style={[
+             { backgroundColor },
+             elevation && isElevated ? shadow(elevation, theme.isV3) : null,
+             style,
++            pointerEvents ? { pointerEvents } : null,
+           ]}
+         >
+           {children}
+diff --git a/src/components/TextInput/Addons/Outline.tsx b/src/components/TextInput/Addons/Outline.tsx
+index 45b675fd8bc6db44ce09e76f7ae13cdc244a1b23..2f0d59f10216d822d4da2d2534bdf2541e0cf4b7 100644
+--- a/src/components/TextInput/Addons/Outline.tsx
++++ b/src/components/TextInput/Addons/Outline.tsx
+@@ -34,7 +34,6 @@ export const Outline = ({
+ }: OutlineProps) => (
+   <View
+     testID="text-input-outline"
+-    pointerEvents="none"
+     style={[
+       styles.outline,
+       !label && styles.noLabelOutline,
+@@ -46,6 +45,7 @@ export const Outline = ({
+         borderColor: hasActiveOutline ? activeColor : outlineColor,
+       },
+       style,
++      styles.pointerEventsNone,
+     ]}
+   />
+ );
+@@ -61,4 +61,7 @@ const styles = StyleSheet.create({
+   noLabelOutline: {
+     top: 0,
+   },
++  pointerEventsNone: {
++    pointerEvents: 'none',
++  },
+ });
+diff --git a/src/components/TextInput/Label/InputLabel.tsx b/src/components/TextInput/Label/InputLabel.tsx
+index f0818f98f0ee2259bb7fa496840391bfeb446f83..497567ea9931ec28cdecec85558c7153b51e9ae6 100644
+--- a/src/components/TextInput/Label/InputLabel.tsx
++++ b/src/components/TextInput/Label/InputLabel.tsx
+@@ -139,16 +139,20 @@ const InputLabel = (props: InputLabelProps) => {
+     // Position colored placeholder and gray placeholder on top of each other and crossfade them
+     // This gives the effect of animating the color, but allows us to use native driver
+     <View
+-      pointerEvents="none"
+-      style={[StyleSheet.absoluteFill, styles.overflow, styles.labelContainer]}
++      style={[
++        StyleSheet.absoluteFill,
++        styles.overflow,
++        styles.labelContainer,
++        styles.pointerEventsNone,
++      ]}
+     >
+       <Animated.View
+-        pointerEvents="none"
+         style={[
+           StyleSheet.absoluteFill,
+           !isWeb && { width },
+           { opacity },
+           labelTranslationX,
++          styles.pointerEventsNone,
+         ]}
+       >
+         <View
+@@ -214,6 +218,9 @@ const styles = StyleSheet.create({
+   labelContainer: {
+     zIndex: 3,
+   },
++  pointerEventsNone: {
++    pointerEvents: 'none',
++  },
+ });
+ 
+ export default React.memo(InputLabel);
+diff --git a/src/components/TextInput/Label/LabelBackground.tsx b/src/components/TextInput/Label/LabelBackground.tsx
+index 409606d2085d85d1f66cfa42705ab7480f03ae0a..a1e5d715d6b8acf37e191d1acbf5ed0043425706 100644
+--- a/src/components/TextInput/Label/LabelBackground.tsx
++++ b/src/components/TextInput/Label/LabelBackground.tsx
+@@ -42,7 +42,6 @@ const LabelBackground = ({
+   const roundedEdgeCover = isRounded ? (
+     <Animated.View
+       key="labelBackground-view"
+-      pointerEvents="none"
+       style={[
+         StyleSheet.absoluteFill,
+         styles.view,
+@@ -53,6 +52,7 @@ const LabelBackground = ({
+           transform: [labelTranslationX],
+           opacity,
+         },
++        styles.pointerEventsNone,
+       ]}
+     />
+   ) : null;
+@@ -90,6 +90,9 @@ const styles = StyleSheet.create({
+     left: 10,
+     width: 12,
+   },
++  pointerEventsNone: {
++    pointerEvents: 'none',
++  },
+   // eslint-disable-next-line react-native/no-color-literals
+   outlinedLabel: {
+     position: 'absolute',
+diff --git a/src/components/TextInput/TextInput.tsx b/src/components/TextInput/TextInput.tsx
+index 7c289d9152599fac15be4e932538d58699e1ca1f..f5da65180c45fdf9975e080c25e1480236bc6b93 100644
+--- a/src/components/TextInput/TextInput.tsx
++++ b/src/components/TextInput/TextInput.tsx
+@@ -2,6 +2,7 @@ import * as React from 'react';
+ import {
+   Animated,
+   LayoutChangeEvent,
++  Platform,
+   StyleProp,
+   TextInput as NativeTextInput,
+   TextStyle,
+@@ -311,7 +312,7 @@ const TextInput = forwardRef<TextInputHandles, Props>(
+           toValue: 1,
+           duration: FOCUS_ANIMATION_DURATION * scale,
+           // To prevent this - https://github.com/callstack/react-native-paper/issues/941
+-          useNativeDriver: true,
++          useNativeDriver: Platform.OS !== 'web',
+         }).start();
+       } else {
+         // hide error
+@@ -320,7 +321,7 @@ const TextInput = forwardRef<TextInputHandles, Props>(
+             toValue: 0,
+             duration: BLUR_ANIMATION_DURATION * scale,
+             // To prevent this - https://github.com/callstack/react-native-paper/issues/941
+-            useNativeDriver: true,
++            useNativeDriver: Platform.OS !== 'web',
+           }).start();
+         }
+       }
+@@ -365,7 +366,7 @@ const TextInput = forwardRef<TextInputHandles, Props>(
+           toValue: 0,
+           duration: BLUR_ANIMATION_DURATION * scale,
+           // To prevent this - https://github.com/callstack/react-native-paper/issues/941
+-          useNativeDriver: true,
++          useNativeDriver: Platform.OS !== 'web',
+         }).start();
+       } else {
+         // restore label
+@@ -373,7 +374,7 @@ const TextInput = forwardRef<TextInputHandles, Props>(
+           toValue: 1,
+           duration: FOCUS_ANIMATION_DURATION * scale,
+           // To prevent this - https://github.com/callstack/react-native-paper/issues/941
+-          useNativeDriver: true,
++          useNativeDriver: Platform.OS !== 'web',
+         }).start();
+       }
+     }, [focused, value, labeled, scale]);
+diff --git a/src/styles/shadow.tsx b/src/styles/shadow.tsx
+index dcc11e8b654b326bb4a8d4f872d684a784a01457..ff019f293889f668f7921e489b65374bfbdd2da9 100644
+--- a/src/styles/shadow.tsx
++++ b/src/styles/shadow.tsx
+@@ -1,4 +1,4 @@
+-import { Animated } from 'react-native';
++import { Animated, Platform } from 'react-native';
+ 
+ import * as MD2Colors from './themes/v2/colors';
+ import { MD3Colors } from './themes/v3/tokens';
+@@ -12,9 +12,51 @@ export default function shadow(
+   elevation: number | Animated.Value = 0,
+   isV3 = false
+ ) {
++  if (Platform.OS === 'web') {
++    return webShadow(elevation, isV3);
++  }
++
+   return isV3 ? v3Shadow(elevation) : v2Shadow(elevation);
+ }
+ 
++function webShadow(elevation: number | Animated.Value, isV3: boolean) {
++  const inputRange = isV3 ? [0, 1, 2, 3, 4, 5] : [0, 1, 2, 3, 8, 24];
++  const outputRange = inputRange.map((level) =>
++    isV3 ? v3BoxShadow(level) : v2BoxShadow(level)
++  );
++
++  return {
++    boxShadow:
++      elevation instanceof Animated.Value
++        ? elevation.interpolate({ inputRange, outputRange })
++        : isV3
++        ? v3BoxShadow(elevation)
++        : v2BoxShadow(elevation),
++  };
++}
++
++function v2BoxShadow(elevation: number) {
++  if (elevation === 0) {
++    return '0px 0px 0px rgba(0, 0, 0, 0)';
++  }
++
++  const height = elevation <= 1 ? 0.5 : elevation === 2 ? 0.75 : elevation - 1;
++  const radius = elevation <= 1 ? 0.75 : elevation === 2 ? 1.5 : elevation;
++
++  return `0px ${height}px ${radius}px rgba(0, 0, 0, ${SHADOW_OPACITY})`;
++}
++
++function v3BoxShadow(elevation: number) {
++  if (elevation === 0) {
++    return '0px 0px 0px rgba(0, 0, 0, 0)';
++  }
++
++  const shadowHeight = [0, 1, 2, 4, 6, 8];
++  const shadowRadius = [0, 3, 6, 8, 10, 12];
++
++  return `0px ${shadowHeight[elevation]}px ${shadowRadius[elevation]}px rgba(0, 0, 0, ${MD3_SHADOW_OPACITY})`;
++}
++
+ function v2Shadow(elevation: number | Animated.Value = 0) {
+   if (elevation instanceof Animated.Value) {
+     const inputRange = [0, 1, 2, 3, 8, 24];
+diff --git a/src/components/MaterialCommunityIcon.tsx b/src/components/MaterialCommunityIcon.tsx
+--- a/src/components/MaterialCommunityIcon.tsx
++++ b/src/components/MaterialCommunityIcon.tsx
+@@ -111,12 +111,12 @@ const MaterialCommunityIcon = ({
+       size={size}
+       style={[
+         {
+           transform: [{ scaleX: direction === 'rtl' ? -1 : 1 }],
+           lineHeight: size,
++          pointerEvents: 'none',
+         },
+         styles.icon,
+       ]}
+-      pointerEvents="none"
+       selectable={false}
+       testID={testID}
+       {...accessibilityProps}
+diff --git a/lib/module/components/MaterialCommunityIcon.js b/lib/module/components/MaterialCommunityIcon.js
+--- a/lib/module/components/MaterialCommunityIcon.js
++++ b/lib/module/components/MaterialCommunityIcon.js
+@@ -67,12 +67,12 @@ const MaterialCommunityIcon = ({
+     color: color,
+     size: size,
+     style: [{
+       transform: [{
+         scaleX: direction === 'rtl' ? -1 : 1
+       }],
+-      lineHeight: size
++      lineHeight: size,
++      pointerEvents: "none"
+     }, styles.icon],
+-    pointerEvents: "none",
+     selectable: false,
+     testID: testID
+   }, accessibilityProps));
+diff --git a/lib/commonjs/components/MaterialCommunityIcon.js b/lib/commonjs/components/MaterialCommunityIcon.js
+--- a/lib/commonjs/components/MaterialCommunityIcon.js
++++ b/lib/commonjs/components/MaterialCommunityIcon.js
+@@ -74,12 +74,12 @@ const MaterialCommunityIcon = ({
+     color: color,
+     size: size,
+     style: [{
+       transform: [{
+         scaleX: direction === 'rtl' ? -1 : 1
+       }],
+-      lineHeight: size
++      lineHeight: size,
++      pointerEvents: "none"
+     }, styles.icon],
+-    pointerEvents: "none",
+     selectable: false,
+     testID: testID
+   }, accessibilityProps));
+diff --git a/src/components/TextInput/TextInputFlat.tsx b/src/components/TextInput/TextInputFlat.tsx
+--- a/src/components/TextInput/TextInputFlat.tsx
++++ b/src/components/TextInput/TextInputFlat.tsx
+@@ -364,15 +364,15 @@ const TextInputFlat = ({
+           // Workaround for: https://github.com/callstack/react-native-paper/issues/2799
+           // Patch for a multiline TextInput with fixed height, which allow to avoid covering input label with its value.
+           <View
+             testID="patch-container"
+-            pointerEvents="none"
+             style={[
+               StyleSheet.absoluteFill,
+               dense ? styles.densePatchContainer : styles.patchContainer,
+               {
+                 backgroundColor:
+                   viewStyle.backgroundColor || containerStyle.backgroundColor,
+                 left: paddingLeft,
++                pointerEvents: 'none',
+                 right: paddingRight,
+               },
+             ]}
+diff --git a/lib/module/components/TextInput/TextInputFlat.js b/lib/module/components/TextInput/TextInputFlat.js
+--- a/lib/module/components/TextInput/TextInputFlat.js
++++ b/lib/module/components/TextInput/TextInputFlat.js
+@@ -264,11 +264,11 @@ const TextInputFlat = ({
+   // Workaround for: https://github.com/callstack/react-native-paper/issues/2799
+   // Patch for a multiline TextInput with fixed height, which allow to avoid covering input label with its value.
+   React.createElement(View, {
+     testID: "patch-container",
+-    pointerEvents: "none",
+     style: [StyleSheet.absoluteFill, dense ? styles.densePatchContainer : styles.patchContainer, {
+       backgroundColor: viewStyle.backgroundColor || containerStyle.backgroundColor,
+       left: paddingLeft,
++      pointerEvents: "none",
+       right: paddingRight
+     }]
+   }), label ? /*#__PURE__*/React.createElement(InputLabel, _extends({
+diff --git a/lib/commonjs/components/TextInput/TextInputFlat.js b/lib/commonjs/components/TextInput/TextInputFlat.js
+--- a/lib/commonjs/components/TextInput/TextInputFlat.js
++++ b/lib/commonjs/components/TextInput/TextInputFlat.js
+@@ -271,11 +271,11 @@ const TextInputFlat = ({
+   // Workaround for: https://github.com/callstack/react-native-paper/issues/2799
+   // Patch for a multiline TextInput with fixed height, which allow to avoid covering input label with its value.
+   React.createElement(_reactNative.View, {
+     testID: "patch-container",
+-    pointerEvents: "none",
+     style: [_reactNative.StyleSheet.absoluteFill, dense ? styles.densePatchContainer : styles.patchContainer, {
+       backgroundColor: viewStyle.backgroundColor || containerStyle.backgroundColor,
+       left: paddingLeft,
++      pointerEvents: "none",
+       right: paddingRight
+     }]
+   }), label ? /*#__PURE__*/React.createElement(_InputLabel.default, _extends({
