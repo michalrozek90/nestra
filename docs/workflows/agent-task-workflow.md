@@ -68,8 +68,9 @@ The workflow ends only after one of these outcomes:
 
 The expected GitHub Project states are:
 
+- `Backlog` — captured work that is not yet actionable because its description is incomplete or important implementation decisions are unresolved. Place newly requested issues here until they are refined.
 - `Todo`
-- `In progress`
+- `In Progress`
 - `Blocked`
 - `Review`
 - `Done`
@@ -127,7 +128,7 @@ git pull --ff-only
 
 If `main` cannot be updated with a fast-forward, stop and report the problem.
 
-After the preflight succeeds, move the selected work item to `In progress`.
+After the preflight succeeds, move the selected work item to `In Progress`.
 
 ## 3. Create or resume the task branch
 
@@ -245,7 +246,7 @@ A separate pull request comment is not required merely to announce readiness.
 When the user requests changes to the pull request:
 
 1. Confirm the active issue, branch, and pull request from the conversation and repository state.
-2. Move the work item from `Review` to `In progress`.
+2. Move the work item from `Review` to `In Progress`.
 3. Implement only the requested corrections.
 4. Run `pnpm verify` with the four-cycle limit.
 5. Commit and push the corrections using a Conventional Commit.
