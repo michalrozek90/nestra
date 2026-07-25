@@ -28,6 +28,7 @@ pnpm-debug.log*
 !.codex/hooks.json
 !.codex/hooks/
 !.codex/hooks/notify-project-status.ps1
+.codex/runtime/
 .DS_Store
 Thumbs.db
 

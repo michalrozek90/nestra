@@ -34,7 +34,9 @@ not run Codex repository hooks are outside this mechanism.
    your own Discord user, and select **Copy User ID**.
 5. Store the numeric ID in the Windows user environment variable
    `NESTRA_DISCORD_USER_ID`.
-6. Restart Cursor so the Codex extension inherits the updated environment.
+6. Restart the active Codex client so it inherits the updated environment. For
+   Cursor, restart Cursor. For the Codex app or CLI, close all active Codex
+   processes and start a new one.
 
 The equivalent PowerShell command is shown below. Prefer the Windows environment
 variable UI if you do not want the webhook URL in PowerShell history.
@@ -68,9 +70,23 @@ From a Codex CLI session opened in the repository:
 Changing the hook definition or command invalidates the stored trust decision
 and requires another review.
 
-## Test the notification
+## Check the active process configuration
 
-After setting the environment variable and restarting the terminal or Cursor,
+Run this command from the repository root:
+
+```powershell
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
+    -File .codex/hooks/notify-project-status.ps1 `
+    -CheckConfiguration
+```
+
+The command reports only booleans and the local diagnostics path. It never
+prints the webhook URL or Discord user ID. All four configuration booleans must
+be `true` before testing delivery.
+
+## Test message generation and Discord delivery
+
+After setting the environment variables and restarting the active Codex client,
 run this command from the repository root:
 
 ```powershell
@@ -95,10 +111,35 @@ run this command from the repository root:
   }
 }
 '@ | powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
-    -File .codex/hooks/notify-project-status.ps1
+    -File .codex/hooks/notify-project-status.ps1 `
+    -DryRun
 ```
 
-Add `-DryRun` to print the Discord request body without sending it.
+This dry run validates input matching and message generation. It does not prove
+that Codex loaded the hook or that Discord accepted the message.
+
+Remove `-DryRun` to test Discord delivery directly. A successful direct
+delivery still does not prove that Codex loaded and trusted the lifecycle hook.
+
+## Test the complete lifecycle hook
+
+An end-to-end test must originate from a real Codex tool call:
+
+1. Run `/hooks`, review the current `.codex/hooks.json`, and trust it.
+2. Start a new Codex conversation from the repository root.
+3. Ask Codex explicitly to use the GitHub Projects integration to update a test
+   item to `Review` or `Blocked`. Updating an item to its existing value is
+   sufficient to exercise the hook without changing its visible status.
+4. Confirm the Discord message and mention.
+5. Inspect the latest diagnostic events:
+
+```powershell
+Get-Content .codex/runtime/project-status-notifications.jsonl -Tail 20
+```
+
+Expected final outcomes are `delivery_attempted` followed by
+`delivery_succeeded`. `delivery_failed` includes only a safe exception type and
+optional HTTP status code.
 
 ## Security and failure behavior
 
@@ -106,7 +147,12 @@ Add `-DryRun` to print the Discord request body without sending it.
 - Only the numeric user ID from `NESTRA_DISCORD_USER_ID` can be mentioned.
 - The script accepts only HTTPS Discord webhook URLs.
 - Role, `@everyone`, and `@here` mentions are disabled.
+- Safe diagnostic events are written to
+  `.codex/runtime/project-status-notifications.jsonl`, which is ignored by Git.
+- Diagnostics never contain the webhook URL, Discord user ID, notification
+  body, tool response, or exception message.
 - Malformed hook input, unrelated tool calls, failed GitHub calls, missing
-  configuration, and Discord delivery failures are ignored.
+  configuration, and Discord delivery failures are recorded without exposing
+  secrets.
 - Notification delivery never blocks or reverses a GitHub Project status
   update.

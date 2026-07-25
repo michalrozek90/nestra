@@ -1,10 +1,15 @@
 [CmdletBinding()]
 param(
-    [switch] $DryRun
+    [switch] $DryRun,
+    [switch] $CheckConfiguration
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+$codexDirectory = Split-Path -Parent $PSScriptRoot
+$diagnosticsDirectory = Join-Path $codexDirectory 'runtime'
+$diagnosticsPath = Join-Path $diagnosticsDirectory 'project-status-notifications.jsonl'
 
 function Get-ObjectProperty {
     param(
@@ -27,6 +32,63 @@ function Get-ObjectProperty {
     return $property.Value
 }
 
+function Write-NotificationDiagnostic {
+    param(
+        [Parameter(Mandatory)]
+        [string] $Outcome,
+
+        [AllowNull()]
+        [string] $IssueNumber,
+
+        [AllowNull()]
+        [string] $Status,
+
+        [AllowNull()]
+        [object] $IsMentionIncluded,
+
+        [AllowNull()]
+        [string] $ErrorType,
+
+        [AllowNull()]
+        [string] $HttpStatusCode
+    )
+
+    try {
+        New-Item -ItemType Directory -Path $diagnosticsDirectory -Force | Out-Null
+
+        $diagnosticEntry = [ordered] @{
+            timestampUtc = [DateTimeOffset]::UtcNow.ToString('o')
+            outcome      = $Outcome
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($IssueNumber)) {
+            $diagnosticEntry['issueNumber'] = $IssueNumber
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($Status)) {
+            $diagnosticEntry['status'] = $Status
+        }
+
+        if ($null -ne $IsMentionIncluded) {
+            $diagnosticEntry['isMentionIncluded'] = [bool] $IsMentionIncluded
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($ErrorType)) {
+            $diagnosticEntry['errorType'] = $ErrorType
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($HttpStatusCode)) {
+            $diagnosticEntry['httpStatusCode'] = $HttpStatusCode
+        }
+
+        $diagnosticJson = $diagnosticEntry | ConvertTo-Json -Compress
+        Add-Content -LiteralPath $diagnosticsPath -Value $diagnosticJson -Encoding UTF8
+    }
+    catch {
+        # Diagnostics are best-effort and must never affect the task workflow.
+    }
+}
+
 function Test-DiscordWebhookUri {
     param(
         [Parameter(Mandatory)]
@@ -45,8 +107,44 @@ function Test-DiscordWebhookUri {
         -and $WebhookUri.AbsolutePath.StartsWith('/api/webhooks/', [StringComparison]::Ordinal)
 }
 
+$webhookUrl = [Environment]::GetEnvironmentVariable(
+    'NESTRA_DISCORD_WEBHOOK_URL',
+    [EnvironmentVariableTarget]::Process
+)
+$discordUserId = [Environment]::GetEnvironmentVariable(
+    'NESTRA_DISCORD_USER_ID',
+    [EnvironmentVariableTarget]::Process
+)
+
+if ($CheckConfiguration) {
+    $isWebhookConfigured = -not [string]::IsNullOrWhiteSpace($webhookUrl)
+    $isWebhookValid = $false
+
+    if ($isWebhookConfigured) {
+        try {
+            $webhookUri = [Uri] $webhookUrl
+            $isWebhookValid = Test-DiscordWebhookUri -WebhookUri $webhookUri
+        }
+        catch {
+            $isWebhookValid = $false
+        }
+    }
+
+    $configurationStatus = [ordered] @{
+        webhookConfigured     = $isWebhookConfigured
+        webhookValid          = $isWebhookValid
+        userMentionConfigured = -not [string]::IsNullOrWhiteSpace($discordUserId)
+        userMentionValid      = $discordUserId -match '^\d{17,20}$'
+        diagnosticsPath       = $diagnosticsPath
+    }
+
+    $configurationStatus | ConvertTo-Json -Compress
+    exit 0
+}
+
 $hookPayloadText = [Console]::In.ReadToEnd()
 if ([string]::IsNullOrWhiteSpace($hookPayloadText)) {
+    Write-NotificationDiagnostic -Outcome 'ignored_empty_input'
     exit 0
 }
 
@@ -54,6 +152,7 @@ try {
     $hookPayload = $hookPayloadText | ConvertFrom-Json -ErrorAction Stop
 }
 catch {
+    Write-NotificationDiagnostic -Outcome 'ignored_invalid_json'
     exit 0
 }
 
@@ -61,15 +160,22 @@ $hookEventName = [string] (Get-ObjectProperty -InputObject $hookPayload -Name 'h
 $toolName = [string] (Get-ObjectProperty -InputObject $hookPayload -Name 'tool_name')
 
 if ($hookEventName -ne 'PostToolUse' -or $toolName -ne 'mcp__github__projects_write') {
+    Write-NotificationDiagnostic -Outcome 'ignored_unexpected_event'
     exit 0
 }
 
 $toolInput = Get-ObjectProperty -InputObject $hookPayload -Name 'tool_input'
 $toolResponse = Get-ObjectProperty -InputObject $hookPayload -Name 'tool_response'
+$itemOwner = [string] (Get-ObjectProperty -InputObject $toolInput -Name 'item_owner')
+$itemRepository = [string] (Get-ObjectProperty -InputObject $toolInput -Name 'item_repo')
+$issueNumber = [string] (Get-ObjectProperty -InputObject $toolInput -Name 'issue_number')
 
 $responseIsError = Get-ObjectProperty -InputObject $toolResponse -Name 'isError'
 $responseIsErrorAlias = Get-ObjectProperty -InputObject $toolResponse -Name 'is_error'
 if ($responseIsError -eq $true -or $responseIsErrorAlias -eq $true) {
+    Write-NotificationDiagnostic `
+        -Outcome 'ignored_tool_error' `
+        -IssueNumber $issueNumber
     exit 0
 }
 
@@ -86,6 +192,9 @@ if (
         -or $projectNumber -ne '1' `
         -or $fieldName -ne 'Status'
 ) {
+    Write-NotificationDiagnostic `
+        -Outcome 'ignored_unrelated_update' `
+        -IssueNumber $issueNumber
     exit 0
 }
 
@@ -96,28 +205,26 @@ $status = switch ($requestedStatus) {
 }
 
 if ($null -eq $status) {
+    Write-NotificationDiagnostic `
+        -Outcome 'ignored_non_notifiable_status' `
+        -IssueNumber $issueNumber
     exit 0
 }
 
-$itemOwner = [string] (Get-ObjectProperty -InputObject $toolInput -Name 'item_owner')
-$itemRepository = [string] (Get-ObjectProperty -InputObject $toolInput -Name 'item_repo')
-$issueNumber = [string] (Get-ObjectProperty -InputObject $toolInput -Name 'issue_number')
 $projectUrl = 'https://github.com/users/michalrozek90/projects/1'
-$discordUserId = [Environment]::GetEnvironmentVariable(
-    'NESTRA_DISCORD_USER_ID',
-    [EnvironmentVariableTarget]::Process
-)
 
 $notificationPrefix = ''
 $allowedMentions = @{
     parse = @()
 }
+$isMentionIncluded = $false
 
 if ($discordUserId -match '^\d{17,20}$') {
     $notificationPrefix = "<@$discordUserId> "
     $allowedMentions = @{
         users = @($discordUserId)
     }
+    $isMentionIncluded = $true
 }
 
 $notificationLines = @(
@@ -144,17 +251,28 @@ $notificationPayload = @{
 
 $notificationJson = $notificationPayload | ConvertTo-Json -Depth 4 -Compress
 
+Write-NotificationDiagnostic `
+    -Outcome 'notification_matched' `
+    -IssueNumber $issueNumber `
+    -Status $status `
+    -IsMentionIncluded $isMentionIncluded
+
 if ($DryRun) {
+    Write-NotificationDiagnostic `
+        -Outcome 'dry_run_completed' `
+        -IssueNumber $issueNumber `
+        -Status $status `
+        -IsMentionIncluded $isMentionIncluded
     $notificationJson
     exit 0
 }
 
-$webhookUrl = [Environment]::GetEnvironmentVariable(
-    'NESTRA_DISCORD_WEBHOOK_URL',
-    [EnvironmentVariableTarget]::Process
-)
-
 if ([string]::IsNullOrWhiteSpace($webhookUrl)) {
+    Write-NotificationDiagnostic `
+        -Outcome 'delivery_skipped_missing_webhook' `
+        -IssueNumber $issueNumber `
+        -Status $status `
+        -IsMentionIncluded $isMentionIncluded
     exit 0
 }
 
@@ -162,10 +280,20 @@ try {
     $webhookUri = [Uri] $webhookUrl
 }
 catch {
+    Write-NotificationDiagnostic `
+        -Outcome 'delivery_skipped_invalid_webhook' `
+        -IssueNumber $issueNumber `
+        -Status $status `
+        -IsMentionIncluded $isMentionIncluded
     exit 0
 }
 
 if (-not (Test-DiscordWebhookUri -WebhookUri $webhookUri)) {
+    Write-NotificationDiagnostic `
+        -Outcome 'delivery_skipped_invalid_webhook' `
+        -IssueNumber $issueNumber `
+        -Status $status `
+        -IsMentionIncluded $isMentionIncluded
     exit 0
 }
 
@@ -176,14 +304,45 @@ try {
 
     $requestBody = [Text.Encoding]::UTF8.GetBytes($notificationJson)
 
+    Write-NotificationDiagnostic `
+        -Outcome 'delivery_attempted' `
+        -IssueNumber $issueNumber `
+        -Status $status `
+        -IsMentionIncluded $isMentionIncluded
+
     Invoke-RestMethod `
         -Uri $webhookUri.AbsoluteUri `
         -Method Post `
         -ContentType 'application/json; charset=utf-8' `
         -Body $requestBody `
         -TimeoutSec 10 | Out-Null
+
+    Write-NotificationDiagnostic `
+        -Outcome 'delivery_succeeded' `
+        -IssueNumber $issueNumber `
+        -Status $status `
+        -IsMentionIncluded $isMentionIncluded
 }
 catch {
-    # Notification delivery is best-effort and must never block the task workflow.
+    $errorType = $_.Exception.GetType().FullName
+    $httpStatusCode = $null
+    $errorResponse = Get-ObjectProperty -InputObject $_.Exception -Name 'Response'
+
+    if ($null -ne $errorResponse) {
+        $responseStatusCode = Get-ObjectProperty -InputObject $errorResponse -Name 'StatusCode'
+        if ($null -ne $responseStatusCode) {
+            $httpStatusCode = [string] $responseStatusCode
+        }
+    }
+
+    Write-NotificationDiagnostic `
+        -Outcome 'delivery_failed' `
+        -IssueNumber $issueNumber `
+        -Status $status `
+        -IsMentionIncluded $isMentionIncluded `
+        -ErrorType $errorType `
+        -HttpStatusCode $httpStatusCode
+
+    # Notification delivery remains best-effort and cannot block the task workflow.
     exit 0
 }

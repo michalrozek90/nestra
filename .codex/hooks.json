@@ -10,7 +10,7 @@
             "command": "pwsh -NoLogo -NoProfile -NonInteractive -File .codex/hooks/notify-project-status.ps1",
             "commandWindows": "powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .codex/hooks/notify-project-status.ps1",
             "timeout": 15,
-            "statusMessage": "Sending the project status notification"
+            "statusMessage": "Sending and recording the project status notification"
           }
         ]
       }
