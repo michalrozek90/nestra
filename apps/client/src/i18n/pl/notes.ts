@@ -18,7 +18,6 @@ export const plNotes = {
     contentLabel: 'Treść',
     titleRequired: 'Wpisz tytuł.',
     titleTooLong: 'Tytuł może mieć maksymalnie 120 znaków.',
-    contentRequired: 'Wpisz treść notatki.',
     contentTooLong: 'Notatka może mieć maksymalnie 20 000 znaków.',
     saving: 'Zapisywanie…',
     saved: 'Zapisano',

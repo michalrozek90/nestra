@@ -40,9 +40,14 @@ export function NoteCard({
             </Text>
           ) : null}
         </View>
-        <Text numberOfLines={3} style={[styles.preview, { color: theme.colors.onSurfaceVariant }]}>
-          {note.content}
-        </Text>
+        {note.content ? (
+          <Text
+            numberOfLines={3}
+            style={[styles.preview, { color: theme.colors.onSurfaceVariant }]}
+          >
+            {note.content}
+          </Text>
+        ) : null}
         <View style={styles.actions}>
           {!note.isArchived ? (
             <NoteActionTooltip title={note.isPinned ? t('actions.unpin') : t('actions.pin')}>

@@ -180,7 +180,7 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
         />
         {contentError ? (
           <Text accessibilityRole="alert" style={[styles.error, { color: theme.colors.error }]}>
-            {t(contentError === 'required' ? 'editor.contentRequired' : 'editor.contentTooLong')}
+            {t('editor.contentTooLong')}
           </Text>
         ) : null}
 

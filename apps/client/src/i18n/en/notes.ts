@@ -18,7 +18,6 @@ export const enNotes = {
     contentLabel: 'Content',
     titleRequired: 'Enter a title.',
     titleTooLong: 'The title can contain up to 120 characters.',
-    contentRequired: 'Enter note content.',
     contentTooLong: 'The note can contain up to 20,000 characters.',
     saving: 'Saving…',
     saved: 'Saved',
