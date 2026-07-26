@@ -44,14 +44,6 @@ export function NoteCard({
             </Text>
           ) : null}
         </View>
-        {note.content ? (
-          <Text
-            numberOfLines={3}
-            style={[styles.preview, { color: theme.colors.onSurfaceVariant }]}
-          >
-            {note.content}
-          </Text>
-        ) : null}
         <View style={styles.actions}>
           {!note.isTrashed ? (
             <NoteActionTooltip title={note.isPinned ? t('actions.unpin') : t('actions.pin')}>
@@ -115,9 +107,6 @@ const styles = StyleSheet.create({
   pinnedLabel: {
     ...typography.supporting,
     fontWeight: '600',
-  },
-  preview: {
-    ...typography.body,
   },
   title: {
     ...typography.cardTitle,

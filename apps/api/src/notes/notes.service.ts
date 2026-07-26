@@ -1,6 +1,13 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import type { CreateNote, EmptyTrashResponse, Note, NoteList, UpdateNote } from '@nestra/contracts';
+import {
+  deriveNoteTitle,
+  type CreateNote,
+  type EmptyTrashResponse,
+  type Note,
+  type NoteList,
+  type UpdateNote,
+} from '@nestra/contracts';
 import { DataSource, Repository } from 'typeorm';
 
 import { ApiException } from '../common/api.exception';
@@ -47,8 +54,7 @@ export class NotesService {
     await this.databaseConnectionService.verifyConnection();
     const note = this.noteRepository.create({
       userId,
-      title: noteInput.title,
-      content: noteInput.content,
+      document: noteInput.document,
       isPinned: false,
       isTrashed: false,
     });
@@ -88,8 +94,7 @@ export class NotesService {
 
       const isPinStateOnlyUpdate =
         noteInput.isPinned !== undefined &&
-        noteInput.title === undefined &&
-        noteInput.content === undefined &&
+        noteInput.document === undefined &&
         noteInput.isTrashed === undefined;
 
       if (isPinStateOnlyUpdate) {
@@ -110,12 +115,8 @@ export class NotesService {
         return this.toNote(note);
       }
 
-      if (noteInput.title !== undefined) {
-        note.title = noteInput.title;
-      }
-
-      if (noteInput.content !== undefined) {
-        note.content = noteInput.content;
+      if (noteInput.document !== undefined) {
+        note.document = noteInput.document;
       }
 
       note.isTrashed = nextIsTrashed;
@@ -163,8 +164,8 @@ export class NotesService {
   private toNote(note: NoteEntity): Note {
     return {
       id: note.id,
-      title: note.title,
-      content: note.content,
+      title: this.getDerivedTitle(note.document),
+      document: note.document,
       isPinned: note.isPinned,
       isTrashed: note.isTrashed,
       createdAt: toIsoDateTimeString(note.createdAt),
@@ -174,5 +175,18 @@ export class NotesService {
 
   private createNoteNotFoundException(): ApiException {
     return new ApiException('NOTE_NOT_FOUND', 'The note was not found.', HttpStatus.NOT_FOUND);
+  }
+
+  private getDerivedTitle(document: string): string {
+    const title = deriveNoteTitle(document);
+    if (title === null) {
+      throw new ApiException(
+        'VALIDATION_FAILED',
+        'The note document must contain a non-whitespace line.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return title;
   }
 }

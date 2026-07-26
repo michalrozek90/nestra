@@ -1,31 +1,35 @@
-import { createNoteSchema, type CreateNote, type Note, type UpdateNote } from '@nestra/contracts';
+import {
+  createNoteSchema,
+  deriveNoteTitle,
+  normalizeNoteDocument,
+  NOTE_DOCUMENT_MAX_LENGTH,
+  NOTE_TITLE_MAX_LENGTH,
+  type CreateNote,
+  type Note,
+  type UpdateNote,
+} from '@nestra/contracts';
 
 export type NoteEditorValue = {
-  readonly title: string;
-  readonly content: string;
+  readonly document: string;
 };
 
 export type NoteEditorValidationErrors = {
-  title?: 'required' | 'tooLong';
-  content?: 'tooLong';
+  document?: 'required' | 'titleTooLong' | 'tooLong';
 };
 
 export function validateNoteEditorValue(value: NoteEditorValue): NoteEditorValidationErrors {
-  const parsedValue = createNoteSchema.safeParse(value);
-  if (parsedValue.success) {
-    return {};
+  const normalizedDocument = normalizeNoteDocument(value.document);
+  const title = deriveNoteTitle(normalizedDocument);
+
+  if (title === null) {
+    return { document: 'required' };
   }
 
-  const errors: NoteEditorValidationErrors = {};
-  for (const issue of parsedValue.error.issues) {
-    const field = issue.path[0];
-    if (field === 'title') {
-      errors.title = value.title.trim().length === 0 ? 'required' : 'tooLong';
-    } else if (field === 'content') {
-      errors.content = 'tooLong';
-    }
+  if (title.length > NOTE_TITLE_MAX_LENGTH) {
+    return { document: 'titleTooLong' };
   }
-  return errors;
+
+  return normalizedDocument.length > NOTE_DOCUMENT_MAX_LENGTH ? { document: 'tooLong' } : {};
 }
 
 export function normalizeNoteEditorValue(value: NoteEditorValue): CreateNote | null {
@@ -35,8 +39,7 @@ export function normalizeNoteEditorValue(value: NoteEditorValue): CreateNote | n
 
 export function getChangedNoteFields(value: CreateNote, serverNote: Note): UpdateNote | null {
   const request: UpdateNote = {
-    ...(value.title !== serverNote.title ? { title: value.title } : {}),
-    ...(value.content !== serverNote.content ? { content: value.content } : {}),
+    ...(value.document !== serverNote.document ? { document: value.document } : {}),
   };
 
   return Object.keys(request).length > 0 ? request : null;

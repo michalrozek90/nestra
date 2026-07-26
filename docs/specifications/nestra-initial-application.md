@@ -1054,8 +1054,8 @@ Entity:
 Note
 ├── id: UUID
 ├── userId: UUID
-├── title: string
-├── content: string
+├── title: string (derived)
+├── document: string
 ├── isPinned: boolean
 ├── isTrashed: boolean
 ├── createdAt: timestamptz
@@ -1064,11 +1064,15 @@ Note
 
 Validation:
 
-- title required, trimmed, non-empty, max 120;
-- content optional on create and update, defaults to an empty string when omitted, max 20,000;
-- trim leading/trailing whitespace from both;
-- whitespace-only title values are invalid;
-- whitespace-only content is valid and normalizes to an empty string;
+- document required on create and optional on update;
+- normalize line endings to line feeds and trim leading/trailing document whitespace;
+- the document must contain at least one non-whitespace logical line;
+- derive `title` from the trimmed first non-empty logical line and never accept it as editable input;
+- the derived title line has a maximum length of 240 characters;
+- the complete document has a maximum length of 20,122 characters;
+- the 20,122-character limit is the documented migration-preservation adjustment to the preferred
+  20,000-character limit: an existing 120-character title, two line feeds, and an existing
+  20,000-character content value must migrate without data loss;
 - PATCH must contain at least one supported field;
 - reject unknown fields;
 - no tags, rich text, collaboration, pagination, soft delete, or `deletedAt`.
@@ -1116,7 +1120,11 @@ permanent delete operations are ownership-scoped and never accept a client-suppl
 
 A committed migration must rename the archive persistence field to the Trash field so every
 previously archived note becomes a trashed note without changing its ID, owner, title, content,
-pin state, or timestamps.
+pin state, or timestamps. A later committed migration must convert each existing title and content
+pair into one document, normally `title + "\n\n" + content` when content is present, while
+preserving IDs, ownership, pin and Trash state, and timestamps. The title is then a derived API
+projection of the stored document for list display and is never independently
+editable or persisted as a second source that could drift.
 
 Every query and mutation includes authenticated user ID. Missing and foreign-owned notes both return `NOTE_NOT_FOUND`.
 
@@ -1127,7 +1135,7 @@ Every query and mutation includes authenticated user ID. Missing and foreign-own
 Support:
 
 - active and Trash views;
-- create and edit;
+- create and in-place document editing without separate read and edit modes;
 - pin/unpin;
 - move to Trash without confirmation;
 - restore;
@@ -1138,6 +1146,12 @@ Support:
 - autosave status.
 
 Use TanStack Query with centralized keys. Do not duplicate server state into a global store or fetch through `useEffect`.
+
+The note detail is a spacious, continuous, borderless document surface with back navigation and a
+discreet accessible autosave state. It has no Edit note heading and no pin, Trash, restore, or
+permanent-delete controls; those actions remain on the notes list. The detail screen and document
+must not create competing nested scrolling areas. The first logical line remains part of the same
+editable document even when title typography is used.
 
 Active note cards expose pin/unpin and a neutral-colored trash icon for the recoverable move
 operation, but no permanent-delete action. Trashed note cards expose a non-destructive Restore
@@ -1150,6 +1164,9 @@ must be removed from the query cache, and local drafts for permanently deleted n
 removed so they cannot recreate or surface deleted content. Pending operations prevent duplicate
 submission. Success and recoverable errors appear close to the affected control. The Trash empty
 state explains that moved notes can be restored or permanently deleted.
+
+Each note card displays only the derived title line, visually truncating it when space requires.
+Cards never display subsequent document lines as a body preview.
 
 ### Autosave
 
@@ -1176,7 +1193,7 @@ Local drafts:
 New note:
 
 - starts as a local draft;
-- server POST after the normalized title is valid and content, when present, is within its limit;
+- server POST after the normalized document and its derived title line are valid;
 - after first POST, replace route with `/notes/:noteId`;
 - continue with PATCH autosave.
 
