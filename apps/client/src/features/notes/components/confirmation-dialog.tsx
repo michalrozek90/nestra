@@ -46,7 +46,12 @@ export function ConfirmationDialog({
       <Button disabled={isConfirming} onPress={onCancel}>
         {t('actions.cancel')}
       </Button>
-      <Button loading={isConfirming} onPress={onConfirm} textColor={theme.colors.error}>
+      <Button
+        disabled={isConfirming}
+        loading={isConfirming}
+        onPress={onConfirm}
+        textColor={theme.colors.error}
+      >
         {confirmLabel}
       </Button>
     </ActionDialog>
@@ -56,5 +61,6 @@ export function ConfirmationDialog({
 const styles = StyleSheet.create({
   error: {
     ...typography.supporting,
+    width: '100%',
   },
 });

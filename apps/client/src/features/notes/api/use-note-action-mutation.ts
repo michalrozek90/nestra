@@ -1,4 +1,4 @@
-import type { Note } from '@nestra/contracts';
+import type { Note, UpdateNote } from '@nestra/contracts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useAuth } from '@/infrastructure/auth/auth-provider';
@@ -13,6 +13,19 @@ export type NoteAction =
   | { readonly kind: 'restore'; readonly note: Note }
   | { readonly kind: 'delete-permanently'; readonly note: Note };
 
+type NoteUpdateAction = Exclude<NoteAction, { readonly kind: 'delete-permanently' }>;
+
+function getNoteUpdate(action: NoteUpdateAction): UpdateNote {
+  switch (action.kind) {
+    case 'toggle-pinned':
+      return { isPinned: !action.note.isPinned };
+    case 'move-to-trash':
+      return { isTrashed: true };
+    case 'restore':
+      return { isTrashed: false };
+  }
+}
+
 export function useNoteActionMutation() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -24,12 +37,7 @@ export function useNoteActionMutation() {
         return action;
       }
 
-      const updatedNote = await updateNote(
-        action.note.id,
-        action.kind === 'toggle-pinned'
-          ? { isPinned: !action.note.isPinned }
-          : { isTrashed: action.kind === 'move-to-trash' },
-      );
+      const updatedNote = await updateNote(action.note.id, getNoteUpdate(action));
       return { ...action, updatedNote };
     },
     onSuccess: async (completedAction) => {

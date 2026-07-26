@@ -27,9 +27,9 @@ export function useEmptyTrashMutation() {
     },
     onSuccess: async ({ deletedNoteIds }) => {
       queryClient.setQueryData<readonly Note[]>(noteQueryKeys.list(true), []);
-      for (const noteId of deletedNoteIds) {
-        queryClient.removeQueries({ queryKey: noteQueryKeys.detail(noteId) });
-      }
+      // The bulk response intentionally exposes only a count, so every cached detail must be
+      // removed to avoid retaining a note trashed on another client before this request.
+      queryClient.removeQueries({ queryKey: noteQueryKeys.details() });
 
       if (user) {
         await Promise.all(
