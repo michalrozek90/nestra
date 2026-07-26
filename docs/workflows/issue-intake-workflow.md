@@ -1,6 +1,15 @@
 # Issue intake workflow
 
-This workflow turns an explicit `/create` command into a triaged GitHub issue for Nestra.
+This workflow turns an explicit issue-creation invocation into a triaged GitHub issue for Nestra.
+
+Supported explicit invocations are:
+
+- the `/create <task-description>` repository alias; and
+- an explicit user selection or mention of the repository `create` skill, shown by supported clients
+  as a `$create` skill chip or attachment accompanying the task description.
+
+These forms are equivalent. A user who selects the `create` skill in the client does not also need
+to type `/create`.
 
 ## Fixed destination and authorization
 
@@ -9,8 +18,9 @@ This workflow turns an explicit `/create` command into a triaged GitHub issue fo
 - Ready work status: `Todo`
 - Insufficiently refined work status: `Backlog`
 
-An actual `/create` invocation starts an intake and authorizes these external GitHub writes once
-the task is ready for `Todo` or the user chooses `backlog` during clarification:
+An actual `/create` invocation or explicit selection of the repository `create` skill starts an
+intake and authorizes these external GitHub writes once the task is ready for `Todo` or the user
+chooses `backlog` during clarification:
 
 1. create one issue in the fixed repository;
 2. add that issue to the fixed project;
@@ -24,9 +34,10 @@ request, or project-status transition.
 
 ## Parse the request
 
-Use the text following `/create` on the first non-empty line plus all subsequent lines as the task
-description. If that description is empty, ask the user for the task description and perform no
-GitHub writes.
+For `/create`, use the text following the command on the first non-empty line plus all subsequent
+lines as the task description. For an explicitly selected `create` skill, use the accompanying user
+text and exclude the client-generated skill chip or attachment itself. If that description is empty,
+ask the user for the task description and perform no GitHub writes.
 
 Treat the user's description as authoritative. Use the active specification or repository source
 only when a project-specific term needs read-only clarification. Do not expand the requested
@@ -36,8 +47,8 @@ Write the issue title, body, and comments in English. Communicate with the user 
 
 ## Continue clarification across turns
 
-Keep one pending intake in the current thread until it is created, replaced by a new `/create`
-command, or the thread context is no longer available.
+Keep one pending intake in the current thread until it is created, replaced by a new explicit
+issue-creation invocation, or the thread context is no longer available.
 
 When the initial description is not ready for `Todo`:
 
@@ -62,8 +73,9 @@ intake is awaiting clarification in the same thread. It authorizes creating the 
 `Backlog`, commenting with the still-unresolved questions, and mentioning the authenticated GitHub
 user. A standalone `backlog` without a pending intake must not create or mutate anything.
 
-If the user sends a new `/create` command while another intake is pending, replace the uncreated
-pending intake with the new one. Do not interpret an unrelated message as a clarification answer.
+If the user sends a new `/create` command or explicitly selects the `create` skill while another
+intake is pending, replace the uncreated pending intake with the new one. Do not interpret an
+unrelated message as a clarification answer.
 
 ## Check the destination and duplicates
 

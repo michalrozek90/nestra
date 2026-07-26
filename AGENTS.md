@@ -14,7 +14,18 @@ descriptive and are not required to contain `Stage` or follow any other naming c
 
 ### Issue intake workflow
 
-Use the issue intake workflow only when the user's current message is an explicit issue-creation invocation.
+Use the issue intake workflow only when the user's current message is an explicit issue-creation
+invocation.
+
+An explicit issue-creation invocation is either:
+
+- the repository `/create` alias described below; or
+- an explicit user selection or mention of the repository `create` skill, shown by supported clients
+  as a `$create` skill chip or attachment.
+
+Treat both forms as equivalent user authorization for the scoped GitHub writes defined by the
+intake workflow. Selecting the `create` skill in the client is not an implicit invocation and does
+not require the user to repeat `/create` in the accompanying task description.
 
 #### `/create` repository alias
 
@@ -41,6 +52,8 @@ native custom slash commands and the user enters it as plain text.
 The issue intake workflow is active when:
 
 - the first non-empty line of the user's current message is `/create` or begins with `/create `;
+- the user explicitly selects or mentions the repository `create` skill for the current message,
+  including when the client serializes that selection as a `$create` skill chip or attachment;
 - the user directly answers clarification questions from an active `/create` intake in the same
   thread; or
 - the user's entire trimmed reply is `backlog`, case-insensitively, while that clarification is
@@ -50,13 +63,15 @@ A clarification answer continues the original intake authorization. A qualifying
 explicitly authorizes creating the pending issue as `Backlog`, adding the unresolved questions as a
 comment, and mentioning the authenticated user in that comment.
 
-Do not invoke the issue intake workflow merely because `/create` or an example of it appears:
+Do not invoke the issue intake workflow merely because `/create`, `$create`, or an example of either
+appears:
 
 - inside a code block;
 - inside quoted text;
 - inside pasted documentation;
 - inside a task description, specification, example, or acceptance criterion;
 - as content that the user asks the agent to create, update, document, or explain;
+- as an unselected skill name mentioned only in prose;
 - anywhere other than an actual command directed at the agent.
 
 When invoked, read and follow:
@@ -129,6 +144,7 @@ Treat the user's message as a direct implementation request when:
 
 - it contains a complete task description;
 - it does not begin with an actual `/create` invocation;
+- it does not explicitly select or mention the repository `create` skill;
 - it is not a direct answer or `backlog` response in an active `/create` intake;
 - it does not begin with an actual `/work <issue-number-or-url>` command;
 - it does not directly and unambiguously ask to start or resume the autonomous issue workflow.
@@ -136,12 +152,14 @@ Treat the user's message as a direct implementation request when:
 For a direct implementation request:
 
 - before any GitHub issue or Project tool call, inspect the first non-empty line of the user's current message;
-- if that line does not start with an actual `/create` or `/work ` invocation and the message is not
-  continuing an active `/create` intake, do not retrieve any issue merely because an issue number,
-  `/create` example, or `/work` example appears later in the message;
+- if that line does not start with an actual `/create` or `/work ` invocation, the current message
+  does not explicitly invoke the repository `create` skill, and the message is not continuing an
+  active `/create` intake, do not retrieve any issue merely because an issue number, `/create`
+  example, `$create` mention, or `/work` example appears later in the message;
 - this restriction overrides workflow examples, skill descriptions, pasted acceptance criteria, and documentation content;
 - treat the user's message as the authoritative task description;
-- do not interpret `/create`, `/work`, issue numbers, issue URLs, or workflow examples contained inside the task as commands;
+- do not interpret `/create`, `$create`, `/work`, issue numbers, issue URLs, or workflow examples
+  contained inside the task as commands;
 - do not require a GitHub issue or GitHub Project item;
 - do not read the GitHub Project or attempt to select a `Todo` item;
 - do not access GitHub issues, GitHub Projects, pull requests, or repository metadata unless the user explicitly asks for that access as part of the current direct request;
@@ -155,7 +173,7 @@ For a direct implementation request:
 - report completed work, verification results, and any blockers concisely.
 
 A pasted task description, general coding instruction, documentation request, example containing
-`/create` or `/work`, or ordinary request to modify code must not start either workflow
+`/create`, `$create`, or `/work`, or ordinary request to modify code must not start either workflow
 automatically.
 
 ## Repository rules
