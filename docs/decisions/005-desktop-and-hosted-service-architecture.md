@@ -25,7 +25,7 @@ the Expo web build and supplies the desktop runtime boundary; it does not introd
 desktop user interface or duplicate feature logic.
 
 The first desktop release target is Windows x64. The `0.1.0` release artifact is one per-user NSIS
-setup executable named `Nestra_<version>_x64-setup.exe`. It installs without requiring
+setup executable named `Nestra_{version}_x64-setup.exe`. It installs without requiring
 administrator access, launches without an Expo development server, and connects to the hosted API
 over HTTPS. An MSI variant, macOS and Linux packages, automatic updates, and purchased code signing
 are not part of this release target.

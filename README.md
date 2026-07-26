@@ -10,7 +10,7 @@ The target architecture keeps one Expo client for Android, iOS, Web, and an inst
 x64 desktop application. Tauri consumes the Expo web build, while a modular NestJS REST API and
 PostgreSQL remain the shared backend. Shared public API contracts live in the
 framework-independent `@nestra/contracts` package. The first desktop artifact will be one
-per-user NSIS setup executable named `Nestra_<version>_x64-setup.exe`.
+per-user NSIS setup executable named `Nestra_{version}_x64-setup.exe`.
 
 ```text
 Expo client (Android / iOS / Web)

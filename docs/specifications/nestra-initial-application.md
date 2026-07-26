@@ -141,7 +141,7 @@ a second UI component or styling framework in `0.1.0`.
 - Tauri using the latest stable mutually compatible release selected during implementation;
 - the Expo web output as the only desktop feature surface;
 - Windows x64 as the first packaging target, distributed as one per-user NSIS setup executable
-  named `Nestra_<version>_x64-setup.exe`;
+  named `Nestra_{version}_x64-setup.exe`;
 - operating-system-backed or appropriately secured Tauri storage for authentication secrets;
 - minimal explicit Tauri capabilities and outbound network permissions.
 
@@ -1574,7 +1574,7 @@ Required:
 - NestJS container deployed to Koyeb and usable while the developer computer is offline;
 - provider-assigned HTTPS API configuration with an accepted family/demo cold start;
 - Tauri desktop shell with secured token storage and minimal capabilities;
-- verified `Nestra_<version>_x64-setup.exe` per-user NSIS installer that launches the application
+- verified `Nestra_{version}_x64-setup.exe` per-user NSIS installer that launches the application
   without a development server;
 - English/Polish;
 - responsive navigation;
