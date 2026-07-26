@@ -1,5 +1,6 @@
 import { useEffect, useRef, type CSSProperties } from 'react';
 
+import { typography } from '@/theme/tokens';
 import type { NoteDocumentInputProps } from './note-document-input.types';
 
 type NoteDocumentInputStyle = CSSProperties & {
@@ -7,6 +8,8 @@ type NoteDocumentInputStyle = CSSProperties & {
 };
 
 const inputClassName = 'nestra-note-document-input';
+const systemSansSerifFontFamily =
+  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 const inputResetStyles = `
   .${inputClassName},
   .${inputClassName}:focus,
@@ -58,8 +61,10 @@ export function NoteDocumentInput({
     color: textColor,
     display: 'block',
     flex: 1,
-    font: 'inherit',
-    lineHeight: 'inherit',
+    fontFamily: systemSansSerifFontFamily,
+    fontSize: typography.body.fontSize,
+    fontWeight: typography.body.fontWeight,
+    lineHeight: `${typography.body.lineHeight}px`,
     minHeight: 0,
     outline: 'none',
     padding: 0,
