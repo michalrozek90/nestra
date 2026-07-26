@@ -1,12 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { z } from 'zod';
 
-const noteDraftSchema = z.strictObject({
-  title: z.string(),
-  content: z.string(),
+const noteDraftMetadataSchema = z.strictObject({
   updatedAt: z.iso.datetime(),
   serverUpdatedAt: z.iso.datetime().optional(),
 });
+const noteDraftSchema = noteDraftMetadataSchema.extend({
+  document: z.string(),
+});
+const legacyNoteDraftSchema = noteDraftMetadataSchema.extend({
+  title: z.string(),
+  content: z.string(),
+});
+const storedNoteDraftSchema = z.union([noteDraftSchema, legacyNoteDraftSchema]);
 const noteIdSchema = z.uuid();
 
 export type NoteDraft = z.infer<typeof noteDraftSchema>;
@@ -38,6 +44,21 @@ function getExistingDraftKeyPrefix(userId: string): string {
   return `nestra.notes.drafts.${userId}.note.`;
 }
 
+function toCurrentNoteDraft(storedDraft: z.infer<typeof storedNoteDraftSchema>): NoteDraft {
+  if ('document' in storedDraft) {
+    return storedDraft;
+  }
+
+  return {
+    document:
+      storedDraft.content.length > 0
+        ? `${storedDraft.title}\n\n${storedDraft.content}`
+        : storedDraft.title,
+    updatedAt: storedDraft.updatedAt,
+    ...(storedDraft.serverUpdatedAt ? { serverUpdatedAt: storedDraft.serverUpdatedAt } : {}),
+  };
+}
+
 class AsyncStorageNoteDraftStorage implements NoteDraftStorage {
   public async read(userId: string, identity: NoteDraftIdentity): Promise<NoteDraft | null> {
     const serializedDraft = await AsyncStorage.getItem(getDraftKey(userId, identity));
@@ -47,7 +68,7 @@ class AsyncStorageNoteDraftStorage implements NoteDraftStorage {
 
     try {
       const parsedValue: unknown = JSON.parse(serializedDraft);
-      return noteDraftSchema.parse(parsedValue);
+      return toCurrentNoteDraft(storedNoteDraftSchema.parse(parsedValue));
     } catch (error: unknown) {
       throw new InvalidStoredNoteDraftError(error);
     }

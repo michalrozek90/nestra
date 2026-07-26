@@ -14,11 +14,8 @@ export class NoteEntity {
   @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
 
-  @Column({ type: 'varchar', length: 120 })
-  title!: string;
-
-  @Column({ type: 'varchar', length: 20_000 })
-  content!: string;
+  @Column({ type: 'varchar', length: 20_122 })
+  document!: string;
 
   @Column({ name: 'is_pinned', type: 'boolean', default: false })
   isPinned!: boolean;

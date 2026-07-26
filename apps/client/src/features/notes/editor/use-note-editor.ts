@@ -33,8 +33,7 @@ type UseNoteEditorResult = {
   readonly isInitialized: boolean;
   readonly saveStatus: NoteSaveStatus;
   readonly invalidRecoveredDraft: NoteDraft | null;
-  readonly setTitle: (title: string) => void;
-  readonly setContent: (content: string) => void;
+  readonly setDocument: (document: string) => void;
   readonly keepInvalidRecoveredDraft: () => void;
   readonly discardInvalidRecoveredDraft: () => void;
   readonly flush: () => Promise<void>;
@@ -46,7 +45,7 @@ function getIdentity(note: Note | null): NoteDraftIdentity {
 }
 
 function toEditorValue(draft: NoteDraft): NoteEditorValue {
-  return { title: draft.title, content: draft.content };
+  return { document: draft.document };
 }
 
 export function useNoteEditor({
@@ -56,8 +55,7 @@ export function useNoteEditor({
 }: UseNoteEditorOptions): UseNoteEditorResult {
   const queryClient = useQueryClient();
   const [value, setValue] = useState<NoteEditorValue>({
-    title: initialNote?.title ?? '',
-    content: initialNote?.content ?? '',
+    document: initialNote?.document ?? '',
   });
   const [isInitialized, setIsInitialized] = useState(false);
   const [saveStatus, setSaveStatus] = useState<NoteSaveStatus>(
@@ -86,8 +84,7 @@ export function useNoteEditor({
     const currentValue = valueRef.current;
     const currentIdentity = identityRef.current;
     const draft: NoteDraft = {
-      title: currentValue.title,
-      content: currentValue.content,
+      document: currentValue.document,
       updatedAt: new Date().toISOString(),
       ...(serverNoteRef.current ? { serverUpdatedAt: serverNoteRef.current.updatedAt } : {}),
     };
@@ -417,8 +414,7 @@ export function useNoteEditor({
   const discardInvalidRecoveredDraft = useCallback(() => {
     setInvalidRecoveredDraft(null);
     const serverValue: NoteEditorValue = {
-      title: initialNote?.title ?? '',
-      content: initialNote?.content ?? '',
+      document: initialNote?.document ?? '',
     };
     valueRef.current = serverValue;
     hasUnsavedChangesRef.current = false;
@@ -434,8 +430,7 @@ export function useNoteEditor({
     isInitialized,
     saveStatus,
     invalidRecoveredDraft,
-    setTitle: (title) => updateValue({ ...valueRef.current, title }),
-    setContent: (content) => updateValue({ ...valueRef.current, content }),
+    setDocument: (document) => updateValue({ document }),
     keepInvalidRecoveredDraft,
     discardInvalidRecoveredDraft,
     flush,

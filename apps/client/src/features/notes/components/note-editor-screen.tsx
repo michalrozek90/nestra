@@ -1,99 +1,60 @@
-import type { Note } from '@nestra/contracts';
+import { NOTE_DOCUMENT_MAX_LENGTH, type Note } from '@nestra/contracts';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
-import {
-  ActivityIndicator,
-  Button as PaperButton,
-  IconButton,
-  Text,
-  TextInput,
-} from 'react-native-paper';
+import { ActivityIndicator, Button as PaperButton, IconButton, Text } from 'react-native-paper';
 
 import { ActionDialog } from '@/components/action-dialog';
-import { Header } from '@/components/header';
 import { Screen } from '@/components/screen';
 import { useAuth } from '@/infrastructure/auth/auth-provider';
 import { spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
-import { getNoteErrorTranslationKey } from '../api/note-error';
-import { useNoteActionMutation, type NoteAction } from '../api/use-note-action-mutation';
 import { validateNoteEditorValue } from '../editor/note-editor-value';
-import type { NoteSaveStatus } from '../editor/use-note-editor';
 import { useNoteEditorWithFocusTransfer } from '../editor/use-note-editor-with-focus-transfer';
-import { ConfirmationDialog } from './confirmation-dialog';
-import { NoteActionTooltip } from './note-action-tooltip';
+import { NoteDocumentInput } from './note-document-input';
 
 type NoteEditorScreenProps = {
   readonly mode: 'new' | 'existing';
   readonly note: Note | null;
 };
 
-const SAVE_STATUS_KEYS: Readonly<Record<NoteSaveStatus, string>> = {
-  saving: 'editor.saving',
-  saved: 'editor.saved',
-  'save-failed': 'editor.saveFailed',
-  'saved-locally': 'editor.savedLocally',
-};
-
 export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
-  const { t } = useTranslation('notes');
   const router = useRouter();
+  const { t } = useTranslation('notes');
   const theme = useNestraTheme();
   const { user } = useAuth();
-  const [hasEditedTitle, setHasEditedTitle] = useState(false);
-  const [hasEditedContent, setHasEditedContent] = useState(false);
-  const [isDeleteDialogVisible, setIsDeleteDialogVisible] = useState(false);
-  const { contentFocus, editor, titleFocus } = useNoteEditorWithFocusTransfer({
+  const [hasEditedDocument, setHasEditedDocument] = useState(false);
+  const { documentFocus, editor } = useNoteEditorWithFocusTransfer({
     userId: user?.id ?? '',
     initialNote: note,
     mode,
     onCreated: (noteId) => router.replace({ pathname: '../notes/[noteId]', params: { noteId } }),
   });
   const validationErrors = useMemo(() => validateNoteEditorValue(editor.value), [editor.value]);
-  const actionMutation = useNoteActionMutation();
-
-  async function performNoteAction(kind: NoteAction['kind']): Promise<void> {
-    if (!note) {
-      return;
-    }
-
-    try {
-      await editor.flush();
-      await actionMutation.mutateAsync({ kind, note });
-
-      if (kind === 'delete-permanently') {
-        await editor.discard();
-        setIsDeleteDialogVisible(false);
-      }
-      if (kind === 'delete-permanently' || kind === 'move-to-trash' || kind === 'restore') {
-        router.back();
-      }
-    } catch {
-      // The mutation exposes a localized, note-content-safe error below.
-    }
-  }
 
   if (!user || !editor.isInitialized) {
     return (
-      <Screen contentStyle={styles.centered}>
+      <Screen contentStyle={styles.centered} isScrollable={false}>
         <ActivityIndicator accessibilityLabel={t('editor.loading')} size="large" />
       </Screen>
     );
   }
 
-  const titleError = hasEditedTitle ? validationErrors.title : undefined;
-  const contentError = hasEditedContent ? validationErrors.content : undefined;
-  const saveStatusColor =
-    editor.saveStatus === 'save-failed'
-      ? theme.colors.error
-      : editor.saveStatus === 'saved'
-        ? theme.colors.primary
-        : theme.colors.onSurfaceVariant;
+  const documentError = hasEditedDocument ? validationErrors.document : undefined;
+  const errorTranslationKey =
+    documentError === 'required'
+      ? 'editor.documentRequired'
+      : documentError === 'titleTooLong'
+        ? 'editor.titleLineTooLong'
+        : 'editor.documentTooLong';
 
   return (
-    <Screen>
+    <Screen
+      containerStyle={styles.screenContainer}
+      contentStyle={styles.screenContent}
+      isScrollable={false}
+    >
       <View style={styles.topBar}>
         <IconButton
           accessibilityLabel={t('actions.back')}
@@ -102,134 +63,45 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
             void editor.flush().finally(() => router.back());
           }}
         />
-        <View style={styles.header}>
-          <Header title={mode === 'new' ? t('editor.newTitle') : t('editor.editTitle')} />
-        </View>
-        {note ? (
-          <View style={styles.actions}>
-            {!note.isTrashed ? (
-              <NoteActionTooltip title={note.isPinned ? t('actions.unpin') : t('actions.pin')}>
-                <IconButton
-                  accessibilityLabel={note.isPinned ? t('actions.unpin') : t('actions.pin')}
-                  disabled={actionMutation.isPending}
-                  icon={note.isPinned ? 'pin-off-outline' : 'pin-outline'}
-                  onPress={() => void performNoteAction('toggle-pinned')}
-                />
-              </NoteActionTooltip>
-            ) : null}
-            <NoteActionTooltip
-              title={note.isTrashed ? t('actions.restore') : t('actions.moveToTrash')}
-            >
-              <IconButton
-                accessibilityLabel={
-                  note.isTrashed ? t('actions.restore') : t('actions.moveToTrash')
-                }
-                disabled={actionMutation.isPending}
-                icon={note.isTrashed ? 'restore' : 'delete-outline'}
-                onPress={() => void performNoteAction(note.isTrashed ? 'restore' : 'move-to-trash')}
-              />
-            </NoteActionTooltip>
-            {note.isTrashed ? (
-              <NoteActionTooltip title={t('actions.deletePermanently')}>
-                <IconButton
-                  accessibilityLabel={t('actions.deletePermanently')}
-                  disabled={actionMutation.isPending}
-                  icon="delete-forever-outline"
-                  iconColor={theme.colors.error}
-                  onPress={() => setIsDeleteDialogVisible(true)}
-                />
-              </NoteActionTooltip>
-            ) : null}
-          </View>
-        ) : (
-          <View style={styles.actionsPlaceholder} />
-        )}
-      </View>
-
-      <View style={styles.form}>
-        <TextInput
-          accessibilityLabel={t('editor.titleLabel')}
-          autoFocus={titleFocus.autoFocus}
-          error={Boolean(titleError)}
-          label={t('editor.titleLabel')}
-          maxLength={120}
-          mode="outlined"
-          onBlur={() => {
-            setHasEditedTitle(true);
-            titleFocus.onBlur();
-          }}
-          onChangeText={(title) => {
-            setHasEditedTitle(true);
-            editor.setTitle(title);
-          }}
-          onFocus={titleFocus.onFocus}
-          onSelectionChange={({ nativeEvent }) => {
-            titleFocus.onSelectionChange(nativeEvent.selection);
-          }}
-          selection={titleFocus.selection}
-          value={editor.value.title}
-        />
-        {titleError ? (
-          <Text accessibilityRole="alert" style={[styles.error, { color: theme.colors.error }]}>
-            {t(titleError === 'required' ? 'editor.titleRequired' : 'editor.titleTooLong')}
-          </Text>
-        ) : null}
-
-        <TextInput
-          accessibilityLabel={t('editor.contentLabel')}
-          autoFocus={contentFocus.autoFocus}
-          error={Boolean(contentError)}
-          label={t('editor.contentLabel')}
-          maxLength={20_000}
-          mode="outlined"
-          multiline
-          onBlur={() => {
-            setHasEditedContent(true);
-            contentFocus.onBlur();
-          }}
-          onChangeText={(content) => {
-            setHasEditedContent(true);
-            editor.setContent(content);
-          }}
-          onFocus={contentFocus.onFocus}
-          onSelectionChange={({ nativeEvent }) => {
-            contentFocus.onSelectionChange(nativeEvent.selection);
-          }}
-          selection={contentFocus.selection}
-          style={styles.contentInput}
-          value={editor.value.content}
-        />
-        {contentError ? (
-          <Text accessibilityRole="alert" style={[styles.error, { color: theme.colors.error }]}>
-            {t('editor.contentTooLong')}
-          </Text>
-        ) : null}
-
-        <Text
-          accessibilityLiveRegion="polite"
-          style={[styles.saveStatus, { color: saveStatusColor }]}
-        >
-          {t(SAVE_STATUS_KEYS[editor.saveStatus])}
-        </Text>
-        {actionMutation.isError && actionMutation.variables.kind !== 'delete-permanently' ? (
-          <Text accessibilityRole="alert" style={[styles.error, { color: theme.colors.error }]}>
-            {t(getNoteErrorTranslationKey(actionMutation.error))}
+        {editor.saveStatus === 'save-failed' ? (
+          <Text
+            accessibilityLiveRegion="assertive"
+            accessibilityRole="alert"
+            style={[styles.saveError, { color: theme.colors.error }]}
+          >
+            {t('editor.saveFailed')}
           </Text>
         ) : null}
       </View>
 
-      <ConfirmationDialog
-        confirmLabel={t('actions.deletePermanently')}
-        description={t('permanentDelete.description')}
-        {...(actionMutation.isError && actionMutation.variables.kind === 'delete-permanently'
-          ? { errorMessage: t(getNoteErrorTranslationKey(actionMutation.error)) }
-          : {})}
-        isConfirming={actionMutation.isPending}
-        isVisible={isDeleteDialogVisible}
-        onCancel={() => setIsDeleteDialogVisible(false)}
-        onConfirm={() => void performNoteAction('delete-permanently')}
-        title={t('permanentDelete.title')}
-      />
+      <View style={styles.documentSurface}>
+        <NoteDocumentInput
+          accessibilityLabel={t('editor.documentLabel')}
+          autoFocus={documentFocus.autoFocus}
+          maxLength={NOTE_DOCUMENT_MAX_LENGTH}
+          onBlur={() => {
+            setHasEditedDocument(true);
+            documentFocus.onBlur();
+          }}
+          onChangeText={(document) => {
+            setHasEditedDocument(true);
+            editor.setDocument(document);
+          }}
+          onFocus={documentFocus.onFocus}
+          onSelectionChange={documentFocus.onSelectionChange}
+          placeholder={t('editor.documentPlaceholder')}
+          placeholderTextColor={theme.colors.onSurfaceVariant}
+          selection={documentFocus.selection}
+          selectionColor={theme.colors.primary}
+          textColor={theme.colors.onBackground}
+          value={editor.value.document}
+        />
+        {documentError ? (
+          <Text accessibilityRole="alert" style={[styles.error, { color: theme.colors.error }]}>
+            {t(errorTranslationKey)}
+          </Text>
+        ) : null}
+      </View>
 
       <ActionDialog
         description={t('draftRecovery.invalidDescription')}
@@ -249,38 +121,37 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
 }
 
 const styles = StyleSheet.create({
-  actions: {
-    flexDirection: 'row',
-  },
-  actionsPlaceholder: {
-    width: 48,
-  },
   centered: {
     alignItems: 'center',
+    flex: 1,
     justifyContent: 'center',
   },
-  contentInput: {
-    minHeight: 280,
+  documentSurface: {
+    alignSelf: 'center',
+    flex: 1,
+    gap: spacing.sm,
+    padding: spacing.sm,
+    width: '100%',
   },
   error: {
     ...typography.supporting,
   },
-  form: {
-    alignSelf: 'center',
-    gap: spacing.sm,
-    maxWidth: 800,
-    width: '100%',
-  },
-  header: {
-    flex: 1,
-  },
-  saveStatus: {
+  saveError: {
     ...typography.supporting,
-    textAlign: 'right',
+    marginLeft: 'auto',
+    paddingHorizontal: spacing.md,
+  },
+  screenContainer: {
+    padding: spacing.lg,
+  },
+  screenContent: {
+    flex: 1,
+    gap: spacing.md,
   },
   topBar: {
     alignItems: 'center',
+    alignSelf: 'center',
     flexDirection: 'row',
-    gap: spacing.sm,
+    width: '100%',
   },
 });

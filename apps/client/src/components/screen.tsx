@@ -20,41 +20,61 @@ const CONTENT_MAX_WIDTH = {
 } as const;
 
 type ScreenProps = PropsWithChildren<{
+  readonly containerStyle?: StyleProp<ViewStyle>;
   readonly contentStyle?: StyleProp<ViewStyle>;
+  readonly isScrollable?: boolean;
 }>;
 
-export function Screen({ children, contentStyle }: ScreenProps) {
+export function Screen({
+  children,
+  containerStyle,
+  contentStyle,
+  isScrollable = true,
+}: ScreenProps) {
   const { width } = useWindowDimensions();
   const responsiveLayout = getResponsiveLayout(width);
   const theme = useNestraTheme();
+
+  const content = (
+    <View
+      style={[
+        styles.content,
+        contentStyle,
+        CONTENT_MAX_WIDTH[responsiveLayout]
+          ? { maxWidth: CONTENT_MAX_WIDTH[responsiveLayout] }
+          : null,
+      ]}
+    >
+      {children}
+    </View>
+  );
 
   return (
     <SafeAreaView
       edges={['top', 'right', 'left']}
       style={[styles.safeArea, { backgroundColor: theme.colors.background }]}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        style={styles.scrollView}
-      >
-        <View
-          style={[
-            styles.content,
-            contentStyle,
-            CONTENT_MAX_WIDTH[responsiveLayout]
-              ? { maxWidth: CONTENT_MAX_WIDTH[responsiveLayout] }
-              : null,
-          ]}
+      {isScrollable ? (
+        <ScrollView
+          contentContainerStyle={[styles.container, containerStyle]}
+          keyboardShouldPersistTaps="handled"
+          style={styles.scrollView}
         >
-          {children}
-        </View>
-      </ScrollView>
+          {content}
+        </ScrollView>
+      ) : (
+        <View style={[styles.container, containerStyle]}>{content}</View>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+    flexGrow: 1,
+    padding: spacing.xl,
+  },
   content: {
     alignSelf: 'center',
     gap: spacing.xl,
@@ -62,11 +82,6 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-  },
-  scrollContent: {
-    alignItems: 'center',
-    flexGrow: 1,
-    padding: spacing.xl,
   },
   scrollView: {
     flex: 1,

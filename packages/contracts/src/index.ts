@@ -34,6 +34,14 @@ export {
   type EmptyTrashResponse,
 } from './notes/empty-trash-response.schema';
 export { noteListSchema, type NoteList } from './notes/note-list.schema';
+export {
+  deriveNoteTitle,
+  normalizeNoteDocument,
+  NOTE_DOCUMENT_MAX_LENGTH,
+  NOTE_TITLE_MAX_LENGTH,
+  noteDocumentSchema,
+  normalizedNoteDocumentSchema,
+} from './notes/note-document';
 export { noteSchema, type Note } from './notes/note.schema';
 export { notesQuerySchema, type NotesQuery } from './notes/notes-query.schema';
 export { updateNoteSchema, type UpdateNote } from './notes/update-note.schema';

@@ -3,8 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 
 import { useNoteEditor } from './use-note-editor';
 
-type NoteEditorField = 'title' | 'content';
-
 type NoteEditorSelection = {
   readonly start: number;
   readonly end: number;
@@ -12,7 +10,6 @@ type NoteEditorSelection = {
 
 type NoteEditorFocusTransfer = {
   readonly noteId: string;
-  readonly field: NoteEditorField;
   readonly selection: NoteEditorSelection;
 };
 
@@ -71,14 +68,10 @@ export function useNoteEditorWithFocusTransfer({
   onCreated,
   userId,
 }: UseNoteEditorWithFocusTransferOptions) {
-  const focusedFieldRef = useRef<NoteEditorField | null>(null);
-  const titleSelectionRef = useRef<NoteEditorSelection>({
-    start: initialNote?.title.length ?? 0,
-    end: initialNote?.title.length ?? 0,
-  });
-  const contentSelectionRef = useRef<NoteEditorSelection>({
-    start: initialNote?.content.length ?? 0,
-    end: initialNote?.content.length ?? 0,
+  const isDocumentFocusedRef = useRef(false);
+  const documentSelectionRef = useRef<NoteEditorSelection>({
+    start: initialNote?.document.length ?? 0,
+    end: initialNote?.document.length ?? 0,
   });
   const [focusTransfer] = useState(() =>
     mode === 'existing' && initialNote ? readNoteEditorFocusTransfer(initialNote.id) : null,
@@ -90,13 +83,10 @@ export function useNoteEditorWithFocusTransfer({
     userId,
     initialNote,
     onCreated: (noteId) => {
-      const focusedField = focusedFieldRef.current;
-      if (focusedField) {
+      if (isDocumentFocusedRef.current) {
         queueNoteEditorFocusTransfer({
           noteId,
-          field: focusedField,
-          selection:
-            focusedField === 'title' ? titleSelectionRef.current : contentSelectionRef.current,
+          selection: documentSelectionRef.current,
         });
       }
 
@@ -122,39 +112,29 @@ export function useNoteEditorWithFocusTransfer({
     return () => cancelAnimationFrame(animationFrame);
   }, [editor.isInitialized, focusTransfer, isFocusRestorationComplete]);
 
-  function getFocusBinding(
-    field: NoteEditorField,
-    selectionRef: { current: NoteEditorSelection },
-    textLength: number,
-  ): NoteEditorFocusBinding {
-    const selection =
-      !isFocusRestorationComplete && focusTransfer?.field === field
-        ? {
-            start: Math.min(focusTransfer.selection.start, textLength),
-            end: Math.min(focusTransfer.selection.end, textLength),
-          }
-        : undefined;
-
-    return {
-      autoFocus: selection !== undefined,
-      onBlur: () => {
-        if (focusedFieldRef.current === field) {
-          focusedFieldRef.current = null;
-        }
-      },
-      onFocus: () => {
-        focusedFieldRef.current = field;
-      },
-      onSelectionChange: (nextSelection) => {
-        selectionRef.current = nextSelection;
-      },
-      selection,
-    };
-  }
+  const documentLength = editor.value.document.length;
+  const selection = !isFocusRestorationComplete
+    ? {
+        start: Math.min(focusTransfer?.selection.start ?? 0, documentLength),
+        end: Math.min(focusTransfer?.selection.end ?? 0, documentLength),
+      }
+    : undefined;
+  const documentFocus: NoteEditorFocusBinding = {
+    autoFocus: focusTransfer !== null && selection !== undefined,
+    onBlur: () => {
+      isDocumentFocusedRef.current = false;
+    },
+    onFocus: () => {
+      isDocumentFocusedRef.current = true;
+    },
+    onSelectionChange: (nextSelection) => {
+      documentSelectionRef.current = nextSelection;
+    },
+    selection: focusTransfer ? selection : undefined,
+  };
 
   return {
-    contentFocus: getFocusBinding('content', contentSelectionRef, editor.value.content.length),
+    documentFocus,
     editor,
-    titleFocus: getFocusBinding('title', titleSelectionRef, editor.value.title.length),
   };
 }
