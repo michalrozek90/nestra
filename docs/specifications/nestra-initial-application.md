@@ -225,9 +225,11 @@ Document the exact versions in README. Use Corepack where compatible.
 │   │   ├── package.json
 │   │   └── tsconfig.json
 │   └── desktop/
-│       ├── src-tauri/
 │       ├── package.json
-│       └── tauri.conf.json
+│       └── src-tauri/
+│           ├── src/
+│           ├── Cargo.toml
+│           └── tauri.conf.json
 ├── packages/
 │   ├── contracts/
 │   │   ├── src/
