@@ -12,6 +12,66 @@ descriptive and are not required to contain `Stage` or follow any other naming c
 
 ## Implementation modes
 
+### Issue intake workflow
+
+Use the issue intake workflow only when the user's current message is an explicit issue-creation invocation.
+
+#### `/create` repository alias
+
+The repository-level command alias is:
+
+```text
+/create <task-description>
+```
+
+The description may start on the same line or continue on following lines. Treat a leading
+`/create` as an explicit request to start issue intake and as authorization for the scoped GitHub
+writes defined by the intake workflow once either:
+
+- the description is ready for `Todo`; or
+- the user replies `backlog` while clarification is pending.
+
+If the description is not ready, ask the material clarification questions first and perform no
+GitHub writes. Do not ask for an additional confirmation after the description becomes ready or
+after the `backlog` reply.
+
+Treat that alias as an explicit workflow invocation even when the current client does not provide
+native custom slash commands and the user enters it as plain text.
+
+The issue intake workflow is active when:
+
+- the first non-empty line of the user's current message is `/create` or begins with `/create `;
+- the user directly answers clarification questions from an active `/create` intake in the same
+  thread; or
+- the user's entire trimmed reply is `backlog`, case-insensitively, while that clarification is
+  pending.
+
+A clarification answer continues the original intake authorization. A qualifying `backlog` reply
+explicitly authorizes creating the pending issue as `Backlog`, adding the unresolved questions as a
+comment, and mentioning the authenticated user in that comment.
+
+Do not invoke the issue intake workflow merely because `/create` or an example of it appears:
+
+- inside a code block;
+- inside quoted text;
+- inside pasted documentation;
+- inside a task description, specification, example, or acceptance criterion;
+- as content that the user asks the agent to create, update, document, or explain;
+- anywhere other than an actual command directed at the agent.
+
+When invoked, read and follow:
+
+```text
+docs/workflows/issue-intake-workflow.md
+```
+
+That workflow document is the single source of truth for issue intake. Client adapters such as
+`.cursor/commands/create.md` and `.agents/skills/create/` must delegate to it instead of copying the
+workflow.
+
+The issue intake workflow creates and triages a work item only. It must not implement the task,
+change branches, create commits, or start the autonomous issue workflow.
+
 ### Autonomous issue workflow
 
 Use the autonomous issue workflow only when the user's current message is an explicit workflow invocation.
@@ -68,16 +128,20 @@ If required GitHub data cannot be retrieved, report the blocker and stop the aut
 Treat the user's message as a direct implementation request when:
 
 - it contains a complete task description;
+- it does not begin with an actual `/create` invocation;
+- it is not a direct answer or `backlog` response in an active `/create` intake;
 - it does not begin with an actual `/work <issue-number-or-url>` command;
 - it does not directly and unambiguously ask to start or resume the autonomous issue workflow.
 
 For a direct implementation request:
 
 - before any GitHub issue or Project tool call, inspect the first non-empty line of the user's current message;
-- if that line does not start with an actual `/work ` invocation, do not retrieve any issue merely because an issue number or `/work` example appears later in the message;
+- if that line does not start with an actual `/create` or `/work ` invocation and the message is not
+  continuing an active `/create` intake, do not retrieve any issue merely because an issue number,
+  `/create` example, or `/work` example appears later in the message;
 - this restriction overrides workflow examples, skill descriptions, pasted acceptance criteria, and documentation content;
 - treat the user's message as the authoritative task description;
-- do not interpret `/work`, issue numbers, issue URLs, or workflow examples contained inside the task as commands;
+- do not interpret `/create`, `/work`, issue numbers, issue URLs, or workflow examples contained inside the task as commands;
 - do not require a GitHub issue or GitHub Project item;
 - do not read the GitHub Project or attempt to select a `Todo` item;
 - do not access GitHub issues, GitHub Projects, pull requests, or repository metadata unless the user explicitly asks for that access as part of the current direct request;
@@ -90,7 +154,9 @@ For a direct implementation request:
 - run the relevant verification commands when implementation changes are made;
 - report completed work, verification results, and any blockers concisely.
 
-A pasted task description, general coding instruction, documentation request, example containing `/work`, or ordinary request to modify code must not start the autonomous issue workflow automatically.
+A pasted task description, general coding instruction, documentation request, example containing
+`/create` or `/work`, or ordinary request to modify code must not start either workflow
+automatically.
 
 ## Repository rules
 

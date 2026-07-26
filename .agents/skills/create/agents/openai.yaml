@@ -1,0 +1,7 @@
+interface:
+  display_name: 'Create issue'
+  short_description: 'Clarify and triage a Nestra board issue'
+  default_prompt: 'Use $create with /create <task description> to clarify and create a Nestra GitHub issue.'
+
+policy:
+  allow_implicit_invocation: true
