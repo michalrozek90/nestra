@@ -8,10 +8,9 @@ import { ActivityIndicator, Button as PaperButton, IconButton, Text } from 'reac
 import { ActionDialog } from '@/components/action-dialog';
 import { Screen } from '@/components/screen';
 import { useAuth } from '@/infrastructure/auth/auth-provider';
-import { radii, spacing, typography } from '@/theme/tokens';
+import { spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
 import { validateNoteEditorValue } from '../editor/note-editor-value';
-import type { NoteSaveStatus } from '../editor/use-note-editor';
 import { useNoteEditorWithFocusTransfer } from '../editor/use-note-editor-with-focus-transfer';
 
 type NoteEditorScreenProps = {
@@ -19,20 +18,12 @@ type NoteEditorScreenProps = {
   readonly note: Note | null;
 };
 
-const SAVE_STATUS_KEYS = {
-  saving: 'editor.saving',
-  saved: 'editor.saved',
-  'save-failed': 'editor.saveFailed',
-  'saved-locally': 'editor.savedLocally',
-} as const satisfies Record<NoteSaveStatus, string>;
-
 export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
   const router = useRouter();
   const { t } = useTranslation('notes');
   const theme = useNestraTheme();
   const { user } = useAuth();
   const [hasEditedDocument, setHasEditedDocument] = useState(false);
-  const [isDocumentFocused, setIsDocumentFocused] = useState(false);
   const { documentFocus, editor } = useNoteEditorWithFocusTransfer({
     userId: user?.id ?? '',
     initialNote: note,
@@ -50,12 +41,6 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
   }
 
   const documentError = hasEditedDocument ? validationErrors.document : undefined;
-  const saveStatusColor =
-    editor.saveStatus === 'save-failed'
-      ? theme.colors.error
-      : editor.saveStatus === 'saved'
-        ? theme.colors.primary
-        : theme.colors.onSurfaceVariant;
   const errorTranslationKey =
     documentError === 'required'
       ? 'editor.documentRequired'
@@ -77,20 +62,18 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
             void editor.flush().finally(() => router.back());
           }}
         />
-        <Text
-          accessibilityLiveRegion="polite"
-          style={[styles.saveStatus, { color: saveStatusColor }]}
-        >
-          {t(SAVE_STATUS_KEYS[editor.saveStatus])}
-        </Text>
+        {editor.saveStatus === 'save-failed' ? (
+          <Text
+            accessibilityLiveRegion="assertive"
+            accessibilityRole="alert"
+            style={[styles.saveError, { color: theme.colors.error }]}
+          >
+            {t('editor.saveFailed')}
+          </Text>
+        ) : null}
       </View>
 
-      <View
-        style={[
-          styles.documentSurface,
-          { borderColor: isDocumentFocused ? theme.colors.primary : 'transparent' },
-        ]}
-      >
+      <View style={styles.documentSurface}>
         <TextInput
           accessibilityLabel={t('editor.documentLabel')}
           autoFocus={documentFocus.autoFocus}
@@ -98,17 +81,13 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
           multiline
           onBlur={() => {
             setHasEditedDocument(true);
-            setIsDocumentFocused(false);
             documentFocus.onBlur();
           }}
           onChangeText={(document) => {
             setHasEditedDocument(true);
             editor.setDocument(document);
           }}
-          onFocus={() => {
-            setIsDocumentFocused(true);
-            documentFocus.onFocus();
-          }}
+          onFocus={documentFocus.onFocus}
           onSelectionChange={({ nativeEvent }) => {
             documentFocus.onSelectionChange(nativeEvent.selection);
           }}
@@ -154,12 +133,11 @@ const styles = StyleSheet.create({
     ...typography.body,
     borderWidth: 0,
     flex: 1,
+    outlineWidth: 0,
     padding: 0,
   },
   documentSurface: {
     alignSelf: 'center',
-    borderRadius: radii.sm,
-    borderWidth: 2,
     flex: 1,
     gap: spacing.sm,
     padding: spacing.sm,
@@ -168,7 +146,7 @@ const styles = StyleSheet.create({
   error: {
     ...typography.supporting,
   },
-  saveStatus: {
+  saveError: {
     ...typography.supporting,
     marginLeft: 'auto',
     paddingHorizontal: spacing.md,

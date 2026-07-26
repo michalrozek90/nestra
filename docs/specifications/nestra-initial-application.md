@@ -1147,11 +1147,11 @@ Support:
 
 Use TanStack Query with centralized keys. Do not duplicate server state into a global store or fetch through `useEffect`.
 
-The note detail is a spacious, continuous, borderless document surface with back navigation and a
-discreet accessible autosave state. It has no Edit note heading and no pin, Trash, restore, or
-permanent-delete controls; those actions remain on the notes list. The detail screen and document
-must not create competing nested scrolling areas. The first logical line remains part of the same
-editable document even when title typography is used.
+The note detail is a spacious, continuous, borderless document surface with back navigation. It
+has no Edit note heading and no pin, Trash, restore, or permanent-delete controls; those actions
+remain on the notes list. The detail screen and document must not create competing nested scrolling
+areas. The first logical line remains part of the same editable document even when title typography
+is used.
 
 Active note cards expose pin/unpin and a neutral-colored trash icon for the recoverable move
 operation, but no permanent-delete action. Trashed note cards expose a non-destructive Restore
@@ -1179,7 +1179,9 @@ Server save:
 - do not send unchanged normalized values;
 - serialize saves per note;
 - prevent stale responses from overwriting newer input;
-- display `Saving`, `Saved`, `Save failed`, and `Saved locally`.
+- keep routine autosave and local-draft persistence visually silent;
+- display an accessible error only when saving fails; do not expose the implementation distinction
+  between server persistence and local draft protection as `Saved` or `Saved locally`.
 
 Local drafts:
 

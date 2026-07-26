@@ -18,10 +18,7 @@ export const plNotes = {
     documentRequired: 'Wpisz co najmniej jeden niepusty wiersz.',
     titleLineTooLong: 'Pierwszy niepusty wiersz może mieć maksymalnie 240 znaków.',
     documentTooLong: 'Notatka może mieć maksymalnie 20 122 znaki.',
-    saving: 'Zapisywanie…',
-    saved: 'Zapisano',
     saveFailed: 'Zapis nie powiódł się',
-    savedLocally: 'Zapisano lokalnie',
   },
   actions: {
     back: 'Wstecz',

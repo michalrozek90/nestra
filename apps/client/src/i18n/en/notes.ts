@@ -18,10 +18,7 @@ export const enNotes = {
     documentRequired: 'Write at least one non-empty line.',
     titleLineTooLong: 'The first non-empty line can contain up to 240 characters.',
     documentTooLong: 'The note can contain up to 20,122 characters.',
-    saving: 'Saving…',
-    saved: 'Saved',
     saveFailed: 'Save failed',
-    savedLocally: 'Saved locally',
   },
   actions: {
     back: 'Back',
