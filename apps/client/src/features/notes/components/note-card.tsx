@@ -34,9 +34,17 @@ export function NoteCard({
   return (
     <Card
       accessibilityLabel={note.title}
-      mode="outlined"
+      mode={note.isPinned ? 'contained' : 'outlined'}
       onPress={onOpen}
-      style={note.isPinned ? { borderColor: theme.colors.primary } : undefined}
+      style={
+        note.isPinned
+          ? {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.primary,
+              borderWidth: 2,
+            }
+          : undefined
+      }
     >
       <Card.Content style={styles.content}>
         <View style={styles.heading}>
