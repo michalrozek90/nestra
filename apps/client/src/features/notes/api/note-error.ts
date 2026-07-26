@@ -2,7 +2,11 @@ import { apiErrorResponseSchema } from '@nestra/contracts';
 import { isAxiosError } from 'axios';
 
 export type NoteErrorTranslationKey =
-  'errors.notFound' | 'errors.validationFailed' | 'errors.serviceUnavailable' | 'errors.unexpected';
+  | 'errors.notFound'
+  | 'errors.notTrashed'
+  | 'errors.validationFailed'
+  | 'errors.serviceUnavailable'
+  | 'errors.unexpected';
 
 export function getNoteErrorTranslationKey(error: unknown): NoteErrorTranslationKey {
   if (!isAxiosError(error)) {
@@ -14,6 +18,8 @@ export function getNoteErrorTranslationKey(error: unknown): NoteErrorTranslation
     switch (parsedError.data.errorCode) {
       case 'NOTE_NOT_FOUND':
         return 'errors.notFound';
+      case 'NOTE_NOT_TRASHED':
+        return 'errors.notTrashed';
       case 'VALIDATION_FAILED':
         return 'errors.validationFailed';
       case 'SERVICE_UNAVAILABLE':

@@ -28,6 +28,7 @@ function mapApiErrorCode(errorCode: ApiErrorCode): AuthErrorTranslationKey {
       return 'errors.serviceUnavailable';
     case 'INTERNAL_SERVER_ERROR':
     case 'NOTE_NOT_FOUND':
+    case 'NOTE_NOT_TRASHED':
     case 'ROUTE_NOT_FOUND':
       return 'errors.unexpected';
   }

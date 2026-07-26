@@ -2,13 +2,14 @@ export const plNotes = {
   list: {
     title: 'Twoje notatki',
     active: 'Aktywne',
-    archived: 'Archiwalne',
+    trash: 'Kosz',
     pinned: 'Przypięta',
     loading: 'Wczytywanie notatek…',
     emptyActiveTitle: 'Nie masz jeszcze notatek',
     emptyActiveDescription: 'Utwórz notatkę, aby zachować coś ważnego pod ręką.',
-    emptyArchivedTitle: 'Brak archiwalnych notatek',
-    emptyArchivedDescription: 'Zarchiwizowane notatki pojawią się w tym miejscu.',
+    emptyTrashTitle: 'Kosz jest pusty',
+    emptyTrashDescription:
+      'Notatki przeniesione do Kosza pojawią się tutaj. Możesz je przywrócić lub trwale usunąć.',
   },
   editor: {
     newTitle: 'Nowa notatka',
@@ -30,16 +31,24 @@ export const plNotes = {
     retry: 'Spróbuj ponownie',
     pin: 'Przypnij',
     unpin: 'Odepnij',
-    archive: 'Archiwizuj',
+    moveToTrash: 'Przenieś do kosza',
     restore: 'Przywróć',
-    delete: 'Usuń',
+    deletePermanently: 'Usuń trwale',
+    emptyTrash: 'Opróżnij kosz',
+    retryEmptyTrash: 'Spróbuj ponownie opróżnić kosz',
     cancel: 'Anuluj',
     keepDraft: 'Zachowaj szkic',
     discardDraft: 'Odrzuć szkic',
   },
-  delete: {
-    title: 'Usunąć notatkę?',
-    description: 'Tej operacji nie można cofnąć.',
+  permanentDelete: {
+    title: 'Trwale usunąć notatkę?',
+    description: 'Notatka zostanie trwale usunięta. Tej operacji nie można cofnąć.',
+  },
+  emptyTrash: {
+    title: 'Opróżnić kosz?',
+    description:
+      'Wszystkie notatki znajdujące się obecnie w Koszu zostaną trwale usunięte i nie będzie można ich odzyskać.',
+    success: 'Kosz opróżniony. Trwale usunięte notatki: {{count}}.',
   },
   draftRecovery: {
     invalidTitle: 'Szkic wymaga uwagi',
@@ -48,6 +57,7 @@ export const plNotes = {
   },
   errors: {
     notFound: 'Ta notatka już nie istnieje.',
+    notTrashed: 'Przenieś notatkę do Kosza przed jej trwałym usunięciem.',
     validationFailed: 'Notatka zawiera nieprawidłowe wartości.',
     serviceUnavailable: 'Usługa notatek jest niedostępna. Sprawdź połączenie i spróbuj ponownie.',
     unexpected: 'Podczas pracy z notatką wystąpił nieoczekiwany błąd.',

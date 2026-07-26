@@ -10,19 +10,23 @@ import { NoteActionTooltip } from './note-action-tooltip';
 type NoteCardProps = {
   readonly note: Note;
   readonly isBusy: boolean;
+  readonly errorMessage?: string;
   readonly onOpen: () => void;
   readonly onTogglePinned: () => void;
-  readonly onToggleArchived: () => void;
-  readonly onDelete: () => void;
+  readonly onMoveToTrash: () => void;
+  readonly onRestore: () => void;
+  readonly onDeletePermanently: () => void;
 };
 
 export function NoteCard({
   note,
   isBusy,
+  errorMessage,
   onOpen,
   onTogglePinned,
-  onToggleArchived,
-  onDelete,
+  onMoveToTrash,
+  onRestore,
+  onDeletePermanently,
 }: NoteCardProps) {
   const { t } = useTranslation('notes');
   const theme = useNestraTheme();
@@ -49,7 +53,7 @@ export function NoteCard({
           </Text>
         ) : null}
         <View style={styles.actions}>
-          {!note.isArchived ? (
+          {!note.isTrashed ? (
             <NoteActionTooltip title={note.isPinned ? t('actions.unpin') : t('actions.pin')}>
               <IconButton
                 accessibilityLabel={note.isPinned ? t('actions.unpin') : t('actions.pin')}
@@ -59,24 +63,33 @@ export function NoteCard({
               />
             </NoteActionTooltip>
           ) : null}
-          <NoteActionTooltip title={note.isArchived ? t('actions.restore') : t('actions.archive')}>
+          <NoteActionTooltip
+            title={note.isTrashed ? t('actions.restore') : t('actions.moveToTrash')}
+          >
             <IconButton
-              accessibilityLabel={note.isArchived ? t('actions.restore') : t('actions.archive')}
+              accessibilityLabel={note.isTrashed ? t('actions.restore') : t('actions.moveToTrash')}
               disabled={isBusy}
-              icon={note.isArchived ? 'archive-arrow-up-outline' : 'archive-outline'}
-              onPress={onToggleArchived}
+              icon={note.isTrashed ? 'restore' : 'delete-outline'}
+              onPress={note.isTrashed ? onRestore : onMoveToTrash}
             />
           </NoteActionTooltip>
-          <NoteActionTooltip title={t('actions.delete')}>
-            <IconButton
-              accessibilityLabel={t('actions.delete')}
-              disabled={isBusy}
-              icon="delete-outline"
-              iconColor={theme.colors.error}
-              onPress={onDelete}
-            />
-          </NoteActionTooltip>
+          {note.isTrashed ? (
+            <NoteActionTooltip title={t('actions.deletePermanently')}>
+              <IconButton
+                accessibilityLabel={t('actions.deletePermanently')}
+                disabled={isBusy}
+                icon="delete-forever-outline"
+                iconColor={theme.colors.error}
+                onPress={onDeletePermanently}
+              />
+            </NoteActionTooltip>
+          ) : null}
         </View>
+        {errorMessage ? (
+          <Text accessibilityRole="alert" style={[styles.error, { color: theme.colors.error }]}>
+            {errorMessage}
+          </Text>
+        ) : null}
       </Card.Content>
     </Card>
   );
@@ -89,6 +102,9 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.sm,
+  },
+  error: {
+    ...typography.supporting,
   },
   heading: {
     alignItems: 'flex-start',

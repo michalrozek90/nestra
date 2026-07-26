@@ -13,7 +13,7 @@ function sortNotes(left: Note, right: Note): number {
 
 export function updateNoteCache(queryClient: QueryClient, note: Note): void {
   queryClient.setQueryData(noteQueryKeys.detail(note.id), note);
-  queryClient.setQueryData<readonly Note[]>(noteQueryKeys.list(note.isArchived), (notes) => {
+  queryClient.setQueryData<readonly Note[]>(noteQueryKeys.list(note.isTrashed), (notes) => {
     if (!notes) {
       return notes;
     }
@@ -21,7 +21,7 @@ export function updateNoteCache(queryClient: QueryClient, note: Note): void {
     const remainingNotes = notes.filter(({ id }) => id !== note.id);
     return [note, ...remainingNotes].sort(sortNotes);
   });
-  queryClient.setQueryData<readonly Note[]>(noteQueryKeys.list(!note.isArchived), (notes) =>
+  queryClient.setQueryData<readonly Note[]>(noteQueryKeys.list(!note.isTrashed), (notes) =>
     notes?.filter(({ id }) => id !== note.id),
   );
 }

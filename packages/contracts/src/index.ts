@@ -29,6 +29,10 @@ export {
 export { registerRequestSchema, type RegisterRequest } from './auth/register.schema';
 export { publicUserSchema, type PublicUser } from './auth/public-user.schema';
 export { createNoteSchema, type CreateNote } from './notes/create-note.schema';
+export {
+  emptyTrashResponseSchema,
+  type EmptyTrashResponse,
+} from './notes/empty-trash-response.schema';
 export { noteListSchema, type NoteList } from './notes/note-list.schema';
 export { noteSchema, type Note } from './notes/note.schema';
 export { notesQuerySchema, type NotesQuery } from './notes/notes-query.schema';

@@ -7,14 +7,14 @@ import { NotesListScreen } from '@/features/notes/components/notes-list-screen';
 export default function NotesScreen() {
   const { t } = useTranslation('notes');
   const router = useRouter();
-  const [isArchived, setIsArchived] = useState(false);
+  const [isTrashed, setIsTrashed] = useState(false);
 
   return (
     <NotesListScreen
-      isArchived={isArchived}
+      isTrashed={isTrashed}
       onCreateNote={() => router.push('../notes/new')}
       onOpenNote={(noteId) => router.push({ pathname: '../notes/[noteId]', params: { noteId } })}
-      onViewChange={setIsArchived}
+      onViewChange={setIsTrashed}
       title={t('list.title')}
     />
   );

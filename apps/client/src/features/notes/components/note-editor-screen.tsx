@@ -63,11 +63,11 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
       await editor.flush();
       await actionMutation.mutateAsync({ kind, note });
 
-      if (kind === 'delete') {
+      if (kind === 'delete-permanently') {
         await editor.discard();
         setIsDeleteDialogVisible(false);
       }
-      if (kind === 'delete' || kind === 'toggle-archived') {
+      if (kind === 'delete-permanently' || kind === 'move-to-trash' || kind === 'restore') {
         router.back();
       }
     } catch {
@@ -107,7 +107,7 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
         </View>
         {note ? (
           <View style={styles.actions}>
-            {!note.isArchived ? (
+            {!note.isTrashed ? (
               <NoteActionTooltip title={note.isPinned ? t('actions.unpin') : t('actions.pin')}>
                 <IconButton
                   accessibilityLabel={note.isPinned ? t('actions.unpin') : t('actions.pin')}
@@ -118,24 +118,28 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
               </NoteActionTooltip>
             ) : null}
             <NoteActionTooltip
-              title={note.isArchived ? t('actions.restore') : t('actions.archive')}
+              title={note.isTrashed ? t('actions.restore') : t('actions.moveToTrash')}
             >
               <IconButton
-                accessibilityLabel={note.isArchived ? t('actions.restore') : t('actions.archive')}
+                accessibilityLabel={
+                  note.isTrashed ? t('actions.restore') : t('actions.moveToTrash')
+                }
                 disabled={actionMutation.isPending}
-                icon={note.isArchived ? 'archive-arrow-up-outline' : 'archive-outline'}
-                onPress={() => void performNoteAction('toggle-archived')}
+                icon={note.isTrashed ? 'restore' : 'delete-outline'}
+                onPress={() => void performNoteAction(note.isTrashed ? 'restore' : 'move-to-trash')}
               />
             </NoteActionTooltip>
-            <NoteActionTooltip title={t('actions.delete')}>
-              <IconButton
-                accessibilityLabel={t('actions.delete')}
-                disabled={actionMutation.isPending}
-                icon="delete-outline"
-                iconColor={theme.colors.error}
-                onPress={() => setIsDeleteDialogVisible(true)}
-              />
-            </NoteActionTooltip>
+            {note.isTrashed ? (
+              <NoteActionTooltip title={t('actions.deletePermanently')}>
+                <IconButton
+                  accessibilityLabel={t('actions.deletePermanently')}
+                  disabled={actionMutation.isPending}
+                  icon="delete-forever-outline"
+                  iconColor={theme.colors.error}
+                  onPress={() => setIsDeleteDialogVisible(true)}
+                />
+              </NoteActionTooltip>
+            ) : null}
           </View>
         ) : (
           <View style={styles.actionsPlaceholder} />
@@ -207,7 +211,7 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
         >
           {t(SAVE_STATUS_KEYS[editor.saveStatus])}
         </Text>
-        {actionMutation.isError ? (
+        {actionMutation.isError && actionMutation.variables.kind !== 'delete-permanently' ? (
           <Text accessibilityRole="alert" style={[styles.error, { color: theme.colors.error }]}>
             {t(getNoteErrorTranslationKey(actionMutation.error))}
           </Text>
@@ -215,13 +219,16 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
       </View>
 
       <ConfirmationDialog
-        confirmLabel={t('actions.delete')}
-        description={t('delete.description')}
+        confirmLabel={t('actions.deletePermanently')}
+        description={t('permanentDelete.description')}
+        {...(actionMutation.isError && actionMutation.variables.kind === 'delete-permanently'
+          ? { errorMessage: t(getNoteErrorTranslationKey(actionMutation.error)) }
+          : {})}
         isConfirming={actionMutation.isPending}
         isVisible={isDeleteDialogVisible}
         onCancel={() => setIsDeleteDialogVisible(false)}
-        onConfirm={() => void performNoteAction('delete')}
-        title={t('delete.title')}
+        onConfirm={() => void performNoteAction('delete-permanently')}
+        title={t('permanentDelete.title')}
       />
 
       <ActionDialog
