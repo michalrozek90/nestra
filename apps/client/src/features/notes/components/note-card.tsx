@@ -32,7 +32,12 @@ export function NoteCard({
   const theme = useNestraTheme();
 
   return (
-    <Card accessibilityLabel={note.title} mode="outlined" onPress={onOpen}>
+    <Card
+      accessibilityLabel={note.title}
+      mode="outlined"
+      onPress={onOpen}
+      style={note.isPinned ? { borderColor: theme.colors.primary } : undefined}
+    >
       <Card.Content style={styles.content}>
         <View style={styles.heading}>
           <Text numberOfLines={2} style={styles.title}>
