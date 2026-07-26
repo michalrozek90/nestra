@@ -2,7 +2,7 @@ import { NOTE_DOCUMENT_MAX_LENGTH, type Note } from '@nestra/contracts';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Button as PaperButton, IconButton, Text } from 'react-native-paper';
 
 import { ActionDialog } from '@/components/action-dialog';
@@ -12,6 +12,7 @@ import { spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
 import { validateNoteEditorValue } from '../editor/note-editor-value';
 import { useNoteEditorWithFocusTransfer } from '../editor/use-note-editor-with-focus-transfer';
+import { NoteDocumentInput } from './note-document-input';
 
 type NoteEditorScreenProps = {
   readonly mode: 'new' | 'existing';
@@ -74,11 +75,10 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
       </View>
 
       <View style={styles.documentSurface}>
-        <TextInput
+        <NoteDocumentInput
           accessibilityLabel={t('editor.documentLabel')}
           autoFocus={documentFocus.autoFocus}
           maxLength={NOTE_DOCUMENT_MAX_LENGTH}
-          multiline
           onBlur={() => {
             setHasEditedDocument(true);
             documentFocus.onBlur();
@@ -88,15 +88,12 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
             editor.setDocument(document);
           }}
           onFocus={documentFocus.onFocus}
-          onSelectionChange={({ nativeEvent }) => {
-            documentFocus.onSelectionChange(nativeEvent.selection);
-          }}
+          onSelectionChange={documentFocus.onSelectionChange}
           placeholder={t('editor.documentPlaceholder')}
           placeholderTextColor={theme.colors.onSurfaceVariant}
           selection={documentFocus.selection}
           selectionColor={theme.colors.primary}
-          style={[styles.documentInput, { color: theme.colors.onBackground }]}
-          textAlignVertical="top"
+          textColor={theme.colors.onBackground}
           value={editor.value.document}
         />
         {documentError ? (
@@ -128,13 +125,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-  },
-  documentInput: {
-    ...typography.body,
-    borderWidth: 0,
-    flex: 1,
-    outlineWidth: 0,
-    padding: 0,
   },
   documentSurface: {
     alignSelf: 'center',
