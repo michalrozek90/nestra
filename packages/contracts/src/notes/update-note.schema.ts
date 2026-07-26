@@ -5,14 +5,14 @@ export const updateNoteSchema = z
     title: z.string().trim().min(1).max(120).optional(),
     content: z.string().trim().max(20_000).optional(),
     isPinned: z.boolean().optional(),
-    isArchived: z.boolean().optional(),
+    isTrashed: z.boolean().optional(),
   })
   .refine(
-    ({ title, content, isPinned, isArchived }) =>
+    ({ title, content, isPinned, isTrashed }) =>
       title !== undefined ||
       content !== undefined ||
       isPinned !== undefined ||
-      isArchived !== undefined,
+      isTrashed !== undefined,
     {
       message: 'At least one supported note field is required.',
     },

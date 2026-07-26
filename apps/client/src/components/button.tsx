@@ -2,8 +2,9 @@ import { StyleSheet } from 'react-native';
 import { Button as PaperButton } from 'react-native-paper';
 
 import { radii, sizes, spacing } from '@/theme/tokens';
+import { useNestraTheme } from '@/theme/themes';
 
-export type ButtonVariant = 'primary' | 'secondary';
+export type ButtonVariant = 'primary' | 'secondary' | 'destructive';
 
 type ButtonProps = {
   readonly label: string;
@@ -22,6 +23,8 @@ export function Button({
   accessibilityLabel,
   isLoading = false,
 }: ButtonProps) {
+  const theme = useNestraTheme();
+
   return (
     <PaperButton
       accessibilityLabel={accessibilityLabel ?? label}
@@ -32,6 +35,7 @@ export function Button({
       loading={isLoading}
       onPress={onPress}
       style={styles.button}
+      {...(variant === 'destructive' ? { textColor: theme.colors.error } : {})}
     >
       {label}
     </PaperButton>

@@ -1,9 +1,11 @@
 import {
   createNoteSchema,
+  emptyTrashResponseSchema,
   noteListSchema,
   noteSchema,
   updateNoteSchema,
   type CreateNote,
+  type EmptyTrashResponse,
   type Note,
   type NoteList,
   type UpdateNote,
@@ -11,9 +13,9 @@ import {
 
 import { apiClient } from '@/infrastructure/api/api-client';
 
-export async function listNotes(isArchived: boolean): Promise<NoteList> {
+export async function listNotes(isTrashed: boolean): Promise<NoteList> {
   const response = await apiClient.get<unknown>('/notes', {
-    params: { archived: isArchived },
+    params: { trashed: isTrashed },
   });
   return noteListSchema.parse(response.data);
 }
@@ -35,6 +37,11 @@ export async function updateNote(noteId: string, request: UpdateNote): Promise<N
   return noteSchema.parse(response.data);
 }
 
-export async function deleteNote(noteId: string): Promise<void> {
+export async function deleteNotePermanently(noteId: string): Promise<void> {
   await apiClient.delete(`/notes/${noteId}`);
+}
+
+export async function emptyTrash(): Promise<EmptyTrashResponse> {
+  const response = await apiClient.delete<unknown>('/notes/trash');
+  return emptyTrashResponseSchema.parse(response.data);
 }

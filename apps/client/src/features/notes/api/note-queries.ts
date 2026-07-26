@@ -3,10 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { noteQueryKeys } from './note-query-keys';
 import { getNote, listNotes } from './notes-api';
 
-export function useNotesListQuery(isArchived: boolean) {
+export function useNotesListQuery(isTrashed: boolean) {
   return useQuery({
-    queryKey: noteQueryKeys.list(isArchived),
-    queryFn: () => listNotes(isArchived),
+    queryKey: noteQueryKeys.list(isTrashed),
+    queryFn: () => listNotes(isTrashed),
     refetchOnWindowFocus: true,
   });
 }

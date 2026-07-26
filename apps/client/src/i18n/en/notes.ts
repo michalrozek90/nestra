@@ -2,13 +2,14 @@ export const enNotes = {
   list: {
     title: 'Your notes',
     active: 'Active',
-    archived: 'Archived',
+    trash: 'Trash',
     pinned: 'Pinned',
     loading: 'Loading notes…',
     emptyActiveTitle: 'No notes yet',
     emptyActiveDescription: 'Create a note to keep something important close at hand.',
-    emptyArchivedTitle: 'No archived notes',
-    emptyArchivedDescription: 'Notes that you archive will appear here.',
+    emptyTrashTitle: 'Trash is empty',
+    emptyTrashDescription:
+      'Notes moved to Trash appear here, where you can restore or permanently delete them.',
   },
   editor: {
     newTitle: 'New note',
@@ -30,16 +31,24 @@ export const enNotes = {
     retry: 'Try again',
     pin: 'Pin',
     unpin: 'Unpin',
-    archive: 'Archive',
+    moveToTrash: 'Move to trash',
     restore: 'Restore',
-    delete: 'Delete',
+    deletePermanently: 'Delete permanently',
+    emptyTrash: 'Empty trash',
+    retryEmptyTrash: 'Try emptying trash again',
     cancel: 'Cancel',
     keepDraft: 'Keep draft',
     discardDraft: 'Discard draft',
   },
-  delete: {
-    title: 'Delete note?',
-    description: 'This action cannot be undone.',
+  permanentDelete: {
+    title: 'Permanently delete note?',
+    description: 'This note will be permanently deleted. This action cannot be undone.',
+  },
+  emptyTrash: {
+    title: 'Empty trash?',
+    description:
+      'All notes currently in Trash will be permanently deleted and cannot be recovered.',
+    success: 'Trash emptied. Permanently deleted notes: {{count}}.',
   },
   draftRecovery: {
     invalidTitle: 'Draft needs attention',
@@ -48,6 +57,7 @@ export const enNotes = {
   },
   errors: {
     notFound: 'This note no longer exists.',
+    notTrashed: 'Move this note to Trash before permanently deleting it.',
     validationFailed: 'The note contains invalid values.',
     serviceUnavailable: 'The notes service is unavailable. Check your connection and try again.',
     unexpected: 'Something went wrong while working with this note.',

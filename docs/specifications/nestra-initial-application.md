@@ -634,6 +634,7 @@ AUTH_REFRESH_TOKEN_INVALID
 AUTH_SESSION_EXPIRED
 AUTH_EMAIL_ALREADY_REGISTERED
 NOTE_NOT_FOUND
+NOTE_NOT_TRASHED
 INTERNAL_SERVER_ERROR
 SERVICE_UNAVAILABLE
 ```
@@ -1056,7 +1057,7 @@ Note
 ├── title: string
 ├── content: string
 ├── isPinned: boolean
-├── isArchived: boolean
+├── isTrashed: boolean
 ├── createdAt: timestamptz
 └── updatedAt: timestamptz
 ```
@@ -1075,29 +1076,47 @@ Validation:
 Endpoints:
 
 ```text
-GET    /api/v1/notes?archived=false
-GET    /api/v1/notes?archived=true
+GET    /api/v1/notes?trashed=false
+GET    /api/v1/notes?trashed=true
 GET    /api/v1/notes/:noteId
 POST   /api/v1/notes
 PATCH  /api/v1/notes/:noteId
 DELETE /api/v1/notes/:noteId
+DELETE /api/v1/notes/trash
 ```
 
-Server-side archive filtering is mandatory.
+Server-side Trash filtering is mandatory.
 
 Sort on the server:
 
 1. pinned first;
 2. most recently updated first within each group.
 
-Archiving must atomically set:
+Moving a note to Trash must atomically set:
 
 ```text
-isArchived = true
+isTrashed = true
 isPinned = false
 ```
 
-Archived notes cannot be pinned. Restoring does not restore prior pin state. DELETE is permanent.
+Trashed notes cannot be pinned. Restoring sets `isTrashed = false` and leaves `isPinned = false`.
+Active notes cannot be permanently deleted. `DELETE /api/v1/notes/:noteId` permanently deletes only
+an owned note already in Trash and otherwise returns the typed `NOTE_NOT_TRASHED` error.
+`DELETE /api/v1/notes/trash` permanently deletes all and only the authenticated user's trashed
+notes and returns:
+
+```ts
+type EmptyTrashResponse = {
+  deletedNotesCount: number;
+};
+```
+
+The count is zero when Trash is already empty. Move, restore, single permanent delete, and bulk
+permanent delete operations are ownership-scoped and never accept a client-supplied user ID.
+
+A committed migration must rename the archive persistence field to the Trash field so every
+previously archived note becomes a trashed note without changing its ID, owner, title, content,
+pin state, or timestamps.
 
 Every query and mutation includes authenticated user ID. Missing and foreign-owned notes both return `NOTE_NOT_FOUND`.
 
@@ -1107,16 +1126,30 @@ Every query and mutation includes authenticated user ID. Missing and foreign-own
 
 Support:
 
-- active and archived views;
+- active and Trash views;
 - create and edit;
 - pin/unpin;
-- archive/restore;
-- permanent delete confirmation;
+- move to Trash without confirmation;
+- restore;
+- permanent delete confirmation available only for trashed notes;
+- confirmed Empty trash action;
 - refresh;
 - loading, empty, recoverable error;
 - autosave status.
 
 Use TanStack Query with centralized keys. Do not duplicate server state into a global store or fetch through `useEffect`.
+
+Active note cards expose pin/unpin and a neutral-colored trash icon for the recoverable move
+operation, but no permanent-delete action. Trashed note cards expose a non-destructive Restore
+action and a red Delete permanently action. Single permanent deletion and Empty trash use modal
+confirmations that state the operation cannot be undone. Empty trash is shown only when Trash
+contains notes.
+
+Reconcile active and Trash list caches after every transition. Permanently deleted note details
+must be removed from the query cache, and local drafts for permanently deleted notes must be
+removed so they cannot recreate or surface deleted content. Pending operations prevent duplicate
+submission. Success and recoverable errors appear close to the affected control. The Trash empty
+state explains that moved notes can be restored or permanently deleted.
 
 ### Autosave
 
@@ -1395,7 +1428,7 @@ hasPendingChanges
 shouldRetryRequest
 ```
 
-Keep conventional names such as `id`, `email`, `content`, `isPinned`, `isArchived`, `createdAt`.
+Keep conventional names such as `id`, `email`, `content`, `isPinned`, `isTrashed`, `createdAt`.
 
 Avoid vague names in broad scopes. Boolean names should read naturally with `is`, `has`, `can`, `should`, or `show`.
 

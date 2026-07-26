@@ -23,8 +23,8 @@ export class NoteEntity {
   @Column({ name: 'is_pinned', type: 'boolean', default: false })
   isPinned!: boolean;
 
-  @Column({ name: 'is_archived', type: 'boolean', default: false })
-  isArchived!: boolean;
+  @Column({ name: 'is_trashed', type: 'boolean', default: false })
+  isTrashed!: boolean;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

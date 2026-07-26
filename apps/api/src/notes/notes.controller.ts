@@ -17,6 +17,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
+  ApiConflictResponse,
   ApiInternalServerErrorResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -26,13 +27,14 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import type { Note, NoteList } from '@nestra/contracts';
+import type { EmptyTrashResponse, Note, NoteList } from '@nestra/contracts';
 import { ZodResponse } from 'nestjs-zod';
 
 import { JwtAuthGuard, type RequestWithAccessToken } from '../auth';
 import { ApiErrorResponseDto } from '../common/api-error-response.dto';
 import { ApiException } from '../common/api.exception';
 import { CreateNoteDto } from './dto/create-note.dto';
+import { EmptyTrashResponseDto } from './dto/empty-trash-response.dto';
 import { NoteListDto } from './dto/note-list.dto';
 import { NoteRouteParametersDto } from './dto/note-route-parameters.dto';
 import { NoteDto } from './dto/note.dto';
@@ -52,7 +54,7 @@ export class NotesController {
   constructor(private readonly notesService: NotesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List active or archived notes owned by the authenticated user' })
+  @ApiOperation({ summary: 'List active or trashed notes owned by the authenticated user' })
   @ZodResponse({
     status: HttpStatus.OK,
     description: 'Owned notes sorted by pin state and most recent update.',
@@ -74,7 +76,7 @@ export class NotesController {
     @Req() request: RequestWithAccessToken,
     @Query() query: NotesQueryDto,
   ): Promise<NoteList> {
-    return this.notesService.listNotes(this.getAuthenticatedUserId(request), query.archived);
+    return this.notesService.listNotes(this.getAuthenticatedUserId(request), query.trashed);
   }
 
   @Get(':noteId')
@@ -181,9 +183,28 @@ export class NotesController {
     );
   }
 
+  @Delete('trash')
+  @ApiOperation({ summary: 'Permanently delete all trashed notes owned by the authenticated user' })
+  @ZodResponse({
+    status: HttpStatus.OK,
+    description: 'All owned notes currently in Trash were permanently deleted.',
+    type: EmptyTrashResponseDto,
+  })
+  @ApiOkResponse({
+    description: 'The number of owned trashed notes that were permanently deleted.',
+    type: EmptyTrashResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'The access token is invalid.',
+    type: ApiErrorResponseDto,
+  })
+  async emptyTrash(@Req() request: RequestWithAccessToken): Promise<EmptyTrashResponse> {
+    return this.notesService.emptyTrash(this.getAuthenticatedUserId(request));
+  }
+
   @Delete(':noteId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Permanently delete an owned note' })
+  @ApiOperation({ summary: 'Permanently delete an owned note that is already in Trash' })
   @ApiParam({
     name: 'noteId',
     required: true,
@@ -202,6 +223,10 @@ export class NotesController {
   })
   @ApiNotFoundResponse({
     description: 'The note is missing or is not owned by the authenticated user.',
+    type: ApiErrorResponseDto,
+  })
+  @ApiConflictResponse({
+    description: 'The owned note is active and must be moved to Trash before permanent deletion.',
     type: ApiErrorResponseDto,
   })
   async deleteNote(

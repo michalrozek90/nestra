@@ -1,6 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import type { CreateNote, Note, NoteList, UpdateNote } from '@nestra/contracts';
+import type { CreateNote, EmptyTrashResponse, Note, NoteList, UpdateNote } from '@nestra/contracts';
 import { DataSource, Repository } from 'typeorm';
 
 import { ApiException } from '../common/api.exception';
@@ -17,10 +17,10 @@ export class NotesService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async listNotes(userId: string, isArchived: boolean): Promise<NoteList> {
+  async listNotes(userId: string, isTrashed: boolean): Promise<NoteList> {
     await this.databaseConnectionService.verifyConnection();
     const notes = await this.noteRepository.find({
-      where: { userId, isArchived },
+      where: { userId, isTrashed },
       order: {
         isPinned: 'DESC',
         updatedAt: 'DESC',
@@ -50,7 +50,7 @@ export class NotesService {
       title: noteInput.title,
       content: noteInput.content,
       isPinned: false,
-      isArchived: false,
+      isTrashed: false,
     });
     const savedNote = await this.noteRepository.save(note);
 
@@ -71,13 +71,17 @@ export class NotesService {
         throw this.createNoteNotFoundException();
       }
 
-      const nextIsArchived = noteInput.isArchived ?? note.isArchived;
-      const nextIsPinned = nextIsArchived ? false : (noteInput.isPinned ?? note.isPinned);
+      const nextIsTrashed = noteInput.isTrashed ?? note.isTrashed;
+      const isRestoring = note.isTrashed && !nextIsTrashed;
+      const nextIsPinned =
+        nextIsTrashed || isRestoring ? false : (noteInput.isPinned ?? note.isPinned);
 
-      if (nextIsArchived && noteInput.isPinned === true) {
+      if ((nextIsTrashed || isRestoring) && noteInput.isPinned === true) {
         throw new ApiException(
           'VALIDATION_FAILED',
-          'Archived notes cannot be pinned.',
+          isRestoring
+            ? 'A note cannot be restored and pinned in the same request.'
+            : 'Trashed notes cannot be pinned.',
           HttpStatus.BAD_REQUEST,
         );
       }
@@ -86,7 +90,7 @@ export class NotesService {
         noteInput.isPinned !== undefined &&
         noteInput.title === undefined &&
         noteInput.content === undefined &&
-        noteInput.isArchived === undefined;
+        noteInput.isTrashed === undefined;
 
       if (isPinStateOnlyUpdate) {
         await transactionalNoteRepository
@@ -114,7 +118,7 @@ export class NotesService {
         note.content = noteInput.content;
       }
 
-      note.isArchived = nextIsArchived;
+      note.isTrashed = nextIsTrashed;
       note.isPinned = nextIsPinned;
 
       const savedNote = await transactionalNoteRepository.save(note);
@@ -125,11 +129,35 @@ export class NotesService {
 
   async deleteNote(userId: string, noteId: string): Promise<void> {
     await this.databaseConnectionService.verifyConnection();
-    const deletion = await this.noteRepository.delete({ id: noteId, userId });
 
-    if (deletion.affected !== 1) {
-      throw this.createNoteNotFoundException();
-    }
+    await this.dataSource.transaction(async (entityManager) => {
+      const transactionalNoteRepository = entityManager.getRepository(NoteEntity);
+      const note = await transactionalNoteRepository.findOne({
+        where: { id: noteId, userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (note === null) {
+        throw this.createNoteNotFoundException();
+      }
+
+      if (!note.isTrashed) {
+        throw new ApiException(
+          'NOTE_NOT_TRASHED',
+          'Only a note in Trash can be permanently deleted.',
+          HttpStatus.CONFLICT,
+        );
+      }
+
+      await transactionalNoteRepository.remove(note);
+    });
+  }
+
+  async emptyTrash(userId: string): Promise<EmptyTrashResponse> {
+    await this.databaseConnectionService.verifyConnection();
+    const deletion = await this.noteRepository.delete({ userId, isTrashed: true });
+
+    return { deletedNotesCount: deletion.affected ?? 0 };
   }
 
   private toNote(note: NoteEntity): Note {
@@ -138,7 +166,7 @@ export class NotesService {
       title: note.title,
       content: note.content,
       isPinned: note.isPinned,
-      isArchived: note.isArchived,
+      isTrashed: note.isTrashed,
       createdAt: toIsoDateTimeString(note.createdAt),
       updatedAt: toIsoDateTimeString(note.updatedAt),
     };

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const notesQuerySchema = z.strictObject({
-  archived: z.enum(['true', 'false']).transform((archived) => archived === 'true'),
+  trashed: z.enum(['true', 'false']).transform((trashed) => trashed === 'true'),
 });
 
 export type NotesQuery = z.infer<typeof notesQuerySchema>;
