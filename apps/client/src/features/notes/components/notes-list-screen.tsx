@@ -45,6 +45,16 @@ export function NotesListScreen({
     actionMutation.isError && actionMutation.variables.kind !== 'delete-permanently'
       ? actionMutation.variables.note.id
       : null;
+  const isPendingPermanentDeletion =
+    actionMutation.isPending &&
+    actionMutation.variables.kind === 'delete-permanently' &&
+    actionMutation.variables.note.id === pendingPermanentDeletion?.id;
+  const permanentDeletionError =
+    actionMutation.isError &&
+    actionMutation.variables.kind === 'delete-permanently' &&
+    actionMutation.variables.note.id === pendingPermanentDeletion?.id
+      ? actionMutation.error
+      : null;
   const hasTrashedNotes = isTrashed && notesQuery.isSuccess && notesQuery.data.length > 0;
 
   return (
@@ -147,12 +157,10 @@ export function NotesListScreen({
       <ConfirmationDialog
         confirmLabel={t('actions.deletePermanently')}
         description={t('permanentDelete.description')}
-        {...(actionMutation.isError && actionMutation.variables.kind === 'delete-permanently'
-          ? { errorMessage: t(getNoteErrorTranslationKey(actionMutation.error)) }
+        {...(permanentDeletionError
+          ? { errorMessage: t(getNoteErrorTranslationKey(permanentDeletionError)) }
           : {})}
-        isConfirming={
-          actionMutation.isPending && actionMutation.variables.kind === 'delete-permanently'
-        }
+        isConfirming={isPendingPermanentDeletion}
         isVisible={pendingPermanentDeletion !== null}
         onCancel={() => setPendingPermanentDeletion(null)}
         onConfirm={() => {

@@ -8,6 +8,15 @@ export type NoteErrorTranslationKey =
   | 'errors.serviceUnavailable'
   | 'errors.unexpected';
 
+export function isNoteNotFoundError(error: unknown): boolean {
+  if (!isAxiosError(error)) {
+    return false;
+  }
+
+  const parsedError = apiErrorResponseSchema.safeParse(error.response?.data);
+  return parsedError.success && parsedError.data.errorCode === 'NOTE_NOT_FOUND';
+}
+
 export function getNoteErrorTranslationKey(error: unknown): NoteErrorTranslationKey {
   if (!isAxiosError(error)) {
     return 'errors.unexpected';

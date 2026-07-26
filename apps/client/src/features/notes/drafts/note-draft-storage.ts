@@ -7,6 +7,7 @@ const noteDraftSchema = z.strictObject({
   updatedAt: z.iso.datetime(),
   serverUpdatedAt: z.iso.datetime().optional(),
 });
+const noteIdSchema = z.uuid();
 
 export type NoteDraft = z.infer<typeof noteDraftSchema>;
 
@@ -18,6 +19,7 @@ export interface NoteDraftStorage {
   write(userId: string, identity: NoteDraftIdentity, draft: NoteDraft): Promise<void>;
   remove(userId: string, identity: NoteDraftIdentity): Promise<void>;
   move(userId: string, from: NoteDraftIdentity, to: NoteDraftIdentity): Promise<void>;
+  listExistingNoteIds(userId: string): Promise<readonly string[]>;
 }
 
 class InvalidStoredNoteDraftError extends Error {
@@ -30,6 +32,10 @@ class InvalidStoredNoteDraftError extends Error {
 function getDraftKey(userId: string, identity: NoteDraftIdentity): string {
   const identityKey = identity.kind === 'new' ? 'new' : `note.${identity.noteId}`;
   return `nestra.notes.drafts.${userId}.${identityKey}`;
+}
+
+function getExistingDraftKeyPrefix(userId: string): string {
+  return `nestra.notes.drafts.${userId}.note.`;
 }
 
 class AsyncStorageNoteDraftStorage implements NoteDraftStorage {
@@ -67,6 +73,20 @@ class AsyncStorageNoteDraftStorage implements NoteDraftStorage {
       await AsyncStorage.setItem(targetKey, serializedDraft);
     }
     await AsyncStorage.removeItem(sourceKey);
+  }
+
+  public async listExistingNoteIds(userId: string): Promise<readonly string[]> {
+    const draftKeyPrefix = getExistingDraftKeyPrefix(userId);
+    const storageKeys = await AsyncStorage.getAllKeys();
+
+    return storageKeys.flatMap((storageKey) => {
+      if (!storageKey.startsWith(draftKeyPrefix)) {
+        return [];
+      }
+
+      const parsedNoteId = noteIdSchema.safeParse(storageKey.slice(draftKeyPrefix.length));
+      return parsedNoteId.success ? [parsedNoteId.data] : [];
+    });
   }
 }
 
