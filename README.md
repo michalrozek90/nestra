@@ -6,20 +6,38 @@ relaxation.
 
 ## Architecture
 
-The target architecture is an Expo client for Android, iOS, and Web, backed by a modular NestJS
-REST API and PostgreSQL. Shared public API contracts will live in a framework-independent
-`@nestra/contracts` package. Stage 2 provides runnable technical scaffolds for each layer; product
-features are introduced in later stages.
+The target architecture keeps one Expo client for Android, iOS, Web, and an installable Windows
+x64 desktop application. Tauri consumes the Expo web build, while a modular NestJS REST API and
+PostgreSQL remain the shared backend. Shared public API contracts live in the
+framework-independent `@nestra/contracts` package. The first desktop artifact will be one
+per-user NSIS setup executable named `Nestra_<version>_x64-setup.exe`.
 
 ```text
 Expo client (Android / iOS / Web)
                 |
-                v
-          NestJS REST API
-                |
-                v
-            PostgreSQL
+                +-- Expo web build --> Tauri desktop (Windows x64)
+                |                            |
+                +----------------------------+
+                              |
+                              v HTTPS
+                    NestJS API on Koyeb
+                              |
+                              v TLS
+                    PostgreSQL on Neon
 ```
+
+The family/demo environment uses Koyeb Free in Frankfurt and Neon Free in a compatible European
+region, so the API remains available while the developer computer is offline. A short cold start
+and the provider-assigned HTTPS endpoint are accepted initially; a custom domain is not required.
+The deployment remains portable through a normal container, standard PostgreSQL, controlled
+migrations, and configuration-owned provider URLs.
+
+Cloudflare R2 is reserved for a future curated ambient-audio catalog. Audio will be delivered
+directly to clients and cached locally by Tauri, while PostgreSQL stores composition metadata.
+User audio uploads and notifications that work while the application is fully closed remain
+future work. See
+[ADR 005](docs/decisions/005-desktop-and-hosted-service-architecture.md) for the accepted
+boundaries, trade-offs, and migration path.
 
 This is a private pnpm monorepo containing:
 
@@ -27,6 +45,8 @@ This is a private pnpm monorepo containing:
 - `@nestra/api`
 - `@nestra/contracts`
 - `@nestra/tsconfig`
+
+The desktop-foundation task will add `apps/desktop` as the private `@nestra/desktop` workspace.
 
 ## Prerequisites
 
@@ -243,12 +263,15 @@ The alias works in Cursor Agent Chat, the Codex extension in Cursor, and the nat
    system and persisted system, light, and dark appearance modes
 4. Authentication
 5. Notes and resilient autosave
-6. Settings, diagnostics, release automation, and `0.1.0` readiness
+6. Settings and diagnostics
+7. Desktop and hosted-service architecture, CI, Koyeb/Neon deployment, Tauri integration,
+   security hardening, Windows packaging, and `0.1.0` release readiness
 
 Post-`0.1.0` milestones cover automated tests, refinement of the established design system and
-product branding, observability, shopping lists, reminders, ambient audio, offline synchronization,
-and a future Tauri desktop wrapper. The authoritative scope and detailed stage boundaries are in
-the specification.
+product branding, observability, shopping lists, server-scheduled reminders, R2-backed ambient
+audio, offline synchronization, and desktop distribution hardening such as updates, signing, and
+additional operating systems. The authoritative scope and detailed boundaries are in the
+specification.
 
 ## License
 
