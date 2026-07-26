@@ -32,7 +32,24 @@ export function NoteCard({
   const theme = useNestraTheme();
 
   return (
-    <Card accessibilityLabel={note.title} mode="outlined" onPress={onOpen}>
+    <Card
+      accessibilityLabel={note.title}
+      mode="outlined"
+      onPress={onOpen}
+      style={
+        note.isPinned
+          ? [
+              styles.pinnedCard,
+              {
+                borderBottomColor: theme.colors.primary,
+                borderLeftColor: theme.colors.primary,
+                borderRightColor: theme.colors.primary,
+                borderTopColor: theme.colors.primary,
+              },
+            ]
+          : undefined
+      }
+    >
       <Card.Content style={styles.content}>
         <View style={styles.heading}>
           <Text numberOfLines={2} style={styles.title}>
@@ -107,6 +124,12 @@ const styles = StyleSheet.create({
   pinnedLabel: {
     ...typography.supporting,
     fontWeight: '600',
+  },
+  // Paper derives a separate one-pixel outline from borderColor. Keeping it transparent prevents
+  // that outline from overlapping the two-pixel surface border at rounded corners.
+  pinnedCard: {
+    borderColor: 'transparent',
+    borderWidth: 2,
   },
   title: {
     ...typography.cardTitle,
