@@ -231,7 +231,22 @@ pnpm lint
 pnpm lint:fix
 pnpm typecheck
 pnpm build
+pnpm verify
 ```
+
+`pnpm verify` runs `format:check`, `lint`, `typecheck`, and `build` in sequence. It is the same command used by the baseline GitHub Actions quality gate.
+
+## Continuous integration
+
+The baseline quality gate workflow in `.github/workflows/ci.yml` runs on pull requests and pushes to `main`. It installs dependencies with `pnpm install --frozen-lockfile`, then runs `pnpm verify`.
+
+CI assumptions:
+
+- Node.js `24.18.0` and pnpm `11.13.1`, matching the pinned repository versions.
+- No PostgreSQL, Docker, or local `.env` files are required. API compilation does not boot the server or connect to a database.
+- The Expo web build uses the public `EXPO_PUBLIC_*` values from `apps/client/.env.example`. Diagnostics and verbose logging stay disabled in CI.
+- `argon2` compiles its native binding during dependency installation on the Ubuntu runner.
+- The baseline workflow runs `pnpm verify` only; deployment, Tauri packaging, and release publishing are out of scope.
 
 The root product version in `package.json` is the single source used by the Expo configuration and
 compiled shared application metadata. Workspace package versions are internal only. Development
