@@ -30,7 +30,10 @@ Long-term modules:
    - simultaneous sounds;
    - saved presets.
 
-Release `0.1.0` implements the foundation and the complete **Notes** module. Shopping, Reminders, and Relax exist only as localized placeholder screens.
+Release `0.1.0` implements the foundation, the complete **Notes** module, a remotely hosted API and
+database, and an installable Windows x64 desktop application. Shopping, Reminders, and Relax exist
+only as localized placeholder screens. Ambient audio, user audio uploads, reminder scheduling, and
+closed-app notifications remain future work.
 
 ---
 
@@ -39,15 +42,21 @@ Release `0.1.0` implements the foundation and the complete **Notes** module. Sho
 ```text
 Expo client
 Android / iOS / Web
-        │
-        ▼
- NestJS REST API
-        │
-        ▼
-   PostgreSQL
+        |
+        +-- Expo web build --> Tauri desktop (Windows x64)
+        |                            |
+        +----------------------------+
+                     |
+                     v HTTPS
+           NestJS REST API container
+            Koyeb Free, Frankfurt
+                     |
+                     v TLS
+          Neon Free PostgreSQL, EU
 ```
 
-The Expo web build must remain suitable for a later Tauri wrapper.
+The Expo web build is the shared client consumed by Tauri. Tauri supplies a desktop runtime
+boundary and must not introduce a second feature implementation.
 
 Mandatory:
 
@@ -61,6 +70,8 @@ Mandatory:
 - structured logging;
 - Developer diagnostics;
 - unified product versioning;
+- a Tauri desktop shell and Windows x64 installer;
+- a remotely hosted NestJS container and managed PostgreSQL database;
 - automated release PRs, version bumps, tags, and GitHub Releases.
 
 Excluded from `0.1.0`:
@@ -68,13 +79,13 @@ Excluded from `0.1.0`:
 - Next.js;
 - microfrontends;
 - microservices;
-- Tauri;
 - WebSockets;
 - general offline synchronization;
 - push notifications;
 - reminder scheduling;
 - ambient audio;
-- desktop installers and updater;
+- user-provided audio uploads;
+- desktop automatic updates, purchased code signing, and macOS or Linux installers;
 - Sentry;
 - Jest and all automated tests;
 - API integration tests;
@@ -124,6 +135,24 @@ a second UI component or styling framework in `0.1.0`.
 - JWT access tokens;
 - opaque rotating refresh tokens;
 - Argon2id.
+
+### Desktop
+
+- Tauri using the latest stable mutually compatible release selected during implementation;
+- the Expo web output as the only desktop feature surface;
+- Windows x64 as the first packaging target, distributed as one per-user NSIS setup executable
+  named `Nestra_{version}_x64-setup.exe`;
+- operating-system-backed or appropriately secured Tauri storage for authentication secrets;
+- minimal explicit Tauri capabilities and outbound network permissions.
+
+### Hosted services
+
+- Koyeb Free Web Service in Frankfurt for the NestJS container;
+- Neon Free PostgreSQL in a compatible European region;
+- provider-assigned HTTPS endpoints for the initial private distribution;
+- no custom domain requirement for `0.1.0`;
+- Cloudflare R2 as the future object-storage target for curated ambient audio, without provisioning
+  or integrating it in `0.1.0`.
 
 ### Contracts package
 
@@ -191,10 +220,16 @@ Document the exact versions in README. Use Corepack where compatible.
 │   │   ├── app.config.ts
 │   │   ├── package.json
 │   │   └── tsconfig.json
-│   └── api/
-│       ├── src/
+│   ├── api/
+│   │   ├── src/
+│   │   ├── package.json
+│   │   └── tsconfig.json
+│   └── desktop/
 │       ├── package.json
-│       └── tsconfig.json
+│       └── src-tauri/
+│           ├── src/
+│           ├── Cargo.toml
+│           └── tauri.conf.json
 ├── packages/
 │   ├── contracts/
 │   │   ├── src/
@@ -240,6 +275,7 @@ Package names:
 ```text
 @nestra/client
 @nestra/api
+@nestra/desktop
 @nestra/contracts
 @nestra/tsconfig
 ```
@@ -274,6 +310,7 @@ pnpm dev:web
 pnpm dev:android
 pnpm dev:ios
 pnpm dev:api
+pnpm dev:desktop
 
 pnpm db:start
 pnpm db:stop
@@ -288,13 +325,17 @@ pnpm format
 pnpm format:check
 pnpm typecheck
 pnpm build
+pnpm build:desktop
 ```
 
 Requirements:
 
 - `pnpm dev` builds contracts once, then runs contracts watch, API watch, and Expo web.
 - `pnpm dev:web` uses port `8081`.
+- `pnpm dev:desktop` prepares the Expo web output and launches the Tauri development runtime.
 - root build order is contracts → API/client.
+- `pnpm build:desktop` is a Windows packaging command that consumes a production Expo web build and
+  produces the configured per-user NSIS Windows x64 installer.
 - no `test` script in `0.1.0`.
 - use a simple maintained concurrent-command tool.
 - unsupported platform scripts fail clearly.
@@ -312,7 +353,7 @@ The root `package.json` `version` is the single product-version source. It must 
 - diagnostics;
 - API health response;
 - changelog display;
-- future Tauri configuration.
+- Tauri configuration and Windows installer metadata.
 
 Workspace package versions are internal metadata and must not be displayed as the product version.
 
@@ -325,7 +366,8 @@ Their automation is deferred until native build pipelines are introduced.
 
 ### Release Please
 
-Configure Release Please before the first release. Do not wait for Tauri.
+Configure Release Please independently of desktop packaging. The `0.1.0` release must not be
+published until the Windows x64 installer has been built and verified.
 
 On pushes to `main`, it must:
 
@@ -501,6 +543,28 @@ export type RuntimeConfig = {
 ```
 
 All four values come from explicit configuration; diagnostics and verbose logging are separate environment variables.
+
+### Hosted private environment
+
+- Deploy the NestJS API as a normal container to a Koyeb Free Web Service in Frankfurt.
+- Deploy PostgreSQL to Neon Free in a compatible European region and connect with TLS using the
+  provider's pooling guidance.
+- Keep secrets exclusively in managed service configuration and never commit or expose them to
+  the client.
+- Run committed TypeORM migrations as an explicit deployment operation; never use
+  `synchronize: true`.
+- Configure the client with the provider-assigned HTTPS API URL and configure matching explicit
+  backend CORS and Tauri network allow-lists.
+- Do not require or purchase a custom domain for `0.1.0`.
+- Accept a short cold start for the initial private distribution and expose the existing health endpoint for
+  deployment checks.
+- Keep the container, PostgreSQL schema, migrations, and public REST contract provider-neutral so
+  an always-on paid service can replace the free tier without an architecture change.
+
+The hosted environment must keep the API and database available while the developer computer is
+offline. If the API host changes before a custom domain is introduced, update the configured API
+base URL and distribute a new client build; feature and presentation code must not contain
+provider URLs.
 
 ## 12. API and database conventions
 
@@ -862,8 +926,12 @@ export interface AuthTokenStorage {
 
 - native implementation: SecureStore;
 - web implementation: localStorage behind the abstraction.
+- desktop implementation: operating-system-backed or appropriately secured Tauri storage behind
+  the same abstraction.
 
-README must warn that web localStorage is a prototype compromise and a public production web release must evaluate `httpOnly`, `Secure`, `SameSite` cookies.
+README must warn that web localStorage is a prototype compromise and a public production web
+release must evaluate `httpOnly`, `Secure`, `SameSite` cookies. The Tauri runtime must never select
+the web localStorage implementation for authentication secrets.
 
 Use one configured Axios instance with typed request functions and interceptors.
 
@@ -1360,15 +1428,17 @@ Future milestone:
 - brute-force protection;
 - auth audit logs;
 - refresh-token replay-family detection;
-- CSP for web/Tauri;
+- broader CSP review beyond the minimal Tauri capability and network policy;
 - request body limits;
 - dependency scanning;
-- production secret management;
+- automated secret rotation and advanced production secret-management controls;
 - cookie-based production web auth;
 - account deletion and session management;
 - external security review.
 
-`0.1.0` must still include CORS allow-list, strong JWT secret validation, Argon2id, rotating opaque tokens, ownership enforcement, safe errors, request IDs, and safe logging.
+`0.1.0` must still include a CORS allow-list, strong JWT secret validation, managed deployment
+secrets, Argon2id, rotating opaque tokens, ownership enforcement, safe errors, request IDs, safe
+logging, secured desktop token storage, and minimal Tauri capabilities and network permissions.
 
 ---
 
@@ -1395,7 +1465,10 @@ pnpm typecheck
 pnpm build
 ```
 
-Build contracts, API, and Expo web. No tests, store builds, EAS, Tauri, deployment, or updater. Pin third-party Actions to immutable reviewed SHAs.
+The baseline quality gate builds contracts, API, and Expo web. It does not run tests that do not
+yet exist, deploy services, package Tauri, run store builds or EAS, or publish an updater. Backend
+deployment and Windows x64 packaging use separate dependent workflows after the baseline is
+established. Pin third-party Actions to immutable reviewed SHAs.
 
 README must cover:
 
@@ -1416,9 +1489,10 @@ README must cover:
 15. versioning and Release Please;
 16. technical vs in-app changelog;
 17. web token-storage warning;
-18. limitations and troubleshooting;
-19. roadmap;
-20. license status.
+18. Tauri prerequisites, secure desktop token storage, and Windows packaging;
+19. hosted Koyeb and Neon architecture, configuration, cold starts, and deployment troubleshooting;
+20. limitations and roadmap;
+21. license status.
 
 State explicitly that no license has been selected and do not create `LICENSE`.
 
@@ -1493,10 +1567,15 @@ Required:
 
 - repository preserved;
 - pnpm monorepo;
-- Docker Postgres and migrations;
+- local Docker Postgres, managed Neon Postgres, and controlled migrations;
 - web and Android work;
 - iOS requirements accurate;
 - API, auth, rotation, Notes, autosave, drafts;
+- NestJS container deployed to Koyeb and usable while the developer computer is offline;
+- provider-assigned HTTPS API configuration with an accepted initial cold start;
+- Tauri desktop shell with secured token storage and minimal capabilities;
+- verified `Nestra_{version}_x64-setup.exe` per-user NSIS installer that launches the application
+  without a development server;
 - English/Polish;
 - responsive navigation;
 - Settings, changelog, diagnostics;
@@ -1508,12 +1587,23 @@ Required:
 - Release Please targeting `v0.1.0`;
 - complete README;
 - no automated tests;
-- no Tauri;
+- no ambient-audio delivery, user audio uploads, or closed-app notification implementation;
+- no automatic desktop updater, purchased code signing, or macOS/Linux installers;
 - no license.
 
 ---
 
 ## 32. Post-0.1.0 roadmap
+
+Future feature work must preserve these boundaries:
+
+- curated ambient audio is stored in Cloudflare R2 and delivered directly to the client rather
+  than proxied through NestJS;
+- Tauri caches downloaded audio locally for fast replay and offline use;
+- the API and PostgreSQL own catalog and composition metadata, not audio blobs;
+- users cannot upload recordings in the initial Relax implementation;
+- notifications that work while the application is fully closed use a server-side scheduler or
+  worker and a replaceable delivery-provider adapter rather than a timer in Tauri.
 
 ```text
 0.1.1 — Unit testing foundation
@@ -1561,10 +1651,10 @@ Licensing spike
 - decide open-source intent
 - add a license only after explicit decision
 
-0.3.0 — Persistent reminders
-0.4.0 — Ambient sound mixer and sound-license review
+0.3.0 — Persistent reminders with server-side scheduling and closed-app delivery
+0.4.0 — R2-backed ambient sound mixer, local cache, and sound-license review
 0.5.0 — WebSockets and offline synchronization
-0.6.0 — Tauri, desktop builds, release assets, updater, signing
+0.6.0 — Desktop distribution hardening, updater, signing, and macOS/Linux evaluation
 
 Before store distribution
 - review bundle identifiers
