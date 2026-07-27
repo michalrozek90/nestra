@@ -78,6 +78,9 @@ pnpm build:desktop
 `pnpm verify` does not compile Rust or produce installers. Run desktop commands locally on Windows
 after the prerequisites above are installed.
 
+Desktop Cargo output is written to `%LOCALAPPDATA%\nestra\desktop-cargo-target` so Expo Metro does
+not watch rustc temporary files inside the monorepo during `pnpm dev:desktop`.
+
 ## Out of scope for the foundation
 
 - Secured production token storage and capability hardening

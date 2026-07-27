@@ -1,3 +1,4 @@
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -20,7 +21,16 @@ if (process.platform !== 'win32') {
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const desktopPackageDirectory = path.resolve(scriptDirectory, '..');
 
+// Keep Cargo artifacts outside the monorepo so Expo Metro does not watch rustc
+// temporary files under apps/desktop/src-tauri/target and crash with ENOENT.
+const localAppDataDirectory =
+  process.env.LOCALAPPDATA ?? path.join(os.homedir(), 'AppData', 'Local');
+const cargoTargetDirectory = path.join(localAppDataDirectory, 'nestra', 'desktop-cargo-target');
+
 runCommand('pnpm', ['exec', 'tauri', ...tauriArguments], {
   cwd: desktopPackageDirectory,
-  env: process.env,
+  env: {
+    ...process.env,
+    CARGO_TARGET_DIR: cargoTargetDirectory,
+  },
 });

@@ -40,4 +40,10 @@ export default typescriptEslint.config(
       'no-console': 'error',
     },
   },
+  {
+    files: ['apps/client/metro.config.js'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
 );
