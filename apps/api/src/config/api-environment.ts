@@ -42,10 +42,33 @@ const rawApiEnvironmentSchema = z
 
 export type ApiEnvironment = z.infer<typeof rawApiEnvironmentSchema>;
 
+function hasConfiguredApiPort(apiPort: unknown): boolean {
+  if (typeof apiPort === 'number') {
+    return Number.isFinite(apiPort);
+  }
+
+  return typeof apiPort === 'string' && apiPort.trim().length > 0;
+}
+
+function withPlatformPortFallback(
+  environmentVariables: Readonly<Record<string, unknown>>,
+): Record<string, unknown> {
+  if (hasConfiguredApiPort(environmentVariables.API_PORT)) {
+    return { ...environmentVariables };
+  }
+
+  return {
+    ...environmentVariables,
+    API_PORT: environmentVariables.PORT,
+  };
+}
+
 export function parseApiEnvironment(
   environmentVariables: Readonly<Record<string, unknown>>,
 ): ApiEnvironment {
-  const parseResult = rawApiEnvironmentSchema.safeParse(environmentVariables);
+  const parseResult = rawApiEnvironmentSchema.safeParse(
+    withPlatformPortFallback(environmentVariables),
+  );
 
   if (!parseResult.success) {
     const invalidFields = parseResult.error.issues

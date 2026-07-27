@@ -22,6 +22,7 @@
     "dev:client": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/client dev",
     "dev:ios": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/client dev:ios",
     "dev:web": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/client dev:web",
+    "docker:api:build": "docker build -f infrastructure/Dockerfile.api -t nestra-api:local .",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "lint": "eslint .",

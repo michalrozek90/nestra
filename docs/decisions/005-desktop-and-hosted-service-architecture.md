@@ -35,10 +35,10 @@ installer metadata, and release assets.
 
 ### Hosted API and database
 
-The NestJS application runs as a normal container on a Koyeb Free Web Service in Frankfurt.
-Koyeb receives secrets and environment-specific configuration at deployment time. The service
+The NestJS application runs as a normal container on a Render Free Web Service in Frankfurt.
+Render receives secrets and environment-specific configuration at deployment time. The service
 exposes its health endpoint and listens on the platform-provided port without embedding
-Koyeb-specific APIs in business logic.
+Render-specific APIs in business logic.
 
 PostgreSQL runs on Neon Free in a compatible European region. The API connects using the
 provider's TLS and pooling guidance, and schema changes continue to use committed TypeORM
@@ -55,7 +55,7 @@ required because the endpoint is application configuration rather than user-faci
 The API base URL remains owned by typed client runtime configuration and must not be duplicated in
 screens or feature modules.
 
-Moving to an always-on paid Koyeb service, another container host, or another managed PostgreSQL
+Moving to an always-on paid Render instance, another container host, or another managed PostgreSQL
 service does not change the public API or application architecture. Without a custom domain,
 changing the API host requires changing the configured base URL and distributing an updated
 client build. A stable custom domain may be introduced before a broader public release if avoiding

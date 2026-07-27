@@ -49,7 +49,7 @@ Android / iOS / Web
                      |
                      v HTTPS
            NestJS REST API container
-            Koyeb Free, Frankfurt
+            Render Free, Frankfurt
                      |
                      v TLS
           Neon Free PostgreSQL, EU
@@ -147,7 +147,7 @@ a second UI component or styling framework in `0.1.0`.
 
 ### Hosted services
 
-- Koyeb Free Web Service in Frankfurt for the NestJS container;
+- Render Free Web Service in Frankfurt for the NestJS container;
 - Neon Free PostgreSQL in a compatible European region;
 - provider-assigned HTTPS endpoints for the initial private distribution;
 - no custom domain requirement for `0.1.0`;
@@ -546,7 +546,7 @@ All four values come from explicit configuration; diagnostics and verbose loggin
 
 ### Hosted private environment
 
-- Deploy the NestJS API as a normal container to a Koyeb Free Web Service in Frankfurt.
+- Deploy the NestJS API as a normal container to a Render Free Web Service in Frankfurt.
 - Deploy PostgreSQL to Neon Free in a compatible European region and connect with TLS using the
   provider's pooling guidance.
 - Keep secrets exclusively in managed service configuration and never commit or expose them to
@@ -1490,7 +1490,7 @@ README must cover:
 16. technical vs in-app changelog;
 17. web token-storage warning;
 18. Tauri prerequisites, secure desktop token storage, and Windows packaging;
-19. hosted Koyeb and Neon architecture, configuration, cold starts, and deployment troubleshooting;
+19. hosted Render and Neon architecture, configuration, cold starts, and deployment troubleshooting;
 20. limitations and roadmap;
 21. license status.
 
@@ -1571,7 +1571,7 @@ Required:
 - web and Android work;
 - iOS requirements accurate;
 - API, auth, rotation, Notes, autosave, drafts;
-- NestJS container deployed to Koyeb and usable while the developer computer is offline;
+- NestJS container deployed to Render and usable while the developer computer is offline;
 - provider-assigned HTTPS API configuration with an accepted initial cold start;
 - Tauri desktop shell with secured token storage and minimal capabilities;
 - verified `Nestra_{version}_x64-setup.exe` per-user NSIS installer that launches the application

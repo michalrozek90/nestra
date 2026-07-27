@@ -20,17 +20,17 @@ Expo client (Android / iOS / Web)
                 +----------------------------+
                               |
                               v HTTPS
-                    NestJS API on Koyeb
+                    NestJS API on Render
                               |
                               v TLS
                     PostgreSQL on Neon
 ```
 
-The initial hosted environment uses Koyeb Free in Frankfurt and Neon Free in a compatible European
-region, so the API remains available while the developer computer is offline. A short cold start
-and the provider-assigned HTTPS endpoint are accepted initially; a custom domain is not required.
-The deployment remains portable through a normal container, standard PostgreSQL, controlled
-migrations, and configuration-owned provider URLs.
+The initial hosted environment uses a Render Free Web Service in Frankfurt and Neon Free
+PostgreSQL in a compatible European region, so the API remains available while the developer
+computer is offline. A short cold start and the provider-assigned HTTPS endpoint are accepted
+initially; a custom domain is not required. The deployment remains portable through a normal
+container, standard PostgreSQL, controlled migrations, and configuration-owned provider URLs.
 
 Cloudflare R2 is reserved for a future curated ambient-audio catalog. Audio will be delivered
 directly to clients and cached locally by Tauri, while PostgreSQL stores composition metadata.
@@ -236,6 +236,24 @@ pnpm verify
 
 `pnpm verify` runs `format:check`, `lint`, `typecheck`, and `build` in sequence. It is the same command used by the baseline GitHub Actions quality gate.
 
+## Hosted API (Render + Neon)
+
+The demonstration API runs as a container on a Render Free Web Service (Frankfurt) with Neon Free
+PostgreSQL in a compatible European region. Provider-assigned HTTPS and a short cold start are
+accepted for the family/demo phase. A custom domain is not required for `0.1.0`.
+
+Operator steps, environment variables, migration procedure, free-tier limits, and the upgrade path
+to an always-on service are documented in
+[`docs/deployment/hosted-api.md`](docs/deployment/hosted-api.md).
+
+Build the production API image locally before deploying:
+
+```bash
+pnpm docker:api:build
+```
+
+Secrets belong only in provider dashboards. Never commit them or paste them into GitHub issues.
+
 ## Continuous integration
 
 The baseline quality gate workflow in `.github/workflows/ci.yml` runs on pull requests and pushes to `main`. It installs dependencies with `pnpm install --frozen-lockfile`, then runs `pnpm verify`.
@@ -256,6 +274,7 @@ identifiers are `nestra`, `com.michalrozek.nestra` for Android, and
 ## Documentation
 
 - [`0.1.0` product and technical specification](docs/specifications/nestra-initial-application.md)
+- [Hosted API deployment (Render + Neon)](docs/deployment/hosted-api.md)
 - [Implementation board](https://github.com/users/michalrozek90/projects/1)
 - [Architecture decisions](docs/decisions/README.md)
 - [Contributor instructions](AGENTS.md)
@@ -279,7 +298,7 @@ The alias works in Cursor Agent Chat, the Codex extension in Cursor, and the nat
 4. Authentication
 5. Notes and resilient autosave
 6. Settings and diagnostics
-7. Desktop and hosted-service architecture, CI, Koyeb/Neon deployment, Tauri integration,
+7. Desktop and hosted-service architecture, CI, Render/Neon deployment, Tauri integration,
    security hardening, Windows packaging, and `0.1.0` release readiness
 
 Post-`0.1.0` milestones cover automated tests, refinement of the established design system and
