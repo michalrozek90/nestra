@@ -149,7 +149,7 @@ a second UI component or styling framework in `0.1.0`.
 
 - Koyeb Free Web Service in Frankfurt for the NestJS container;
 - Neon Free PostgreSQL in a compatible European region;
-- provider-assigned HTTPS endpoints for the family/demo phase;
+- provider-assigned HTTPS endpoints for the initial private distribution;
 - no custom domain requirement for `0.1.0`;
 - Cloudflare R2 as the future object-storage target for curated ambient audio, without provisioning
   or integrating it in `0.1.0`.
@@ -544,7 +544,7 @@ export type RuntimeConfig = {
 
 All four values come from explicit configuration; diagnostics and verbose logging are separate environment variables.
 
-### Hosted family/demo environment
+### Hosted private environment
 
 - Deploy the NestJS API as a normal container to a Koyeb Free Web Service in Frankfurt.
 - Deploy PostgreSQL to Neon Free in a compatible European region and connect with TLS using the
@@ -556,12 +556,12 @@ All four values come from explicit configuration; diagnostics and verbose loggin
 - Configure the client with the provider-assigned HTTPS API URL and configure matching explicit
   backend CORS and Tauri network allow-lists.
 - Do not require or purchase a custom domain for `0.1.0`.
-- Accept a short cold start for the family/demo phase and expose the existing health endpoint for
+- Accept a short cold start for the initial private distribution and expose the existing health endpoint for
   deployment checks.
 - Keep the container, PostgreSQL schema, migrations, and public REST contract provider-neutral so
   an always-on paid service can replace the free tier without an architecture change.
 
-The hosted environment must serve authentication and Notes while the developer computer is
+The hosted environment must keep the API and database available while the developer computer is
 offline. If the API host changes before a custom domain is introduced, update the configured API
 base URL and distribute a new client build; feature and presentation code must not contain
 provider URLs.
@@ -1572,7 +1572,7 @@ Required:
 - iOS requirements accurate;
 - API, auth, rotation, Notes, autosave, drafts;
 - NestJS container deployed to Koyeb and usable while the developer computer is offline;
-- provider-assigned HTTPS API configuration with an accepted family/demo cold start;
+- provider-assigned HTTPS API configuration with an accepted initial cold start;
 - Tauri desktop shell with secured token storage and minimal capabilities;
 - verified `Nestra_{version}_x64-setup.exe` per-user NSIS installer that launches the application
   without a development server;

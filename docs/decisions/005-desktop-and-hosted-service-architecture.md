@@ -7,9 +7,9 @@ Accepted
 ## Context
 
 Nestra must become an installable desktop application without duplicating the existing Expo
-client. Authentication and Notes also need to remain available when the developer computer is
-offline. The initial audience is limited to the developer's family, so the deployment should have
-no fixed monthly cost and may accept a short cold start.
+client. The hosted API and database must remain available when the developer computer is offline.
+The initial private distribution targets a limited audience, so the deployment should have no
+fixed monthly cost and may accept a short cold start.
 
 Later product milestones need curated ambient audio, saved sound compositions, and notifications
 that can be delivered while the desktop application is fully closed. Those future features need
@@ -46,7 +46,7 @@ migrations that run as a controlled deployment step. Production never enables Ty
 synchronization.
 
 This topology keeps the API and database available independently of the developer computer. A
-short first-request cold start is accepted for the family/demo phase.
+short first-request cold start is accepted for the initial private distribution.
 
 ### Endpoint and configuration boundary
 
@@ -95,7 +95,7 @@ notification implementation are outside the desktop `0.1.0` scope.
 ## Consequences
 
 - Nestra gains one shared client implementation and a narrow platform-specific desktop boundary.
-- The family/demo environment can operate without a developer machine or a fixed monthly hosting
+- The hosted environment can operate without a developer machine or a fixed monthly hosting
   cost.
 - Cold starts and free-tier availability limits are accepted until usage justifies an always-on
   paid service.
@@ -113,10 +113,10 @@ notification implementation are outside the desktop `0.1.0` scope.
 - Building a separate desktop client was rejected because it would duplicate the Expo feature
   surface and increase maintenance cost.
 - Producing both NSIS and MSI installers was rejected because one familiar per-user setup
-  executable is sufficient for the initial family/demo distribution and avoids maintaining two
+  executable is sufficient for the initial private distribution and avoids maintaining two
   release artifacts.
 - Buying a custom domain immediately was rejected because provider-assigned HTTPS is sufficient
-  for the family/demo audience and the endpoint is not directly navigated by users.
+  for the initial private distribution and the endpoint is not directly navigated by users.
 - Proxying ambient audio through NestJS was rejected because it would add latency, bandwidth cost,
   and unnecessary backend load.
 - Storing audio files in PostgreSQL was rejected because object storage and local caching are

@@ -26,7 +26,7 @@ Expo client (Android / iOS / Web)
                     PostgreSQL on Neon
 ```
 
-The family/demo environment uses Koyeb Free in Frankfurt and Neon Free in a compatible European
+The initial hosted environment uses Koyeb Free in Frankfurt and Neon Free in a compatible European
 region, so the API remains available while the developer computer is offline. A short cold start
 and the provider-assigned HTTPS endpoint are accepted initially; a custom domain is not required.
 The deployment remains portable through a normal container, standard PostgreSQL, controlled
