@@ -2,8 +2,7 @@
 
 This document covers the operator checklist for the free-tier demonstration environment.
 Architecture decisions live in
-[ADR 005](../decisions/005-desktop-and-hosted-service-architecture.md) and
-[ADR 006](../decisions/006-hosted-api-runtime-on-render.md). Issue #47 splits work between
+[ADR 005](../decisions/005-desktop-and-hosted-service-architecture.md). Issue #47 splits work between
 repository changes (agent) and provider-console steps (operator).
 
 ## Topology
