@@ -80,11 +80,18 @@ The API uses the standard `pg` driver through TypeORM and honors TLS settings fr
 add Neon or Render SDKs into domain or application code. Production never enables TypeORM
 `synchronize`.
 
-## CORS for the next desktop task
+## CORS for desktop clients
 
-Configure an explicit allow-list now so #41 / #42 can add Tauri origins without changing server
-code. Until desktop exists, include the Expo web origin used for manual checks, for example
-`http://localhost:8081`. Native mobile clients are not browser CORS clients.
+Configure an explicit allow-list so browser and Tauri WebView clients can call the API without
+changing server code for each origin. Include every origin you actually use:
+
+| Client mode                      | Example origin           |
+| -------------------------------- | ------------------------ |
+| Expo web / Tauri development     | `http://localhost:8081`  |
+| Packaged Tauri WebView (Windows) | `http://tauri.localhost` |
+
+Native mobile clients are not browser CORS clients. See
+[`docs/deployment/desktop.md`](./desktop.md) for the desktop shell setup.
 
 ## Controlled migrations
 

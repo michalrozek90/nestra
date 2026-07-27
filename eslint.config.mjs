@@ -4,7 +4,15 @@ import typescriptEslint from 'typescript-eslint';
 
 export default typescriptEslint.config(
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/coverage/**', '**/.expo/**'],
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/coverage/**',
+      '**/.expo/**',
+      '**/src-tauri/target/**',
+      '**/src-tauri/gen/**',
+    ],
   },
   {
     linterOptions: {

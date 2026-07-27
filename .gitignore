@@ -35,5 +35,9 @@ Thumbs.db
 # TypeScript incremental output
 *.tsbuildinfo
 
+# Rust / Tauri build output
+**/src-tauri/target/
+**/src-tauri/gen/
+
 # Local temporary deploy trees
 .tmp-api-deploy/

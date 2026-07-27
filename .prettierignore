@@ -5,5 +5,7 @@ build/
 coverage/
 .expo/
 **/expo-env.d.ts
+**/src-tauri/target/
+**/src-tauri/gen/
 docs/specifications/nestra-initial-application.md
 pnpm-lock.yaml
