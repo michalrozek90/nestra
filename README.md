@@ -43,10 +43,9 @@ This is a private pnpm monorepo containing:
 
 - `@nestra/client`
 - `@nestra/api`
+- `@nestra/desktop`
 - `@nestra/contracts`
 - `@nestra/tsconfig`
-
-The desktop-foundation task will add `apps/desktop` as the private `@nestra/desktop` workspace.
 
 ## Prerequisites
 
@@ -55,6 +54,16 @@ The desktop-foundation task will add `apps/desktop` as the private `@nestra/desk
 - [pnpm `11.13.1`](https://pnpm.io/installation) (version declared by `packageManager`)
 - [Git](https://git-scm.com/install/)
 - [Docker Desktop](https://docs.docker.com/get-started/get-docker/) or Docker Engine with Compose
+
+For the Windows desktop shell (`pnpm dev:desktop` / `pnpm build:desktop`), also install:
+
+- [Rust via rustup](https://rustup.rs/)
+- [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) with the
+  **Desktop development with C++** workload
+- [WebView2 Evergreen Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) when it is
+  not already present
+
+Details are in [`docs/deployment/desktop.md`](docs/deployment/desktop.md).
 
 Node.js 24 is the current LTS line and satisfies the Node requirements of the selected stable
 Expo SDK 57 and NestJS 11 lines. Use the exact pinned versions so local and CI behavior remains
@@ -75,6 +84,7 @@ Local environment templates are committed at:
 ```text
 apps/api/.env.example
 apps/client/.env.example
+apps/client/.env.desktop.example
 infrastructure/.env.example
 ```
 
@@ -194,13 +204,40 @@ pnpm dev:ios
 Android requires Android Studio and a configured emulator or device. The iOS simulator requires
 macOS and Xcode; `pnpm dev:ios` fails with an explicit message on unsupported platforms.
 
-The configurable API base URLs for later client stages are:
+### Desktop (Windows)
+
+After installing the Rust, MSVC, and WebView2 prerequisites documented in
+[`docs/deployment/desktop.md`](docs/deployment/desktop.md):
+
+```bash
+pnpm dev:desktop
+```
+
+That command prepares Expo web on port `8081` and opens the Tauri development window. It uses
+`apps/client/.env` for the typed API base URL. Point that file at the local NestJS API or at the
+hosted demonstration HTTPS URL.
+
+Create the desktop production environment file before packaging:
+
+```powershell
+Copy-Item apps/client/.env.desktop.example apps/client/.env.desktop
+```
+
+```bash
+pnpm build:desktop
+```
+
+`pnpm build:desktop` exports the Expo web client with `.env.desktop` and runs the Tauri Windows
+build (per-user NSIS). Signing and release publishing remain separate tasks.
+
+The configurable API base URLs for client runtimes are:
 
 ```text
-Web:              http://localhost:3000/api/v1
-iOS Simulator:    http://localhost:3000/api/v1
-Android Emulator: http://10.0.2.2:3000/api/v1
-Physical phone:   http://<LAN-IP>:3000/api/v1
+Local web / desktop dev:  http://localhost:3000/api/v1
+Hosted demo API:          https://<provider-assigned-host>/api/v1
+iOS Simulator:            http://localhost:3000/api/v1
+Android Emulator:         http://10.0.2.2:3000/api/v1
+Physical phone:           http://<LAN-IP>:3000/api/v1
 ```
 
 For a physical phone, the computer and phone must share a network, the API must listen on
@@ -265,6 +302,7 @@ CI assumptions:
 - The Expo web build uses the public `EXPO_PUBLIC_*` values from `apps/client/.env.example`. Diagnostics and verbose logging stay disabled in CI.
 - `argon2` compiles its native binding during dependency installation on the Ubuntu runner.
 - The baseline workflow runs `pnpm verify` only; deployment, Tauri packaging, and release publishing are out of scope.
+- Desktop Rust compilation requires Windows MSVC tooling and is verified locally with `pnpm dev:desktop` / `pnpm build:desktop`.
 
 The root product version in `package.json` is the single source used by the Expo configuration and
 compiled shared application metadata. Workspace package versions are internal only. Development
@@ -275,6 +313,7 @@ identifiers are `nestra`, `com.michalrozek.nestra` for Android, and
 
 - [`0.1.0` product and technical specification](docs/specifications/nestra-initial-application.md)
 - [Hosted API deployment (Render + Neon)](docs/deployment/hosted-api.md)
+- [Desktop shell (Tauri)](docs/deployment/desktop.md)
 - [Implementation board](https://github.com/users/michalrozek90/projects/1)
 - [Architecture decisions](docs/decisions/README.md)
 - [Contributor instructions](AGENTS.md)

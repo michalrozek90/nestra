@@ -4,7 +4,15 @@ import typescriptEslint from 'typescript-eslint';
 
 export default typescriptEslint.config(
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/coverage/**', '**/.expo/**'],
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/coverage/**',
+      '**/.expo/**',
+      '**/src-tauri/target/**',
+      '**/src-tauri/gen/**',
+    ],
   },
   {
     linterOptions: {
@@ -30,6 +38,12 @@ export default typescriptEslint.config(
     ignores: ['apps/client/src/infrastructure/logging/console-logger.ts'],
     rules: {
       'no-console': 'error',
+    },
+  },
+  {
+    files: ['apps/client/metro.config.js'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
 );
