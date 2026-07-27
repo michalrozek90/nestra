@@ -2,7 +2,8 @@
 
 ## Status
 
-Accepted
+Accepted — the Koyeb Free container-host choice is superseded by
+[ADR 006](006-hosted-api-runtime-on-render.md).
 
 ## Context
 

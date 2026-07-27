@@ -1,9 +1,9 @@
 # Production image for @nestra/api. Build from the repository root:
 #   docker build -f infrastructure/Dockerfile.api -t nestra-api:local .
 #
-# Koyeb: select the Dockerfile builder and set the Dockerfile path to
-# infrastructure/Dockerfile.api. Expose the same port the process listens on
-# (API_PORT, or the platform PORT when API_PORT is unset).
+# Render: set the service runtime to Docker and the Dockerfile path to
+# infrastructure/Dockerfile.api. The process listens on API_PORT, or the
+# platform PORT when API_PORT is unset.
 
 FROM node:24.18.0-bookworm-slim AS base
 
