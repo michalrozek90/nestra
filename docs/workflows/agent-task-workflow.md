@@ -26,8 +26,8 @@ These forms are valid across Cursor Agent Chat, the Codex extension in Cursor, a
 Entrypoints that must delegate here without copying this workflow:
 
 - repository alias defined in `AGENTS.md`;
-- Codex skill at `.agents/skills/work/`;
-- Cursor command at `.cursor/commands/work.md`.
+- repository skill at `.agents/skills/work/` for Cursor Agent Chat, the Codex extension in Cursor,
+  and the native Codex application.
 
 Before accessing GitHub issues, GitHub Projects, branches, or pull requests, inspect the first non-empty line of the user's current message literally.
 

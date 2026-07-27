@@ -80,9 +80,8 @@ When invoked, read and follow:
 docs/workflows/issue-intake-workflow.md
 ```
 
-That workflow document is the single source of truth for issue intake. Client adapters such as
-`.cursor/commands/create.md` and `.agents/skills/create/` must delegate to it instead of copying the
-workflow.
+That workflow document is the single source of truth for issue intake. The client adapter at
+`.agents/skills/create/` must delegate to it instead of copying the workflow.
 
 The issue intake workflow creates and triages a work item only. It must not implement the task,
 change branches, create commits, or start the autonomous issue workflow.
@@ -130,7 +129,7 @@ In autonomous issue workflow mode, read and follow:
 docs/workflows/agent-task-workflow.md
 ```
 
-That workflow document is the single source of truth for the autonomous lifecycle. Client adapters such as `.cursor/commands/work.md` and `.agents/skills/work/` must delegate to it instead of copying the workflow.
+That workflow document is the single source of truth for the autonomous lifecycle. The client adapter at `.agents/skills/work/` must delegate to it instead of copying the workflow.
 
 Also read the selected GitHub issue, its comments, the corresponding GitHub Project item, the active specification, relevant architecture decisions, and `docs/code-review.md` as required by that workflow.
 
