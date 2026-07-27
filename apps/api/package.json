@@ -2,6 +2,9 @@
   "name": "@nestra/api",
   "version": "0.0.0",
   "private": true,
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "nest build",
     "db:migrate": "pnpm build && typeorm migration:run -d dist/database/data-source.js",

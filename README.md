@@ -236,6 +236,24 @@ pnpm verify
 
 `pnpm verify` runs `format:check`, `lint`, `typecheck`, and `build` in sequence. It is the same command used by the baseline GitHub Actions quality gate.
 
+## Hosted API (Koyeb + Neon)
+
+The demonstration API runs as a container on Koyeb Free (Frankfurt) with Neon Free PostgreSQL in a
+compatible European region. Provider-assigned HTTPS and a short cold start are accepted for the
+family/demo phase. A custom domain is not required for `0.1.0`.
+
+Operator steps, environment variables, migration procedure, free-tier limits, and the upgrade path
+to an always-on service are documented in
+[`docs/deployment/hosted-api.md`](docs/deployment/hosted-api.md).
+
+Build the production API image locally before deploying:
+
+```bash
+pnpm docker:api:build
+```
+
+Secrets belong only in provider dashboards. Never commit them or paste them into GitHub issues.
+
 ## Continuous integration
 
 The baseline quality gate workflow in `.github/workflows/ci.yml` runs on pull requests and pushes to `main`. It installs dependencies with `pnpm install --frozen-lockfile`, then runs `pnpm verify`.
@@ -256,6 +274,7 @@ identifiers are `nestra`, `com.michalrozek.nestra` for Android, and
 ## Documentation
 
 - [`0.1.0` product and technical specification](docs/specifications/nestra-initial-application.md)
+- [Hosted API deployment (Koyeb + Neon)](docs/deployment/hosted-api.md)
 - [Implementation board](https://github.com/users/michalrozek90/projects/1)
 - [Architecture decisions](docs/decisions/README.md)
 - [Contributor instructions](AGENTS.md)

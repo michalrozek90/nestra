@@ -34,3 +34,6 @@ Thumbs.db
 
 # TypeScript incremental output
 *.tsbuildinfo
+
+# Local temporary deploy trees
+.tmp-api-deploy/
