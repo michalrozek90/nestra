@@ -11,9 +11,9 @@ Tauri. Architecture decisions live in
 export from `@nestra/client` is the only feature surface.
 
 - `pnpm dev:desktop` starts Expo web on port `8081` and opens a Tauri window against that URL.
-- `pnpm build:desktop` builds the Expo web export with the desktop environment file, then runs the
-  Tauri Windows packaging command (per-user NSIS target). Signing, release publishing, and
-  automatic updates remain separate work.
+- `pnpm build:desktop` builds the Expo web export with the desktop environment file, then produces
+  the per-user NSIS Windows x64 installer. Signing, release publishing, and automatic updates remain
+  separate work.
 
 ## Prerequisites (Windows)
 
@@ -30,6 +30,54 @@ Restart the terminal after installing Rust or the C++ tools so `cargo`, `rustc`,
 environment are visible.
 
 Desktop commands refuse non-Windows hosts with an explicit error.
+
+## Identity, version, and installer metadata
+
+| Value                  | Source                                                                        |
+| ---------------------- | ----------------------------------------------------------------------------- |
+| Product name           | `productName`: `Nestra` in `apps/desktop/src-tauri/tauri.conf.json`           |
+| Main binary            | `mainBinaryName`: `Nestra` → installed `Nestra.exe`                           |
+| Application identifier | `com.michalrozek.nestra`                                                      |
+| Product version        | Root `package.json` `version`, referenced by Tauri as `../../../package.json` |
+| Publisher              | `Nestra`                                                                      |
+| Installer mode         | Per-user NSIS (`installMode`: `currentUser`)                                  |
+| Installer icon         | `apps/desktop/src-tauri/icons/icon.ico`                                       |
+
+The expected installer file name is:
+
+```text
+Nestra_{version}_x64-setup.exe
+```
+
+Example for the current root product version `0.0.0`:
+
+```text
+Nestra_0.0.0_x64-setup.exe
+```
+
+`pnpm build:desktop` fails if that artifact is missing after the Tauri build.
+
+Workspace package versions under `apps/` and `packages/` are internal metadata and must not be used
+as the product or installer version.
+
+## Packaging outputs
+
+Local builds write Cargo artifacts to `%LOCALAPPDATA%\nestra\desktop-cargo-target` by default so
+Expo Metro does not watch rustc temporary files inside the monorepo. Override with
+`CARGO_TARGET_DIR` when needed (CI does this).
+
+Installer location (first match wins):
+
+```text
+%CARGO_TARGET_DIR%\release\bundle\nsis\Nestra_{version}_x64-setup.exe
+%CARGO_TARGET_DIR%\x86_64-pc-windows-msvc\release\bundle\nsis\Nestra_{version}_x64-setup.exe
+```
+
+Default local path example:
+
+```text
+%LOCALAPPDATA%\nestra\desktop-cargo-target\release\bundle\nsis\Nestra_0.0.0_x64-setup.exe
+```
 
 ## API configuration boundary
 
@@ -108,13 +156,62 @@ Client logging sanitizes tokens, credentials, note content, drafts, and complete
 request/response payloads. Desktop hardening does not add Rust or JavaScript paths that log
 authentication secrets.
 
+## Continuous integration packaging
+
+The workflow `.github/workflows/desktop-package.yml` builds the Windows x64 installer on
+`windows-latest` for pull requests, pushes to `main`, and manual `workflow_dispatch` runs.
+
+It reuses the baseline CI conventions from `.github/workflows/ci.yml`:
+
+- Node.js from `.nvmrc` and pnpm `11.13.1`
+- `pnpm install --frozen-lockfile`
+- pinned third-party Actions by commit SHA
+- minimal `contents: read` permissions
+
+Packaging-specific steps:
+
+1. Install the stable Rust toolchain with the `x86_64-pc-windows-msvc` target.
+2. Cache Cargo artifacts with `Swatinem/rust-cache`.
+3. Copy `apps/client/.env.desktop.example` to `apps/client/.env.desktop` (never commit the copy).
+4. Run `pnpm build:desktop`.
+5. Upload `Nestra_{version}_x64-setup.exe` as a workflow artifact (14-day retention).
+
+CI sets `CARGO_TARGET_DIR` to `apps/desktop/src-tauri/target` inside the checked-out workspace so
+caching and artifact upload paths stay predictable. The quality-gate workflow does **not** compile
+Rust or produce installers.
+
+## Clean-machine smoke test
+
+Run this checklist against a freshly built `Nestra_{version}_x64-setup.exe` and the hosted API from
+[#47](https://github.com/michalrozek90/nestra/issues/47) / [`hosted-api.md`](./hosted-api.md). Prefer
+a clean Windows user profile or a machine that does not already have Nestra installed.
+
+Prerequisites:
+
+- Hosted API HTTPS URL is reachable; a short first-request cold start after idle is acceptable.
+- Hosted `CORS_ALLOWED_ORIGINS` includes `http://tauri.localhost`.
+- Installer was built with `.env.desktop` pointing at that hosted API.
+
+| Step            | Expectation                                                                                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1. Install      | Run the NSIS setup without elevation. Installation completes for the current user.                                                                           |
+| 2. Launch       | Start Nestra from the Start Menu or desktop shortcut. No Expo/Metro development server is required.                                                          |
+| 3. Cold start   | The first API call after hosted idle may take several seconds; the UI should recover once the API wakes.                                                     |
+| 4. Authenticate | Register or sign in against the hosted API while the developer coding machine can be offline.                                                                |
+| 5. Notes        | Create, open, edit, and save at least one owned note.                                                                                                        |
+| 6. Restart      | Quit the application fully and reopen it. The authenticated session is restored from OS credential storage without storing tokens in browser `localStorage`. |
+| 7. Sign-out     | Sign out removes desktop credentials; a subsequent launch requires authentication again.                                                                     |
+| 8. Uninstall    | Remove Nestra through Windows Apps & features (or the NSIS uninstaller). The application no longer launches from the previous shortcuts.                     |
+
+Do not paste tokens, note content, or provider secrets into issues, PR comments, or logs while recording smoke-test results.
+
 ## Future platform boundaries (not implemented)
 
 These boundaries are recorded so later work does not invent ad-hoc desktop behavior:
 
 - **Ambient audio cache:** curated recordings will download from object storage (or its CDN) and
   Tauri may cache files locally for fast replay and offline use. Caching, licensing, playback, and
-  compositions are out of scope for this hardened runtime.
+  compositions are out of scope for this packaging work.
 - **Closed-app notifications:** reminders that must fire while Nestra is fully closed require a
   server-side scheduler or worker and a replaceable delivery-provider adapter. They must not depend
   on a timer inside the Tauri process.
@@ -131,13 +228,12 @@ pnpm dev:desktop
 pnpm build:desktop
 ```
 
-`pnpm verify` does not compile Rust or produce installers. Run desktop commands locally on Windows
-after the prerequisites above are installed.
+`pnpm verify` does not compile Rust or produce installers. Run desktop packaging locally on Windows
+after the prerequisites above are installed, or download the CI workflow artifact.
 
-Desktop Cargo output is written to `%LOCALAPPDATA%\nestra\desktop-cargo-target` so Expo Metro does
-not watch rustc temporary files inside the monorepo during `pnpm dev:desktop`.
-
-## Out of scope for packaging follow-up
+## Out of scope
 
 - Installer signing, Release Please desktop publishing, and automatic updates
+- Creating a public GitHub Release or distributing the installer to end users
 - Ambient audio caching, notifications, and related platform plugins
+- macOS or Linux packaging

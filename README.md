@@ -227,8 +227,12 @@ Copy-Item apps/client/.env.desktop.example apps/client/.env.desktop
 pnpm build:desktop
 ```
 
-`pnpm build:desktop` exports the Expo web client with `.env.desktop` and runs the Tauri Windows
-build (per-user NSIS). Signing and release publishing remain separate tasks.
+`pnpm build:desktop` exports the Expo web client with `.env.desktop` and produces the per-user
+NSIS installer `Nestra_{version}_x64-setup.exe`, where `{version}` is the root `package.json`
+product version. Local output defaults to
+`%LOCALAPPDATA%\nestra\desktop-cargo-target\release\bundle\nsis\`. Signing and release publishing
+remain separate tasks. Packaging details and the clean-machine smoke test live in
+[`docs/deployment/desktop.md`](docs/deployment/desktop.md).
 
 The configurable API base URLs for client runtimes are:
 
@@ -300,19 +304,25 @@ Secrets belong only in provider dashboards. Never commit them or paste them into
 
 The baseline quality gate workflow in `.github/workflows/ci.yml` runs on pull requests and pushes to `main`. It installs dependencies with `pnpm install --frozen-lockfile`, then runs `pnpm verify`.
 
+The Windows packaging workflow in `.github/workflows/desktop-package.yml` runs on the same events
+(and `workflow_dispatch`) on `windows-latest`. It installs Rust, copies
+`apps/client/.env.desktop.example` to `.env.desktop`, runs `pnpm build:desktop`, and uploads
+`Nestra_{version}_x64-setup.exe` as a workflow artifact.
+
 CI assumptions:
 
 - Node.js `24.18.0` and pnpm `11.13.1`, matching the pinned repository versions.
-- No PostgreSQL, Docker, or local `.env` files are required. API compilation does not boot the server or connect to a database.
-- The Expo web build uses the public `EXPO_PUBLIC_*` values from `apps/client/.env.example`. Diagnostics and verbose logging stay disabled in CI.
+- No PostgreSQL, Docker, or local `.env` files are required for the quality gate. API compilation does not boot the server or connect to a database.
+- The Expo web build in the quality gate uses the public `EXPO_PUBLIC_*` values from `apps/client/.env.example`. Diagnostics and verbose logging stay disabled there.
 - `argon2` compiles its native binding during dependency installation on the Ubuntu runner.
-- The baseline workflow runs `pnpm verify` only; deployment, Tauri packaging, and release publishing are out of scope.
-- Desktop Rust compilation requires Windows MSVC tooling and is verified locally with `pnpm dev:desktop` / `pnpm build:desktop`.
+- The quality-gate workflow runs `pnpm verify` only. Desktop packaging is a separate Windows job and does not publish releases.
+- Desktop packaging requires Windows MSVC tooling, WebView2, and the Rust stable toolchain on the runner (or a local Windows machine for `pnpm build:desktop`).
 
-The root product version in `package.json` is the single source used by the Expo configuration and
-compiled shared application metadata. Workspace package versions are internal only. Development
-identifiers are `nestra`, `com.michalrozek.nestra` for Android, and
-`com.michalrozek.nestra` for iOS; they must be reviewed before store publication.
+The root product version in `package.json` is the single source used by the Expo configuration,
+compiled shared application metadata, Tauri configuration, and Windows installer metadata.
+Workspace package versions are internal only. Development identifiers are `nestra`,
+`com.michalrozek.nestra` for Android, and `com.michalrozek.nestra` for iOS; they must be reviewed
+before store publication.
 
 ## Documentation
 

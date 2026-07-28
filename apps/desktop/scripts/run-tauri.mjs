@@ -2,6 +2,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { assertInstallerArtifact } from './installer-artifact.mjs';
 import { runCommand } from './run-command.mjs';
 
 const [, , ...tauriArguments] = process.argv;
@@ -21,11 +22,17 @@ if (process.platform !== 'win32') {
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const desktopPackageDirectory = path.resolve(scriptDirectory, '..');
 
-// Keep Cargo artifacts outside the monorepo so Expo Metro does not watch rustc
-// temporary files under apps/desktop/src-tauri/target and crash with ENOENT.
+// Keep Cargo artifacts outside the monorepo by default so Expo Metro does not
+// watch rustc temporary files under apps/desktop/src-tauri/target.
+// CI may override CARGO_TARGET_DIR to a workspace path for caching and uploads.
 const localAppDataDirectory =
   process.env.LOCALAPPDATA ?? path.join(os.homedir(), 'AppData', 'Local');
-const cargoTargetDirectory = path.join(localAppDataDirectory, 'nestra', 'desktop-cargo-target');
+const defaultCargoTargetDirectory = path.join(
+  localAppDataDirectory,
+  'nestra',
+  'desktop-cargo-target',
+);
+const cargoTargetDirectory = process.env.CARGO_TARGET_DIR ?? defaultCargoTargetDirectory;
 
 runCommand('pnpm', ['exec', 'tauri', ...tauriArguments], {
   cwd: desktopPackageDirectory,
@@ -34,3 +41,7 @@ runCommand('pnpm', ['exec', 'tauri', ...tauriArguments], {
     CARGO_TARGET_DIR: cargoTargetDirectory,
   },
 });
+
+if (tauriArguments[0] === 'build') {
+  assertInstallerArtifact(cargoTargetDirectory);
+}
