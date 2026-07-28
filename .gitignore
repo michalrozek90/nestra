@@ -35,6 +35,9 @@ Thumbs.db
 # TypeScript incremental output
 *.tsbuildinfo
 
+# Generated client icon-font payload for packaged web/desktop
+apps/client/src/infrastructure/fonts/generated-icon-font-data.ts
+
 # Rust / Tauri build output
 **/src-tauri/target/
 **/src-tauri/gen/

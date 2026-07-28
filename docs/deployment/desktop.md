@@ -103,6 +103,18 @@ demo deployment. Changing hosts is a configuration change, not a UI change.
 For `pnpm dev:desktop`, use `apps/client/.env`. Point that file at the local API while iterating,
 or at the hosted HTTPS URL when the developer machine should not run NestJS.
 
+`pnpm build:desktop` temporarily replaces `apps/client/.env` with `.env.desktop` during the Expo
+web export (Expo reads `.env` for `EXPO_PUBLIC_*` values) and restores the original file afterwards.
+Always clear-rebuild when changing the hosted API URL so Metro does not keep a stale bundle.
+
+Icon fonts (`Ionicons`, Material Community Icons) are vendored under `apps/client/fonts/`.
+Web/desktop bootstrap (`load-icon-fonts.web.ts`) embeds those fonts as base64 (generated before
+export) and registers them with the browser `FontFace` API from raw bytes, then syncs expo-font's
+cache via blob URLs. Native uses the same `.ttf` files through expo-font's normal asset pipeline
+(`load-icon-fonts.ts`) and does not embed the base64 payload. A pnpm patch to `expo-font` skips
+FontFaceObserver on web. CSP `connect-src` includes `'self'`; `font-src` allows `blob:` for the
+expo-font cache sync URLs.
+
 ## Authentication storage
 
 Desktop authentication secrets use the operating-system credential store (Windows Credential

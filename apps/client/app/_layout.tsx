@@ -9,6 +9,7 @@ import { Button } from '@/components/button';
 import { initializeLocalization } from '@/i18n/i18n';
 import { getBootstrapMessages } from '@/i18n/system-language';
 import { logger } from '@/infrastructure/logging/logger';
+import { loadIconFonts } from '@/infrastructure/fonts/load-icon-fonts';
 import { AuthProvider, useAuth } from '@/infrastructure/auth/auth-provider';
 import { queryClient } from '@/infrastructure/query/query-client';
 import { useApplicationQueryFocus } from '@/infrastructure/query/use-application-query-focus';
@@ -64,22 +65,22 @@ function AuthenticatedRootNavigator() {
 
 function ClientBootstrap() {
   const theme = useNestraTheme();
-  const [localizationStatus, setLocalizationStatus] = useState<InitializationStatus>('loading');
+  const [bootstrapStatus, setBootstrapStatus] = useState<InitializationStatus>('loading');
   const [initializationAttempt, setInitializationAttempt] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
 
-    void initializeLocalization()
+    void Promise.all([initializeLocalization(), loadIconFonts()])
       .then(() => {
         if (isMounted) {
-          setLocalizationStatus('ready');
+          setBootstrapStatus('ready');
         }
       })
       .catch((error: unknown) => {
-        logger.error('Client localization initialization failed', error);
+        logger.error('Client bootstrap initialization failed', error);
         if (isMounted) {
-          setLocalizationStatus('failed');
+          setBootstrapStatus('failed');
         }
       });
 
@@ -88,7 +89,7 @@ function ClientBootstrap() {
     };
   }, [initializationAttempt]);
 
-  if (localizationStatus === 'loading') {
+  if (bootstrapStatus === 'loading') {
     return (
       <View
         accessibilityLabel="Nestra"
@@ -100,7 +101,7 @@ function ClientBootstrap() {
     );
   }
 
-  if (localizationStatus === 'failed') {
+  if (bootstrapStatus === 'failed') {
     const messages = getBootstrapMessages();
 
     return (
@@ -111,7 +112,7 @@ function ClientBootstrap() {
         <Button
           label={messages.retry}
           onPress={() => {
-            setLocalizationStatus('loading');
+            setBootstrapStatus('loading');
             setInitializationAttempt((attempt) => attempt + 1);
           }}
         />

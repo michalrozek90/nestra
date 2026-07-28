@@ -1,0 +1,23 @@
+diff --git a/build/ExpoFontLoader.web.js b/build/ExpoFontLoader.web.js
+index 942042d410f956d29600d54e63ee7d2d7eb767e9..68b5df4c26c7242d3f3949d3d667590a21042489 100644
+--- a/build/ExpoFontLoader.web.js
++++ b/build/ExpoFontLoader.web.js
+@@ -107,13 +107,11 @@ const ExpoFontLoader = {
+         if (!res.length) {
+             _createWebStyle(fontFamilyName, resource);
+         }
+-        if (!isFontLoadingListenerSupported()) {
+-            return Promise.resolve();
+-        }
+-        return new FontObserver(fontFamilyName, {
+-            // @ts-expect-error: TODO(@kitten): Typings indicate that the polyfill may not support this?
+-            display: resource.display,
+-        }).load(resource.testString ?? null, 12000);
++        // FontFaceObserver commonly times out in embedded WebViews (including Tauri
++        // WebView2) even after @font-face is injected, which leaves expo-font's
++        // loaded cache empty and icon components render blank. The stylesheet is
++        // enough for rendering; resolve immediately after injection.
++        return Promise.resolve();
+     },
+ };
+ const isServer = process.env.EXPO_OS === 'web' && typeof window === 'undefined';
