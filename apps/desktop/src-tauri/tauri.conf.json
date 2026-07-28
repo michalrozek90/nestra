@@ -1,7 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Nestra",
-  "version": "0.0.0",
+  "mainBinaryName": "Nestra",
+  "version": "../../../package.json",
   "identifier": "com.michalrozek.nestra",
   "build": {
     "beforeDevCommand": "node ./scripts/prepare-client-dev.mjs",
@@ -27,6 +28,11 @@
   "bundle": {
     "active": true,
     "targets": ["nsis"],
+    "createUpdaterArtifacts": false,
+    "publisher": "Nestra",
+    "category": "Productivity",
+    "shortDescription": "Cross-platform personal organization application",
+    "longDescription": "Nestra is a private personal organization application. The Windows desktop shell packages the Expo web client and connects to the configured hosted API over HTTPS.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -36,7 +42,8 @@
     ],
     "windows": {
       "nsis": {
-        "installMode": "currentUser"
+        "installMode": "currentUser",
+        "installerIcon": "icons/icon.ico"
       }
     }
   }
