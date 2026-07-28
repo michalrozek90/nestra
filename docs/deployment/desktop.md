@@ -42,7 +42,7 @@ Desktop commands refuse non-Windows hosts with an explicit error.
 | Product version        | Root `package.json` `version`, referenced by Tauri as `../../../package.json` |
 | Publisher              | `Nestra`                                                                      |
 | Installer mode         | Per-user NSIS (`installMode`: `currentUser`)                                  |
-| Installer icon         | `apps/desktop/src-tauri/icons/icon.ico`                                       |
+| Installer icon         | `apps/desktop/src-tauri/icons/icon.ico` (provisional Nestra brand mark)       |
 
 The expected installer file name is:
 
