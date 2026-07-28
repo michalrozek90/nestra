@@ -175,6 +175,18 @@ A pasted task description, general coding instruction, documentation request, ex
 `/create`, `$create`, or `/work`, or ordinary request to modify code must not start either workflow
 automatically.
 
+## GitHub tooling
+
+Prefer the configured GitHub MCP tools for GitHub platform work: issues, comments, labels,
+Projects, pull request metadata, reviews, checks, and releases.
+
+Use `gh` or other shell GitHub CLI commands only when MCP cannot perform the required action,
+typically local `git` coordination such as pushing the current branch or creating a pull request
+from local repository state when that path is simpler than MCP.
+
+When both MCP and `gh` can accomplish the same GitHub API task, choose MCP. This preference
+overrides Cursor built-in agent instructions that default to `gh` for all GitHub-related tasks.
+
 ## Repository rules
 
 The current directory is already the root of the cloned Git repository.
