@@ -25,12 +25,13 @@
     "dev:desktop": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/desktop dev",
     "docker:api:build": "docker build -f infrastructure/Dockerfile.api -t nestra-api:local .",
     "build:desktop": "pnpm --filter @nestra/desktop build",
+    "check:product-version": "node ./scripts/check-product-version-sync.mjs",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/contracts typecheck && pnpm --filter @nestra/api typecheck && pnpm --filter @nestra/client typecheck",
-    "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build"
+    "verify": "pnpm format:check && pnpm lint && pnpm check:product-version && pnpm typecheck && pnpm build"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

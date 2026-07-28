@@ -309,6 +309,13 @@ The Windows packaging workflow in `.github/workflows/desktop-package.yml` runs o
 `apps/client/.env.desktop.example` to `.env.desktop`, runs `pnpm build:desktop`, and uploads
 `Nestra_{version}_x64-setup.exe` as a workflow artifact.
 
+Release Please runs on pushes to `main` through `.github/workflows/release-please.yml`. It maintains
+one release PR, updates `CHANGELOG.md` and the root product version, and creates draft GitHub
+Releases only after that PR is merged. The Windows release-assets workflow in
+`.github/workflows/desktop-release-assets.yml` builds the installer for a release tag and uploads
+it to that draft or published GitHub Release. Public publication still requires explicit operator
+approval. See [`docs/deployment/release.md`](docs/deployment/release.md).
+
 CI assumptions:
 
 - Node.js `24.18.0` and pnpm `11.13.1`, matching the pinned repository versions.
@@ -319,16 +326,17 @@ CI assumptions:
 - Desktop packaging requires Windows MSVC tooling, WebView2, and the Rust stable toolchain on the runner (or a local Windows machine for `pnpm build:desktop`).
 
 The root product version in `package.json` is the single source used by the Expo configuration,
-compiled shared application metadata, Tauri configuration, and Windows installer metadata.
-Workspace package versions are internal only. Development identifiers are `nestra`,
-`com.michalrozek.nestra` for Android, and `com.michalrozek.nestra` for iOS; they must be reviewed
-before store publication.
+compiled shared application metadata, Tauri configuration, Windows installer metadata, and Release
+Please tracking. `pnpm check:product-version` verifies that synchronization. Workspace package
+versions are internal only. Development identifiers are `nestra`, `com.michalrozek.nestra` for
+Android, and `com.michalrozek.nestra` for iOS; they must be reviewed before store publication.
 
 ## Documentation
 
 - [`0.1.0` product and technical specification](docs/specifications/nestra-initial-application.md)
 - [Hosted API deployment (Render + Neon)](docs/deployment/hosted-api.md)
 - [Desktop shell (Tauri)](docs/deployment/desktop.md)
+- [Desktop release candidate checklist](docs/deployment/release.md)
 - [Implementation board](https://github.com/users/michalrozek90/projects/1)
 - [Architecture decisions](docs/decisions/README.md)
 - [Contributor instructions](AGENTS.md)

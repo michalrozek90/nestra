@@ -291,10 +291,10 @@ The root and every non-published workspace package must set `"private": true`.
 Use lightweight ADRs in `docs/decisions/`, for example:
 
 ```text
-001-monorepo-and-package-boundaries.md
-002-contracts-build-strategy.md
+001-contracts-build-strategy.md
+002-client-ui-and-theming-strategy.md
 003-authentication-token-strategy.md
-004-release-automation.md
+007-release-automation.md
 ```
 
 Each ADR contains status, context, decision, consequences, and alternatives.
@@ -398,7 +398,7 @@ Before release automation is considered complete:
 
 - validate current Release Please bootstrap behavior from official docs;
 - use a dry run or another non-destructive check;
-- document the bootstrap in ADR 004;
+- document the bootstrap in ADR 007;
 - verify the first release will be `0.1.0`, not `1.0.0`.
 
 Do not create a local tag.

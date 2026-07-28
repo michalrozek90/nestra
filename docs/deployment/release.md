@@ -1,0 +1,179 @@
+# Desktop release candidate (0.1.0)
+
+This document is the operator checklist for turning a verified Windows x64 installer into a
+controlled `0.1.0` release candidate. Architecture decisions live in
+[ADR 005](../decisions/005-desktop-and-hosted-service-architecture.md) and
+[ADR 007](../decisions/007-release-automation.md). Packaging details live in
+[`desktop.md`](./desktop.md). Hosted API and database details live in
+[`hosted-api.md`](./hosted-api.md).
+
+## Goals and non-goals
+
+Goals:
+
+- Automate product-version preparation and technical changelog generation with Release Please.
+- Keep product version values synchronized across the client, Tauri shell, installer, and release
+  asset naming.
+- Attach `Nestra_{version}_x64-setup.exe` to a draft or otherwise testable GitHub Release.
+- Document hosted-API dependency, cold-start expectations, rollback, and the absence of a custom
+  domain for the family/demo phase.
+
+Non-goals:
+
+- Publishing a public GitHub Release, creating a release tag, or distributing installers without
+  explicit operator approval.
+- Buying or configuring a custom domain.
+- macOS or Linux releases, automatic updates, or purchased code signing.
+- Relax audio, R2 provisioning, user uploads, or notifications.
+
+## Version source of truth
+
+The root `package.json` `version` is the only product version.
+
+| Consumer                      | Synchronization mechanism                                      |
+| ----------------------------- | -------------------------------------------------------------- |
+| Expo app / runtime version    | `apps/client/app.config.ts` imports root `package.json`        |
+| API / contracts diagnostics   | `packages/contracts` injects root version at build time        |
+| Tauri application / installer | `tauri.conf.json` → `../../../package.json`                    |
+| Desktop Cargo crate metadata  | Release Please updates `apps/desktop/src-tauri/Cargo.toml`     |
+| Release Please tracking       | `.release-please-manifest.json` must match root `package.json` |
+| Installer file name           | `Nestra_{version}_x64-setup.exe`                               |
+
+Run the synchronization check locally or in CI:
+
+```bash
+pnpm check:product-version
+```
+
+`pnpm verify` includes this check. Workspace package versions under `apps/` and `packages/` are
+internal metadata and must not be presented as the product version.
+
+## Release Please automation
+
+Checked-in files:
+
+- `release-please-config.json`
+- `.release-please-manifest.json`
+- `CHANGELOG.md`
+- `.github/workflows/release-please.yml`
+
+Bootstrap choices validated against current Release Please manifest documentation:
+
+- Manifest starts at `0.0.0`, matching the current root product version.
+- First Conventional Commit-driven release therefore targets `0.1.0`, not `1.0.0`.
+- One repository-wide component at `.` with `release-type: node`.
+- Tags use the `v` prefix and omit a component name (`v0.1.0`).
+- `bump-minor-pre-major: true` prevents pre-1.0 breaking changes from forcing `1.0.0`.
+- `draft: true` creates draft GitHub Releases so publication remains an explicit operator step.
+- Do not create local tags during development or agent workflows.
+
+On pushes to `main`, Release Please analyzes Conventional Commits and maintains one release PR that
+updates `CHANGELOG.md`, the root product version, the Release Please manifest, and the desktop
+Cargo package version. Merging that PR creates the Git tag and a draft GitHub Release. Do not merge
+it until the checklist below is complete and the operator explicitly approves publication
+preparation.
+
+Do not manually add a dated `0.1.0` heading to `CHANGELOG.md` before the release PR. Release Please
+owns the technical release history. In-app product notes remain curated localization content and
+must not parse `CHANGELOG.md` at runtime.
+
+## Associating the Windows installer with a release candidate
+
+Workflow: `.github/workflows/desktop-release-assets.yml`
+
+Triggers:
+
+1. Automatic after Release Please creates a draft GitHub Release: the release-please workflow
+   dispatches this workflow with the new tag. Direct `release: created` events are also supported
+   when an operator creates a release outside Release Please.
+2. Manual: `workflow_dispatch` with an existing release `tag_name` such as `v0.1.0`.
+
+Behavior:
+
+1. Check out the release tag.
+2. Run `pnpm check:product-version`.
+3. Build the Windows x64 NSIS installer with the desktop production environment file.
+4. Upload `Nestra_{version}_x64-setup.exe` to that GitHub Release (`gh release upload --clobber`).
+
+The packaging workflow in `.github/workflows/desktop-package.yml` continues to upload short-lived
+workflow artifacts for pull requests and `main` verification. The release-assets workflow is the
+path that associates a verified installer with a release candidate tag.
+
+## Hosted API dependency for release candidates
+
+The installed desktop application depends on the remotely hosted NestJS API and Neon PostgreSQL
+database. It must not require the developer computer to host the API or remain online.
+
+Current family/demo topology:
+
+- NestJS container on a Render Free Web Service
+- Neon Free PostgreSQL in a compatible European region
+- Provider-assigned HTTPS endpoint (no custom domain in `0.1.0`)
+- Accepted short cold start after free-tier idle spin-down
+
+See [`hosted-api.md`](./hosted-api.md) for operator environment variables, migration procedure,
+CORS origins, and the upgrade path to an always-on host. Never put secrets, connection strings, or
+JWT values into release notes, workflow logs, issues, or chat.
+
+When the API hostname changes without a custom domain, update:
+
+1. `EXPO_PUBLIC_API_BASE_URL` / `apps/client/.env.desktop.example`
+2. Tauri CSP `connect-src`
+3. Hosted `CORS_ALLOWED_ORIGINS`
+4. Rebuild and redistribute the desktop installer
+
+## Release checklist
+
+Complete before merging a Release Please PR or publishing a draft release:
+
+1. All seven `#12` desktop/delivery sub-issues satisfy their completion criteria.
+2. `pnpm verify` passes on the intended release commit.
+3. `pnpm check:product-version` passes.
+4. Windows packaging has produced `Nestra_{version}_x64-setup.exe` for the intended version.
+5. Clean-machine smoke test from [`desktop.md`](./desktop.md) passes against the hosted API,
+   including an acceptable first-request cold start.
+6. Hosted health, authentication, and owned Notes operations work while the developer coding
+   machine can be offline from the API process.
+7. Draft GitHub Release exists or will be created by merging the Release Please PR.
+8. Desktop release-assets workflow has attached the matching installer to that release.
+9. Release notes, docs, and workflow logs contain no secrets or private user data.
+10. Operator explicitly approves merging the Release Please PR and later publishing the draft
+    release.
+
+## Rollback considerations
+
+| Situation                                             | Response                                                                                                                                       |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Draft release has a bad installer                     | Rebuild from the tag with `desktop-release-assets` / `workflow_dispatch`, or leave the draft unpublished                                       |
+| Draft release should not be published                 | Keep it draft; delete only with an intentional operator decision                                                                               |
+| Published release must be withdrawn                   | Unpublish or mark the GitHub Release carefully; communicate that installs already performed are unaffected                                     |
+| Hosted API regression                                 | Roll back the Render deploy / Neon migration using the controlled migration procedure; desktop installers keep working once the API is healthy |
+| Wrong product version shipped in an unpublished draft | Do not publish; fix on a follow-up commit and prepare a new release PR rather than rewriting history casually                                  |
+
+Deleting a Git tag after users may have referenced it is an intentional operator decision. Prefer
+leaving a bad draft unpublished over rewriting published release history.
+
+## Security audit notes for the scoped desktop release
+
+Confirm before publication:
+
+- Desktop auth secrets use OS credential storage, not browser `localStorage`, inside Tauri.
+- Tauri capabilities remain minimal and CSP allow-lists only the configured API origins.
+- Logs and diagnostics do not expose tokens, note content, drafts, credentials, or complete private
+  payloads.
+- Release assets and documentation do not embed provider secrets or private environment values.
+- The installer does not require the developer computer to remain online.
+- No custom domain is required for the family/demo phase; the provider-assigned HTTPS endpoint is
+  accepted application configuration.
+
+## Explicit publication gate
+
+Autonomous agents and CI must not:
+
+- merge a Release Please PR without explicit operator approval;
+- publish a draft GitHub Release without explicit operator approval;
+- create local release tags;
+- distribute installers as a public release outside the draft/testable flow above.
+
+A plain approval in conversation or an intentional dashboard action by the repository owner is
+required before any public `0.1.0` publication.
