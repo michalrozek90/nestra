@@ -65,7 +65,11 @@ if (tauriVersionReference !== '../../../package.json') {
 }
 
 const cargoToml = readText('apps/desktop/src-tauri/Cargo.toml');
-const cargoPackageVersionMatch = /^version\s*=\s*"([^"]+)"/m.exec(cargoToml.value);
+const cargoPackageSectionMatch = /\[package\]([\s\S]*?)(?=\n\[|$)/.exec(cargoToml.value);
+const cargoPackageVersionMatch =
+  cargoPackageSectionMatch === null
+    ? null
+    : /^version\s*=\s*"([^"]+)"/m.exec(cargoPackageSectionMatch[1]);
 
 if (cargoPackageVersionMatch === null) {
   fail('apps/desktop/src-tauri/Cargo.toml must declare package.version.');

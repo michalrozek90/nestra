@@ -32,6 +32,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
         run: |
+          if [ -z "${RELEASE_TAG}" ]; then
+            echo "Release Please reported release_created without tag_name."
+            exit 1
+          fi
+
           gh workflow run desktop-release-assets.yml \
             --repo "${{ github.repository }}" \
             -f "tag_name=${RELEASE_TAG}"
