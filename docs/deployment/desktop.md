@@ -1,8 +1,9 @@
 # Desktop shell (Tauri)
 
-This document covers the Windows desktop foundation that packages the existing Expo web client
-through Tauri. Architecture decisions live in
-[ADR 005](../decisions/005-desktop-and-hosted-service-architecture.md).
+This document covers the Windows desktop shell that packages the existing Expo web client through
+Tauri. Architecture decisions live in
+[ADR 005](../decisions/005-desktop-and-hosted-service-architecture.md) and
+[ADR 006](../decisions/006-desktop-auth-storage-and-runtime-hardening.md).
 
 ## What this package does
 
@@ -53,6 +54,42 @@ demo deployment. Changing hosts is a configuration change, not a UI change.
 For `pnpm dev:desktop`, use `apps/client/.env`. Point that file at the local API while iterating,
 or at the hosted HTTPS URL when the developer machine should not run NestJS.
 
+## Authentication storage
+
+Desktop authentication secrets use the operating-system credential store (Windows Credential
+Manager) through Tauri commands. The Expo web bundle detects the Tauri runtime and selects that
+adapter behind `AuthTokenStorage`. Browser-only web builds still use `localStorage`; the Tauri
+runtime must never persist auth tokens there.
+
+Sign-out clears the OS-backed credentials. Developer diagnostics report the active storage
+implementation as `OSCredentialStore` inside Tauri and `localStorage` in a normal browser.
+
+## Capabilities and outbound network policy
+
+The default capability grants only:
+
+- `core:default`
+- `allow-auth-secret-storage` (read/write/clear auth secrets in the OS credential store)
+
+No filesystem, shell, notification, or generic HTTP plugin permissions are enabled.
+
+WebView outbound access is further constrained by Content Security Policy in
+`apps/desktop/src-tauri/tauri.conf.json`:
+
+- production `csp` allow-lists Tauri IPC and the configured API origins only;
+- `devCsp` additionally allow-lists Expo Metro on port `8081` (including WebSocket) and the script
+  sources Metro needs during `pnpm dev:desktop`.
+
+| Target                                                         | Purpose                                       |
+| -------------------------------------------------------------- | --------------------------------------------- |
+| `ipc:` / `http://ipc.localhost`                                | Tauri IPC                                     |
+| `https://nestra-api-nkr9.onrender.com`                         | Hosted API origin from `.env.desktop.example` |
+| `http://localhost:3000` / `http://127.0.0.1:3000`              | Local API during development                  |
+| `http://localhost:8081` / `ws://localhost:8081` (and loopback) | Expo Metro for `pnpm dev:desktop` (`devCsp`)  |
+
+When the hosted API host changes, update `EXPO_PUBLIC_API_BASE_URL`, the CSP `connect-src` entry,
+and hosted `CORS_ALLOWED_ORIGINS` together.
+
 ## CORS origins for the hosted API
 
 Browser and Tauri WebView clients are subject to CORS. Configure `CORS_ALLOWED_ORIGINS` on the
@@ -64,6 +101,25 @@ hosted API to include the exact origins you use:
 | Packaged Tauri WebView (Windows) | `http://tauri.localhost` |
 
 Native mobile clients are not browser CORS clients.
+
+## Logging and private data
+
+Client logging sanitizes tokens, credentials, note content, drafts, and complete private
+request/response payloads. Desktop hardening does not add Rust or JavaScript paths that log
+authentication secrets.
+
+## Future platform boundaries (not implemented)
+
+These boundaries are recorded so later work does not invent ad-hoc desktop behavior:
+
+- **Ambient audio cache:** curated recordings will download from object storage (or its CDN) and
+  Tauri may cache files locally for fast replay and offline use. Caching, licensing, playback, and
+  compositions are out of scope for this hardened runtime.
+- **Closed-app notifications:** reminders that must fire while Nestra is fully closed require a
+  server-side scheduler or worker and a replaceable delivery-provider adapter. They must not depend
+  on a timer inside the Tauri process.
+
+See ADR 005 and ADR 006 for the accepted rationale.
 
 ## Commands
 
@@ -81,8 +137,7 @@ after the prerequisites above are installed.
 Desktop Cargo output is written to `%LOCALAPPDATA%\nestra\desktop-cargo-target` so Expo Metro does
 not watch rustc temporary files inside the monorepo during `pnpm dev:desktop`.
 
-## Out of scope for the foundation
+## Out of scope for packaging follow-up
 
-- Secured production token storage and capability hardening
 - Installer signing, Release Please desktop publishing, and automatic updates
 - Ambient audio caching, notifications, and related platform plugins

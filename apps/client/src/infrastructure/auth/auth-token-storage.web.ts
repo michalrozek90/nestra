@@ -1,4 +1,5 @@
 import type { AuthTokenStorage } from './auth-token-storage';
+import { isTauriRuntime } from './is-tauri-runtime';
 
 const ACCESS_TOKEN_KEY = 'nestra.auth.accessToken';
 const REFRESH_TOKEN_KEY = 'nestra.auth.refreshToken';
@@ -38,5 +39,46 @@ class WebAuthTokenStorage implements AuthTokenStorage {
   }
 }
 
-export const authTokenStorage: AuthTokenStorage = new WebAuthTokenStorage();
-export const authStorageImplementation = 'localStorage';
+class LazyDesktopAuthTokenStorage implements AuthTokenStorage {
+  private implementationPromise: Promise<AuthTokenStorage> | undefined;
+
+  private resolveImplementation(): Promise<AuthTokenStorage> {
+    if (this.implementationPromise === undefined) {
+      this.implementationPromise = import('./auth-token-storage.desktop').then(
+        ({ createDesktopAuthTokenStorage }) => createDesktopAuthTokenStorage(),
+      );
+    }
+
+    return this.implementationPromise;
+  }
+
+  public async getAccessToken(): Promise<string | null> {
+    return (await this.resolveImplementation()).getAccessToken();
+  }
+
+  public async setAccessToken(accessToken: string): Promise<void> {
+    await (await this.resolveImplementation()).setAccessToken(accessToken);
+  }
+
+  public async getRefreshToken(): Promise<string | null> {
+    return (await this.resolveImplementation()).getRefreshToken();
+  }
+
+  public async setRefreshToken(refreshToken: string): Promise<void> {
+    await (await this.resolveImplementation()).setRefreshToken(refreshToken);
+  }
+
+  public async clear(): Promise<void> {
+    await (await this.resolveImplementation()).clear();
+  }
+}
+
+const usesDesktopAuthStorage = isTauriRuntime();
+
+export const authTokenStorage: AuthTokenStorage = usesDesktopAuthStorage
+  ? new LazyDesktopAuthTokenStorage()
+  : new WebAuthTokenStorage();
+
+export const authStorageImplementation = usesDesktopAuthStorage
+  ? 'OSCredentialStore'
+  : 'localStorage';
