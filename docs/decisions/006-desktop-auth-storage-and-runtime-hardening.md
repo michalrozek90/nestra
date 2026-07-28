@@ -37,10 +37,10 @@ The default Tauri capability remains minimal: `core:default` plus the auth-secre
 permission. No filesystem, shell, notification, or generic HTTP plugin permissions are granted.
 
 Outbound browser requests from the WebView are constrained by Content Security Policy
-`connect-src`, which allow-lists Tauri IPC endpoints, the configured hosted API origin, local
-API origins used during development, and the Expo Metro origin used by `pnpm dev:desktop`.
-Changing the hosted API host requires updating both `EXPO_PUBLIC_API_BASE_URL` and the CSP
-`connect-src` entry, and keeping `CORS_ALLOWED_ORIGINS` aligned on the API.
+`connect-src`. Production CSP allow-lists Tauri IPC and the configured API origins. Development
+CSP additionally allow-lists the Expo Metro origin used by `pnpm dev:desktop`. Changing the hosted
+API host requires updating both `EXPO_PUBLIC_API_BASE_URL` and the CSP `connect-src` entries, and
+keeping `CORS_ALLOWED_ORIGINS` aligned on the API.
 
 ### Future boundaries (documentation only)
 

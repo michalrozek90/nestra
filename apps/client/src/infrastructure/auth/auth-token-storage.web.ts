@@ -40,16 +40,16 @@ class WebAuthTokenStorage implements AuthTokenStorage {
 }
 
 class LazyDesktopAuthTokenStorage implements AuthTokenStorage {
-  private implementation: AuthTokenStorage | undefined;
+  private implementationPromise: Promise<AuthTokenStorage> | undefined;
 
-  private async resolveImplementation(): Promise<AuthTokenStorage> {
-    if (this.implementation) {
-      return this.implementation;
+  private resolveImplementation(): Promise<AuthTokenStorage> {
+    if (this.implementationPromise === undefined) {
+      this.implementationPromise = import('./auth-token-storage.desktop').then(
+        ({ createDesktopAuthTokenStorage }) => createDesktopAuthTokenStorage(),
+      );
     }
 
-    const { createDesktopAuthTokenStorage } = await import('./auth-token-storage.desktop');
-    this.implementation = createDesktopAuthTokenStorage();
-    return this.implementation;
+    return this.implementationPromise;
   }
 
   public async getAccessToken(): Promise<string | null> {

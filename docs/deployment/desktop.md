@@ -73,15 +73,19 @@ The default capability grants only:
 
 No filesystem, shell, notification, or generic HTTP plugin permissions are enabled.
 
-WebView outbound access is further constrained by Content Security Policy `connect-src` in
-`apps/desktop/src-tauri/tauri.conf.json`. The current allow-list is:
+WebView outbound access is further constrained by Content Security Policy in
+`apps/desktop/src-tauri/tauri.conf.json`:
+
+- production `csp` allow-lists Tauri IPC and the configured API origins only;
+- `devCsp` additionally allow-lists Expo Metro on port `8081` (including WebSocket) and the script
+  sources Metro needs during `pnpm dev:desktop`.
 
 | Target                                                         | Purpose                                       |
 | -------------------------------------------------------------- | --------------------------------------------- |
 | `ipc:` / `http://ipc.localhost`                                | Tauri IPC                                     |
 | `https://nestra-api-nkr9.onrender.com`                         | Hosted API origin from `.env.desktop.example` |
 | `http://localhost:3000` / `http://127.0.0.1:3000`              | Local API during development                  |
-| `http://localhost:8081` / `ws://localhost:8081` (and loopback) | Expo Metro for `pnpm dev:desktop`             |
+| `http://localhost:8081` / `ws://localhost:8081` (and loopback) | Expo Metro for `pnpm dev:desktop` (`devCsp`)  |
 
 When the hosted API host changes, update `EXPO_PUBLIC_API_BASE_URL`, the CSP `connect-src` entry,
 and hosted `CORS_ALLOWED_ORIGINS` together.

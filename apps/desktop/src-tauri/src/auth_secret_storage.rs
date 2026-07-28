@@ -4,9 +4,13 @@ const AUTH_SECRET_SERVICE: &str = "com.michalrozek.nestra.auth";
 const ACCESS_TOKEN_ACCOUNT: &str = "accessToken";
 const REFRESH_TOKEN_ACCOUNT: &str = "refreshToken";
 
+fn is_allowed_account(account: &str) -> bool {
+    account == ACCESS_TOKEN_ACCOUNT || account == REFRESH_TOKEN_ACCOUNT
+}
+
 fn create_entry(account: &str) -> Result<Entry, String> {
-    if account.is_empty() {
-        return Err("auth secret account must not be empty".to_owned());
+    if !is_allowed_account(account) {
+        return Err("auth secret account is not allowed".to_owned());
     }
 
     Entry::new(AUTH_SECRET_SERVICE, account).map_err(|error| error.to_string())
@@ -59,12 +63,17 @@ pub fn clear_auth_secrets() -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{ACCESS_TOKEN_ACCOUNT, AUTH_SECRET_SERVICE, REFRESH_TOKEN_ACCOUNT};
+    use super::{
+        is_allowed_account, ACCESS_TOKEN_ACCOUNT, AUTH_SECRET_SERVICE, REFRESH_TOKEN_ACCOUNT,
+    };
 
     #[test]
     fn auth_secret_identifiers_are_stable() {
         assert_eq!(AUTH_SECRET_SERVICE, "com.michalrozek.nestra.auth");
         assert_eq!(ACCESS_TOKEN_ACCOUNT, "accessToken");
         assert_eq!(REFRESH_TOKEN_ACCOUNT, "refreshToken");
+        assert!(is_allowed_account(ACCESS_TOKEN_ACCOUNT));
+        assert!(is_allowed_account(REFRESH_TOKEN_ACCOUNT));
+        assert!(!is_allowed_account("other"));
     }
 }
