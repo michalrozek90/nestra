@@ -93,6 +93,11 @@ changing server code for each origin. Include every origin you actually use:
 Native mobile clients are not browser CORS clients. See
 [`docs/deployment/desktop.md`](./desktop.md) for the desktop shell setup.
 
+These CORS origins must stay aligned with the desktop Content Security Policy `connect-src`
+allow-list. The WebView may only call the configured API host; changing that host requires updates
+to `EXPO_PUBLIC_API_BASE_URL`, Tauri CSP, and `CORS_ALLOWED_ORIGINS` together
+([ADR 006](../decisions/006-desktop-auth-storage-and-runtime-hardening.md)).
+
 ## Controlled migrations
 
 Migrations are a separate deployment step. They never run automatically on container start.

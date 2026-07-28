@@ -251,6 +251,11 @@ uses `localStorage` as a prototype compromise, isolated behind the same typed st
 Before any public production web release, replace or reassess this approach and evaluate server-set
 cookies with the `httpOnly`, `Secure`, and `SameSite` attributes.
 
+The Tauri desktop runtime never selects that web `localStorage` path for authentication secrets.
+It stores tokens in the operating-system credential store through a narrow Tauri command boundary.
+Details are in [`docs/deployment/desktop.md`](docs/deployment/desktop.md) and
+[ADR 006](docs/decisions/006-desktop-auth-storage-and-runtime-hardening.md).
+
 ## Development standards
 
 - pnpm is the only package manager.
