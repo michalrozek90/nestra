@@ -126,7 +126,8 @@ When the API hostname changes without a custom domain, update:
 
 Complete before merging a Release Please PR or publishing a draft release:
 
-1. All seven `#12` desktop/delivery sub-issues satisfy their completion criteria.
+1. Parent epic `#12` and its seven desktop/delivery sub-issues (`#40`, `#20`, `#47`, `#41`,
+   `#42`, `#43`, `#44`) are complete.
 2. `pnpm verify` passes on the intended release commit.
 3. `pnpm check:product-version` passes.
 4. Windows packaging has produced `Nestra_{version}_x64-setup.exe` for the intended version.
