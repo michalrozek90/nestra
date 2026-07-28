@@ -8,10 +8,10 @@ trade-offs should survive beyond an implementation stage.
 Use a zero-padded sequence and a concise kebab-case title, for example:
 
 ```text
-001-monorepo-and-package-boundaries.md
-002-contracts-build-strategy.md
+001-contracts-build-strategy.md
+002-client-ui-and-theming-strategy.md
 003-authentication-token-strategy.md
-004-release-automation.md
+007-release-automation.md
 ```
 
 An ADR is immutable after acceptance except for corrections and status changes. A later decision

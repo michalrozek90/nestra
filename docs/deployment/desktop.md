@@ -12,8 +12,9 @@ export from `@nestra/client` is the only feature surface.
 
 - `pnpm dev:desktop` starts Expo web on port `8081` and opens a Tauri window against that URL.
 - `pnpm build:desktop` builds the Expo web export with the desktop environment file, then produces
-  the per-user NSIS Windows x64 installer. Signing, release publishing, and automatic updates remain
-  separate work.
+  the per-user NSIS Windows x64 installer. Signing, public release publication, and automatic
+  updates remain separate work; draft release-candidate attachment is documented in
+  [`release.md`](./release.md).
 
 ## Prerequisites (Windows)
 
@@ -233,7 +234,10 @@ after the prerequisites above are installed, or download the CI workflow artifac
 
 ## Out of scope
 
-- Installer signing, Release Please desktop publishing, and automatic updates
-- Creating a public GitHub Release or distributing the installer to end users
+- Installer signing, automatic updates, and public GitHub Release publication without explicit
+  operator approval
 - Ambient audio caching, notifications, and related platform plugins
 - macOS or Linux packaging
+
+Release Please version preparation, draft release-candidate attachment, rollback, and the
+publication gate are documented in [`release.md`](./release.md).

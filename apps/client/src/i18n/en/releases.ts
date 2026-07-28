@@ -1,6 +1,7 @@
 export const enReleases = {
   changelog: {
     title: 'Changelog',
-    description: 'Release notes will appear here when the first release is prepared.',
+    description:
+      'Product notes for the 0.1.0 Windows desktop release candidate will appear here after publication. Technical history is maintained separately in the repository changelog.',
   },
 } as const;
