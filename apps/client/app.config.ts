@@ -15,6 +15,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   orientation: 'default',
   backgroundColor: APP_BOOTSTRAP_BACKGROUND_COLOR,
   userInterfaceStyle: 'automatic',
+  icon: './assets/icon.png',
   plugins: [
     'expo-router',
     'expo-secure-store',
@@ -28,6 +29,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: 'com.michalrozek.nestra',
     versionCode: 1,
+    adaptiveIcon: {
+      foregroundImage: './assets/adaptive-icon.png',
+      backgroundColor: '#102B31',
+    },
   },
   ios: {
     bundleIdentifier: 'com.michalrozek.nestra',
