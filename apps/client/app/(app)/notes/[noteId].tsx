@@ -1,9 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Text } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { z } from 'zod';
 
 import { Button } from '@/components/button';
+import { Loader } from '@/components/loader';
 import { Screen } from '@/components/screen';
 import { getNoteErrorTranslationKey } from '@/features/notes/api/note-error';
 import { useNoteQuery } from '@/features/notes/api/note-queries';
@@ -33,7 +34,7 @@ export default function ExistingNoteScreen() {
   if (noteQuery.isPending) {
     return (
       <Screen>
-        <ActivityIndicator accessibilityLabel={t('editor.loading')} size="large" />
+        <Loader accessibilityLabel={t('editor.loading')} />
       </Screen>
     );
   }

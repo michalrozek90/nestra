@@ -3,9 +3,10 @@ import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Text } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 
 import { Button } from '@/components/button';
+import { Loader } from '@/components/loader';
 import { initializeLocalization } from '@/i18n/i18n';
 import { getBootstrapMessages } from '@/i18n/system-language';
 import { logger } from '@/infrastructure/logging/logger';
@@ -32,7 +33,7 @@ function AuthenticatedRootNavigator() {
         accessibilityState={{ busy: true }}
         style={[styles.initializationContainer, { backgroundColor: theme.colors.background }]}
       >
-        <ActivityIndicator color={theme.colors.primary} size="large" />
+        <Loader />
       </View>
     );
   }
@@ -96,7 +97,7 @@ function ClientBootstrap() {
         accessibilityState={{ busy: true }}
         style={[styles.initializationContainer, { backgroundColor: theme.colors.background }]}
       >
-        <ActivityIndicator color={theme.colors.primary} size="large" />
+        <Loader />
       </View>
     );
   }
