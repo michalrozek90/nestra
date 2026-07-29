@@ -229,9 +229,10 @@ pnpm build:desktop
 
 `pnpm build:desktop` exports the Expo web client with `.env.desktop` and produces the per-user
 NSIS installer `Nestra_{version}_x64-setup.exe`, where `{version}` is the root `package.json`
-product version. Local output defaults to
-`%LOCALAPPDATA%\nestra\desktop-cargo-target\release\bundle\nsis\`. Signing and release publishing
-remain separate tasks. Packaging details and the clean-machine smoke test live in
+product version. Local builds copy the finished installer to `D:\Nestra-setup\` (override with
+`NESTRA_INSTALLER_OUTPUT_DIR`). Cargo intermediates remain under
+`%LOCALAPPDATA%\nestra\desktop-cargo-target\`. Signing and release publishing remain separate
+tasks. Packaging details and the clean-machine smoke test live in
 [`docs/deployment/desktop.md`](docs/deployment/desktop.md).
 
 The configurable API base URLs for client runtimes are:

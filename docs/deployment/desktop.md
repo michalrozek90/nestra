@@ -67,18 +67,21 @@ Local builds write Cargo artifacts to `%LOCALAPPDATA%\nestra\desktop-cargo-targe
 Expo Metro does not watch rustc temporary files inside the monorepo. Override with
 `CARGO_TARGET_DIR` when needed (CI does this).
 
-Installer location (first match wins):
+Tauri still produces the NSIS installer under the Cargo target directory (first match wins):
 
 ```text
 %CARGO_TARGET_DIR%\release\bundle\nsis\Nestra_{version}_x64-setup.exe
 %CARGO_TARGET_DIR%\x86_64-pc-windows-msvc\release\bundle\nsis\Nestra_{version}_x64-setup.exe
 ```
 
-Default local path example:
+After a successful local `pnpm build:desktop`, the finished installer is also copied to:
 
 ```text
-%LOCALAPPDATA%\nestra\desktop-cargo-target\release\bundle\nsis\Nestra_0.0.0_x64-setup.exe
+D:\Nestra-setup\Nestra_{version}_x64-setup.exe
 ```
+
+Override that convenience copy with `NESTRA_INSTALLER_OUTPUT_DIR`. CI skips the copy unless that
+variable is set, and continues to upload from `CARGO_TARGET_DIR`.
 
 ## API configuration boundary
 
