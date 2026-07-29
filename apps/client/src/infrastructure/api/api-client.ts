@@ -32,6 +32,9 @@ const REFRESH_EXCLUDED_PATHS = [
 const authenticationFailureHandlers = new Set<AuthenticationFailureHandler>();
 let refreshPromise: Promise<string> | null = null;
 
+/** Per-request timeout for auth calls that must tolerate hosted free-tier cold starts. */
+export const AUTH_REQUEST_TIMEOUT_MS = 60_000;
+
 export const apiClient = axios.create({
   baseURL: runtimeConfig.apiBaseUrl,
   headers: {
@@ -53,7 +56,11 @@ async function rotateSession(): Promise<string> {
     throw new Error('An authentication refresh cannot be performed without a refresh token.');
   }
 
-  const response = await apiClient.post<unknown>('/auth/refresh', { refreshToken });
+  const response = await apiClient.post<unknown>(
+    '/auth/refresh',
+    { refreshToken },
+    { timeout: AUTH_REQUEST_TIMEOUT_MS },
+  );
   const session = authenticationSessionResponseSchema.parse(response.data);
   await persistAuthenticationSessionTokens(session);
   return session.accessToken;
