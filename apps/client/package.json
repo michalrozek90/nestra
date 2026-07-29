@@ -4,12 +4,13 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
-    "build": "expo export --platform web --output-dir dist",
-    "dev": "expo start",
-    "dev:android": "expo start --android",
-    "dev:ios": "node ./scripts/start-ios.mjs",
-    "dev:web": "expo start --web --port 8081",
-    "typecheck": "tsc --noEmit"
+    "generate:icon-fonts": "node ./scripts/generate-icon-font-data.mjs",
+    "build": "node ./scripts/generate-icon-font-data.mjs --force && expo export --platform web --output-dir dist --clear",
+    "dev": "pnpm run generate:icon-fonts && expo start",
+    "dev:android": "pnpm run generate:icon-fonts && expo start --android",
+    "dev:ios": "pnpm run generate:icon-fonts && node ./scripts/start-ios.mjs",
+    "dev:web": "pnpm run generate:icon-fonts && expo start --web --port 8081",
+    "typecheck": "pnpm run generate:icon-fonts && tsc --noEmit"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
@@ -21,6 +22,7 @@
     "axios": "^1.18.1",
     "expo": "57.0.7",
     "expo-constants": "~57.0.6",
+    "expo-font": "~57.0.1",
     "expo-linking": "~57.0.3",
     "expo-localization": "~57.0.1",
     "expo-router": "~57.0.7",

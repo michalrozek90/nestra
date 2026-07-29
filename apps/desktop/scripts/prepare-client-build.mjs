@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { copyFileSync, existsSync, renameSync, unlinkSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,6 +11,8 @@ const repositoryRoot = path.resolve(desktopPackageDirectory, '../..');
 const clientPackageDirectory = path.resolve(repositoryRoot, 'apps/client');
 const desktopEnvPath = path.join(clientPackageDirectory, '.env.desktop');
 const desktopEnvExamplePath = path.join(clientPackageDirectory, '.env.desktop.example');
+const clientEnvPath = path.join(clientPackageDirectory, '.env');
+const clientEnvBackupPath = path.join(clientPackageDirectory, '.env.desktop-build-backup');
 
 if (!existsSync(desktopEnvPath)) {
   console.error(
@@ -24,14 +26,53 @@ if (!existsSync(desktopEnvPath)) {
   process.exit(1);
 }
 
-applyEnvFile(desktopEnvPath);
+/**
+ * Expo loads apps/client/.env during export and that file wins over process.env for
+ * EXPO_PUBLIC_* values. Temporarily replace it with .env.desktop for the packaged build.
+ */
+function withDesktopClientEnv(build) {
+  const hadClientEnv = existsSync(clientEnvPath);
+  let replacedClientEnv = false;
 
-runCommand('pnpm', ['--filter', '@nestra/contracts', 'build'], {
-  cwd: repositoryRoot,
-  env: process.env,
-});
+  if (existsSync(clientEnvBackupPath)) {
+    throw new Error(
+      `Refusing to overwrite existing desktop build backup: ${path.relative(
+        repositoryRoot,
+        clientEnvBackupPath,
+      )}. Restore or remove it before retrying the build.`,
+    );
+  }
 
-runCommand('pnpm', ['--filter', '@nestra/client', 'build'], {
-  cwd: repositoryRoot,
-  env: process.env,
+  try {
+    applyEnvFile(desktopEnvPath);
+
+    if (hadClientEnv) {
+      renameSync(clientEnvPath, clientEnvBackupPath);
+    }
+
+    copyFileSync(desktopEnvPath, clientEnvPath);
+    replacedClientEnv = true;
+
+    return build();
+  } finally {
+    if (replacedClientEnv && existsSync(clientEnvPath)) {
+      unlinkSync(clientEnvPath);
+    }
+
+    if (hadClientEnv && existsSync(clientEnvBackupPath)) {
+      renameSync(clientEnvBackupPath, clientEnvPath);
+    }
+  }
+}
+
+withDesktopClientEnv(() => {
+  runCommand('pnpm', ['--filter', '@nestra/contracts', 'build'], {
+    cwd: repositoryRoot,
+    env: process.env,
+  });
+
+  runCommand('pnpm', ['--filter', '@nestra/client', 'build'], {
+    cwd: repositoryRoot,
+    env: process.env,
+  });
 });

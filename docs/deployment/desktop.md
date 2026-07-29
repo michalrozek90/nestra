@@ -67,18 +67,21 @@ Local builds write Cargo artifacts to `%LOCALAPPDATA%\nestra\desktop-cargo-targe
 Expo Metro does not watch rustc temporary files inside the monorepo. Override with
 `CARGO_TARGET_DIR` when needed (CI does this).
 
-Installer location (first match wins):
+Tauri still produces the NSIS installer under the Cargo target directory (first match wins):
 
 ```text
 %CARGO_TARGET_DIR%\release\bundle\nsis\Nestra_{version}_x64-setup.exe
 %CARGO_TARGET_DIR%\x86_64-pc-windows-msvc\release\bundle\nsis\Nestra_{version}_x64-setup.exe
 ```
 
-Default local path example:
+After a successful local `pnpm build:desktop`, the finished installer is also copied to:
 
 ```text
-%LOCALAPPDATA%\nestra\desktop-cargo-target\release\bundle\nsis\Nestra_0.0.0_x64-setup.exe
+D:\Nestra-setup\Nestra_{version}_x64-setup.exe
 ```
+
+Override that convenience copy with `NESTRA_INSTALLER_OUTPUT_DIR`. CI skips the copy unless that
+variable is set, and continues to upload from `CARGO_TARGET_DIR`.
 
 ## API configuration boundary
 
@@ -102,6 +105,18 @@ demo deployment. Changing hosts is a configuration change, not a UI change.
 
 For `pnpm dev:desktop`, use `apps/client/.env`. Point that file at the local API while iterating,
 or at the hosted HTTPS URL when the developer machine should not run NestJS.
+
+`pnpm build:desktop` temporarily replaces `apps/client/.env` with `.env.desktop` during the Expo
+web export (Expo reads `.env` for `EXPO_PUBLIC_*` values) and restores the original file afterwards.
+Always clear-rebuild when changing the hosted API URL so Metro does not keep a stale bundle.
+
+Icon fonts (`Ionicons`, Material Community Icons) come from the installed `@expo/vector-icons`
+package. Web/desktop bootstrap (`load-icon-fonts.web.ts`) embeds those fonts as base64 (generated
+before export), registers them with the browser `FontFace` API from raw bytes, and syncs
+expo-font's cache via blob URLs using a known glyph from each font as its readiness probe. Native
+uses the package-provided font maps through expo-font's normal asset pipeline
+(`load-icon-fonts.ts`) and does not embed the base64 payload. CSP `connect-src` includes `'self'`;
+`font-src` allows `blob:` for the expo-font cache sync URLs.
 
 ## Authentication storage
 
