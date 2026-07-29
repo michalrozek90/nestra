@@ -956,16 +956,17 @@ At startup:
 
 1. initialize preference storage;
 2. read stored tokens;
-3. display an initialization screen while auth is unknown;
-4. without refresh token, enter unauthenticated routes;
-5. with refresh token, attempt one refresh;
-6. use the returned user or confirm with `/auth/me`;
-7. enter authenticated routes only after success;
-8. clear invalid tokens and return to login on auth failure.
+3. display an initialization screen with the shared Loader while auth is unknown;
+4. without refresh token, enter unauthenticated routes immediately (no API wait);
+5. with refresh token, attempt session restore with a patient per-attempt timeout sized for hosted free-tier cold starts (about 60 seconds; success proceeds as soon as the API responds);
+6. auto-retry at most once more after a short pause when the failure is recoverable (no response, timeout, or HTTP 5xx);
+7. enter authenticated routes only after a successful restore;
+8. on non-recoverable auth failure (invalid or expired refresh token and similar), clear local tokens immediately and return to login without burning the retry budget;
+9. after the restore budget is exhausted, clear local tokens and return to login through that same simple path.
 
 Do not flash login for a valid session or create redirect loops.
 
-If the API is unreachable during restoration, show a recoverable state with Retry and Clear local session actions.
+Do not show a dual-action restoration-error screen (Retry next to Clear local session). Do not explain cold starts, wake-ups, or other infrastructure details in the UI. Apply the same longer auth-request timeout patience to login and equivalent auth requests so users are not immediately failed again while the API is still waking.
 
 Routing:
 

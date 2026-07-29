@@ -10,20 +10,19 @@ import { isRecoverableConnectionError } from './auth-error';
 import { persistAuthenticationSessionTokens } from './auth-session-storage';
 import { authTokenStorage } from './auth-token-storage';
 
-export type AuthenticationStatus =
-  'unknown' | 'authenticated' | 'unauthenticated' | 'restoration-error';
+export type AuthenticationStatus = 'unknown' | 'authenticated' | 'unauthenticated';
 
 type AuthContextValue = {
   readonly status: AuthenticationStatus;
   readonly user: PublicUser | null;
   readonly isSigningOut: boolean;
   readonly completeAuthentication: (session: AuthenticationSessionResponse) => Promise<void>;
-  readonly retryRestoration: () => Promise<void>;
-  readonly clearLocalSession: () => Promise<void>;
   readonly signOut: () => Promise<void>;
 };
 
 const AUTH_SESSION_QUERY_KEY = ['auth', 'session'] as const;
+const SESSION_RESTORE_MAX_ATTEMPTS = 2;
+const SESSION_RESTORE_RETRY_DELAY_MS = 4_000;
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 async function clearStoredTokensSafely(): Promise<void> {
@@ -32,6 +31,12 @@ async function clearStoredTokensSafely(): Promise<void> {
   } catch (error: unknown) {
     logger.error('Authentication tokens could not be cleared', error);
   }
+}
+
+function wait(durationMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, durationMs);
+  });
 }
 
 async function restoreAuthenticationSession(): Promise<PublicUser | null> {
@@ -47,18 +52,31 @@ async function restoreAuthenticationSession(): Promise<PublicUser | null> {
     return null;
   }
 
-  try {
-    const session = await refreshSession({ refreshToken });
-    await persistAuthenticationSessionTokens(session);
-    return session.user;
-  } catch (error: unknown) {
-    if (isRecoverableConnectionError(error)) {
-      throw error;
-    }
+  let attempt = 0;
+  while (attempt < SESSION_RESTORE_MAX_ATTEMPTS) {
+    attempt += 1;
+    try {
+      const session = await refreshSession({ refreshToken });
+      await persistAuthenticationSessionTokens(session);
+      return session.user;
+    } catch (error: unknown) {
+      if (!isRecoverableConnectionError(error)) {
+        await clearStoredTokensSafely();
+        return null;
+      }
 
-    await clearStoredTokensSafely();
-    return null;
+      if (attempt >= SESSION_RESTORE_MAX_ATTEMPTS) {
+        break;
+      }
+
+      logger.warn('Session restoration recoverable failure; retrying');
+      await wait(SESSION_RESTORE_RETRY_DELAY_MS);
+    }
   }
+
+  logger.warn('Session restoration exhausted recoverable attempts');
+  await clearStoredTokensSafely();
+  return null;
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
@@ -94,15 +112,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
     [client],
   );
 
-  const retryRestoration = useCallback(async () => {
-    await sessionQuery.refetch();
-  }, [sessionQuery]);
-
-  const clearLocalSession = useCallback(async () => {
-    await clearStoredTokensSafely();
-    clearSessionState();
-  }, [clearSessionState]);
-
   const signOut = useCallback(async () => {
     if (isSigningOut) {
       return;
@@ -135,11 +144,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const user = sessionQuery.data ?? null;
   const status: AuthenticationStatus = sessionQuery.isPending
     ? 'unknown'
-    : sessionQuery.isError
-      ? 'restoration-error'
-      : user
-        ? 'authenticated'
-        : 'unauthenticated';
+    : user
+      ? 'authenticated'
+      : 'unauthenticated';
 
   const contextValue = useMemo<AuthContextValue>(
     () => ({
@@ -147,19 +154,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
       user,
       isSigningOut,
       completeAuthentication,
-      retryRestoration,
-      clearLocalSession,
       signOut,
     }),
-    [
-      clearLocalSession,
-      completeAuthentication,
-      isSigningOut,
-      retryRestoration,
-      user,
-      signOut,
-      status,
-    ],
+    [completeAuthentication, isSigningOut, user, signOut, status],
   );
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

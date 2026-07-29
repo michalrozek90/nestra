@@ -1,7 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 
@@ -23,8 +22,7 @@ type InitializationStatus = 'loading' | 'ready' | 'failed';
 function AuthenticatedRootNavigator() {
   const theme = useNestraTheme();
   const { isInitialized: isAppearanceInitialized } = useAppearance();
-  const { status, retryRestoration, clearLocalSession } = useAuth();
-  const { t } = useTranslation('common');
+  const { status } = useAuth();
 
   if (status === 'unknown' || !isAppearanceInitialized) {
     return (
@@ -34,22 +32,6 @@ function AuthenticatedRootNavigator() {
         style={[styles.initializationContainer, { backgroundColor: theme.colors.background }]}
       >
         <Loader />
-      </View>
-    );
-  }
-
-  if (status === 'restoration-error') {
-    return (
-      <View style={[styles.initializationContainer, { backgroundColor: theme.colors.background }]}>
-        <Text accessibilityRole="header" style={styles.initializationTitle}>
-          {t('initialization.sessionUnavailable')}
-        </Text>
-        <Button label={t('actions.retry')} onPress={() => void retryRestoration()} />
-        <Button
-          label={t('actions.clearLocalSession')}
-          onPress={() => void clearLocalSession()}
-          variant="secondary"
-        />
       </View>
     );
   }
