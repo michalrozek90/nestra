@@ -2,11 +2,12 @@ import type { Note } from '@nestra/contracts';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
-import { ActivityIndicator, SegmentedButtons, Text } from 'react-native-paper';
+import { SegmentedButtons, Text } from 'react-native-paper';
 
 import { Button } from '@/components/button';
 import { EmptyState } from '@/components/empty-state';
 import { Header } from '@/components/header';
+import { Loader } from '@/components/loader';
 import { Screen } from '@/components/screen';
 import { spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
@@ -112,7 +113,7 @@ export function NotesListScreen({
 
       {notesQuery.isPending ? (
         <View accessibilityState={{ busy: true }} style={styles.centered}>
-          <ActivityIndicator size="large" />
+          <Loader accessibilityLabel={t('list.loading')} />
           <Text>{t('list.loading')}</Text>
         </View>
       ) : notesQuery.isError ? (

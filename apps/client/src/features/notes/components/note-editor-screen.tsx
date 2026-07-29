@@ -3,9 +3,10 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Button as PaperButton, IconButton, Text } from 'react-native-paper';
+import { Button as PaperButton, IconButton, Text } from 'react-native-paper';
 
 import { ActionDialog } from '@/components/action-dialog';
+import { Loader } from '@/components/loader';
 import { Screen } from '@/components/screen';
 import { useAuth } from '@/infrastructure/auth/auth-provider';
 import { spacing, typography } from '@/theme/tokens';
@@ -36,7 +37,7 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
   if (!user || !editor.isInitialized) {
     return (
       <Screen contentStyle={styles.centered} isScrollable={false}>
-        <ActivityIndicator accessibilityLabel={t('editor.loading')} size="large" />
+        <Loader accessibilityLabel={t('editor.loading')} />
       </Screen>
     );
   }
