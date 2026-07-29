@@ -13,6 +13,7 @@ export function runCommand(command, args, options = {}) {
   }
 
   if (result.status !== 0) {
-    process.exit(result.status ?? 1);
+    const exitCode = result.status ?? 1;
+    throw new Error(`Command failed with exit code ${exitCode}: ${command} ${args.join(' ')}`);
   }
 }

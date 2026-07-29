@@ -107,13 +107,13 @@ or at the hosted HTTPS URL when the developer machine should not run NestJS.
 web export (Expo reads `.env` for `EXPO_PUBLIC_*` values) and restores the original file afterwards.
 Always clear-rebuild when changing the hosted API URL so Metro does not keep a stale bundle.
 
-Icon fonts (`Ionicons`, Material Community Icons) are vendored under `apps/client/fonts/`.
-Web/desktop bootstrap (`load-icon-fonts.web.ts`) embeds those fonts as base64 (generated before
-export) and registers them with the browser `FontFace` API from raw bytes, then syncs expo-font's
-cache via blob URLs. Native uses the same `.ttf` files through expo-font's normal asset pipeline
-(`load-icon-fonts.ts`) and does not embed the base64 payload. A pnpm patch to `expo-font` skips
-FontFaceObserver on web. CSP `connect-src` includes `'self'`; `font-src` allows `blob:` for the
-expo-font cache sync URLs.
+Icon fonts (`Ionicons`, Material Community Icons) come from the installed `@expo/vector-icons`
+package. Web/desktop bootstrap (`load-icon-fonts.web.ts`) embeds those fonts as base64 (generated
+before export), registers them with the browser `FontFace` API from raw bytes, and syncs
+expo-font's cache via blob URLs using a known glyph from each font as its readiness probe. Native
+uses the package-provided font maps through expo-font's normal asset pipeline
+(`load-icon-fonts.ts`) and does not embed the base64 payload. CSP `connect-src` includes `'self'`;
+`font-src` allows `blob:` for the expo-font cache sync URLs.
 
 ## Authentication storage
 

@@ -17,15 +17,11 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
   return bytes.buffer;
 }
 
-function revokeRegisteredFontBlobUrls(): void {
-  for (const fontBlobUrl of registeredFontBlobUrls) {
-    URL.revokeObjectURL(fontBlobUrl);
-  }
-
-  registeredFontBlobUrls.length = 0;
-}
-
-async function registerEmbeddedWebIconFont(fontFamily: string, base64: string): Promise<void> {
+async function registerEmbeddedWebIconFont(
+  fontFamily: string,
+  base64: string,
+  testString: string,
+): Promise<void> {
   const fontBuffer = base64ToArrayBuffer(base64);
   const fontFace = new FontFace(fontFamily, fontBuffer, {
     style: 'normal',
@@ -34,18 +30,13 @@ async function registerEmbeddedWebIconFont(fontFamily: string, base64: string): 
   });
 
   document.fonts.add(fontFace);
-
-  try {
-    await fontFace.load();
-  } catch (error: unknown) {
-    logger.error('Browser FontFace.load failed for embedded icon font', error);
-  }
+  await fontFace.load();
 
   // Keep expo-font's loaded cache in sync so @expo/vector-icons / Paper render glyphs.
   const fontBlobUrl = URL.createObjectURL(new Blob([fontBuffer], { type: 'font/ttf' }));
   registeredFontBlobUrls.push(fontBlobUrl);
   await loadAsync({
-    [fontFamily]: { uri: fontBlobUrl },
+    [fontFamily]: { uri: fontBlobUrl, testString },
   });
 }
 
@@ -56,12 +47,11 @@ async function registerEmbeddedWebIconFont(fontFamily: string, base64: string): 
  */
 export async function loadIconFonts(): Promise<void> {
   try {
-    revokeRegisteredFontBlobUrls();
-
-    for (const [fontFamily, base64] of Object.entries(GENERATED_ICON_FONT_BASE64)) {
-      await registerEmbeddedWebIconFont(fontFamily, base64);
+    for (const [fontFamily, { base64, testString }] of Object.entries(GENERATED_ICON_FONT_BASE64)) {
+      await registerEmbeddedWebIconFont(fontFamily, base64, testString);
     }
   } catch (error: unknown) {
     logger.error('Icon font loading failed', error);
+    throw error;
   }
 }

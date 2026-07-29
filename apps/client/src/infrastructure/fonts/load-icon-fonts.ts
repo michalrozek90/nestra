@@ -1,10 +1,12 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { loadAsync } from 'expo-font';
 
 import { logger } from '@/infrastructure/logging/logger';
 
 const NATIVE_ICON_FONT_SOURCES = {
-  ionicons: require('../../../fonts/Ionicons.ttf'),
-  'material-community': require('../../../fonts/MaterialCommunityIcons.ttf'),
+  ...Ionicons.font,
+  ...MaterialCommunityIcons.font,
 } as const;
 
 /**
@@ -16,5 +18,6 @@ export async function loadIconFonts(): Promise<void> {
     await loadAsync(NATIVE_ICON_FONT_SOURCES);
   } catch (error: unknown) {
     logger.error('Icon font loading failed', error);
+    throw error;
   }
 }

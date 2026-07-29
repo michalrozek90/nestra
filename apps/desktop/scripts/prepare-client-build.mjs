@@ -34,6 +34,15 @@ function withDesktopClientEnv(build) {
   const hadClientEnv = existsSync(clientEnvPath);
   let replacedClientEnv = false;
 
+  if (existsSync(clientEnvBackupPath)) {
+    throw new Error(
+      `Refusing to overwrite existing desktop build backup: ${path.relative(
+        repositoryRoot,
+        clientEnvBackupPath,
+      )}. Restore or remove it before retrying the build.`,
+    );
+  }
+
   try {
     applyEnvFile(desktopEnvPath);
 
