@@ -52,7 +52,9 @@ async function restoreAuthenticationSession(): Promise<PublicUser | null> {
     return null;
   }
 
-  for (let attempt = 1; attempt <= SESSION_RESTORE_MAX_ATTEMPTS; attempt += 1) {
+  let attempt = 0;
+  while (attempt < SESSION_RESTORE_MAX_ATTEMPTS) {
+    attempt += 1;
     try {
       const session = await refreshSession({ refreshToken });
       await persistAuthenticationSessionTokens(session);
@@ -64,9 +66,7 @@ async function restoreAuthenticationSession(): Promise<PublicUser | null> {
       }
 
       if (attempt >= SESSION_RESTORE_MAX_ATTEMPTS) {
-        logger.warn('Session restoration exhausted recoverable attempts');
-        await clearStoredTokensSafely();
-        return null;
+        break;
       }
 
       logger.warn('Session restoration recoverable failure; retrying');
@@ -74,6 +74,7 @@ async function restoreAuthenticationSession(): Promise<PublicUser | null> {
     }
   }
 
+  logger.warn('Session restoration exhausted recoverable attempts');
   await clearStoredTokensSafely();
   return null;
 }
