@@ -68,6 +68,7 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
           <Text
             accessibilityLiveRegion="assertive"
             accessibilityRole="alert"
+            numberOfLines={2}
             style={[styles.saveError, { color: theme.colors.error }]}
           >
             {t('editor.saveFailed')}
@@ -139,8 +140,11 @@ const styles = StyleSheet.create({
   },
   saveError: {
     ...typography.supporting,
+    flexShrink: 1,
     marginLeft: 'auto',
+    minWidth: 0,
     paddingHorizontal: spacing.md,
+    textAlign: 'right',
   },
   screenContainer: {
     padding: spacing.lg,

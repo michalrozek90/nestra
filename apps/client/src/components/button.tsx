@@ -13,6 +13,7 @@ type ButtonProps = {
   readonly isDisabled?: boolean;
   readonly accessibilityLabel?: string;
   readonly isLoading?: boolean;
+  readonly isFullWidth?: boolean;
 };
 
 export function Button({
@@ -22,6 +23,7 @@ export function Button({
   isDisabled = false,
   accessibilityLabel,
   isLoading = false,
+  isFullWidth = false,
 }: ButtonProps) {
   const theme = useNestraTheme();
 
@@ -34,7 +36,7 @@ export function Button({
       mode={variant === 'primary' ? 'contained' : 'outlined'}
       loading={isLoading}
       onPress={onPress}
-      style={styles.button}
+      style={[styles.button, isFullWidth ? styles.fullWidth : null]}
       {...(variant === 'destructive' ? { textColor: theme.colors.error } : {})}
     >
       {label}
@@ -49,6 +51,9 @@ const styles = StyleSheet.create({
   content: {
     minHeight: sizes.minimumTouchTarget,
     paddingHorizontal: spacing.xl,
+  },
+  fullWidth: {
+    width: '100%',
   },
   label: {
     fontSize: 16,

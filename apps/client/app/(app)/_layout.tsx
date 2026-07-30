@@ -47,7 +47,7 @@ export default function ApplicationLayout() {
         ...(isCompact
           ? {
               tabBarLabel: ({ children, color }) => (
-                <Text numberOfLines={1} style={[styles.compactTabLabel, { color }]}>
+                <Text numberOfLines={2} style={[styles.compactTabLabel, { color }]}>
                   {children}
                 </Text>
               ),
@@ -138,7 +138,9 @@ const styles = StyleSheet.create({
   },
   compactTabLabel: {
     fontSize: 10,
+    lineHeight: 12,
     maxWidth: 64,
+    textAlign: 'center',
   },
   railTab: {
     alignItems: 'center',

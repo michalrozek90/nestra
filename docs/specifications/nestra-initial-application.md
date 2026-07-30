@@ -1025,15 +1025,17 @@ Central breakpoints:
 
 ```ts
 export const BREAKPOINTS = {
-  compact: 0,
+  compact: 320,
   medium: 768,
   expanded: 1200,
 } as const;
 ```
 
+`320` is the minimum supported layout width. Widths below that floor still use the compact layout, but are not a supported design target.
+
 Behavior:
 
-- below 768: bottom tabs, one column;
+- 320–767: bottom tabs, one column;
 - 768–1199: left navigation rail, content max width about 960;
 - 1200+: left sidebar with icons and labels, content max width about 1200.
 
