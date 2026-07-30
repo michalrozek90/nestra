@@ -4,7 +4,12 @@ export const plSettings = {
     account: 'Konto',
     language: 'Język',
     appearance: 'Wygląd',
+    about: 'O aplikacji',
     developer: 'Dla dewelopera',
+  },
+  about: {
+    entryTitle: 'O Nestrze',
+    entryDescription: 'Zobacz bieżącą wersję i informacje o wydaniach produktu.',
   },
   account: {
     signOut: 'Wyloguj się',

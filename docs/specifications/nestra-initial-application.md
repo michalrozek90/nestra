@@ -999,7 +999,7 @@ app/
     └── settings/
         ├── _layout.tsx
         ├── index.tsx
-        ├── changelog.tsx
+        ├── about.tsx
         └── developer-diagnostics.tsx
 ```
 
