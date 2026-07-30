@@ -307,6 +307,26 @@ Do not silently ignore caught errors. Handle them, convert them into an expected
 - Keep the selected issue link available in the implementation handoff, but leave issue closure and
   project-status transitions to the user or GitHub automation.
 
+## Conventional Commits
+
+Release Please on `main` bumps the product version from Conventional Commit prefixes. Use English
+messages. Prefer an optional scope when it clarifies the change, for example `feat(auth): ...`.
+
+| Prefix | Release Please effect |
+| ------ | --------------------- |
+| `feat:` | Minor bump (`0.1.0` → `0.2.0`) |
+| `fix:` | Patch bump (`0.1.0` → `0.1.1`) |
+| Breaking change (`!` or `BREAKING CHANGE:`) | Minor bump while pre-1.0 (`bump-minor-pre-major`) |
+| `chore:`, `docs:`, `refactor:`, `test:`, `ci:`, `style:` | No version bump |
+
+Guidelines:
+
+- Use `feat:` / `fix:` only for user-facing or product behavior changes that should ship in a release.
+- Use `chore:` (or another non-bumping type) for tooling, formatting, workflow, and post-release
+  housekeeping so those commits do not open a needless release PR.
+- Do not commit unless the user explicitly asks for a commit.
+- Release flow details live in `docs/deployment/release.md` and ADR 007.
+
 ## Formatting and verification
 
 Use the configured ESLint and Prettier setup.
