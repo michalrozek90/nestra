@@ -312,12 +312,12 @@ Do not silently ignore caught errors. Handle them, convert them into an expected
 Release Please on `main` bumps the product version from Conventional Commit prefixes. Use English
 messages. Prefer an optional scope when it clarifies the change, for example `feat(auth): ...`.
 
-| Prefix | Release Please effect |
-| ------ | --------------------- |
-| `feat:` | Minor bump (`0.1.0` → `0.2.0`) |
-| `fix:` | Patch bump (`0.1.0` → `0.1.1`) |
-| Breaking change (`!` or `BREAKING CHANGE:`) | Minor bump while pre-1.0 (`bump-minor-pre-major`) |
-| `chore:`, `docs:`, `refactor:`, `test:`, `ci:`, `style:` | No version bump |
+| Prefix                                                   | Release Please effect                             |
+| -------------------------------------------------------- | ------------------------------------------------- |
+| `feat:`                                                  | Minor bump (`0.1.0` → `0.2.0`)                    |
+| `fix:`                                                   | Patch bump (`0.1.0` → `0.1.1`)                    |
+| Breaking change (`!` or `BREAKING CHANGE:`)              | Minor bump while pre-1.0 (`bump-minor-pre-major`) |
+| `chore:`, `docs:`, `refactor:`, `test:`, `ci:`, `style:` | No version bump                                   |
 
 Guidelines:
 
