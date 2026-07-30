@@ -8,7 +8,7 @@ import { getResponsiveLayout } from '@/theme/breakpoints';
 import { spacing, typography } from '@/theme/tokens';
 
 const DIALOG_MAX_WIDTH_PX = 560;
-const DIALOG_MAX_HEIGHT_RATIO = 0.75;
+const DIALOG_SCROLL_MAX_HEIGHT_RATIO = 0.55;
 
 type WhatsNewDialogProps = {
   readonly children: ReactNode;
@@ -34,7 +34,7 @@ export function WhatsNewDialog({
   );
   const availableWidthPx = Math.max(0, windowWidth - horizontalMarginPx * 2);
   const dialogWidthPx = Math.min(DIALOG_MAX_WIDTH_PX, availableWidthPx);
-  const contentMaxHeightPx = Math.max(160, windowHeight * DIALOG_MAX_HEIGHT_RATIO);
+  const contentMaxHeightPx = Math.max(160, windowHeight * DIALOG_SCROLL_MAX_HEIGHT_RATIO);
 
   return (
     <Portal>

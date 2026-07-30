@@ -114,6 +114,7 @@ function formatReleaseDate(releaseDate: string, language: string): string {
   return parsedDate.toLocaleDateString(language, {
     day: 'numeric',
     month: 'short',
+    timeZone: 'UTC',
     year: 'numeric',
   });
 }
