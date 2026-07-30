@@ -1,9 +1,9 @@
 import { applicationMetadata } from '@nestra/contracts';
 import { useQuery } from '@tanstack/react-query';
-import { Redirect } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, View } from 'react-native';
-import { Text } from 'react-native-paper';
+import { IconButton, Text } from 'react-native-paper';
 
 import { Card } from '@/components/card';
 import { Header } from '@/components/header';
@@ -44,6 +44,7 @@ function formatTimestamp(timestamp: string | null, fallback: string): string {
 
 export default function DeveloperDiagnosticsScreen() {
   const { t } = useTranslation('settings');
+  const router = useRouter();
   const apiDiagnostics = useApiDiagnostics();
   const { status } = useAuth();
   const tokenPresenceQuery = useQuery({
@@ -64,7 +65,23 @@ export default function DeveloperDiagnosticsScreen() {
 
   return (
     <Screen>
-      <Header title={t('diagnostics.title')} />
+      <View style={styles.topBar}>
+        <IconButton
+          accessibilityLabel={t('diagnostics.actions.back')}
+          icon="arrow-left"
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+              return;
+            }
+
+            router.replace('/settings');
+          }}
+        />
+        <View style={styles.titleContainer}>
+          <Header title={t('diagnostics.title')} />
+        </View>
+      </View>
 
       <View style={styles.section}>
         <SectionHeader title={t('diagnostics.sections.application')} />
@@ -168,6 +185,16 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: spacing.md,
+  },
+  titleContainer: {
+    flex: 1,
+    minWidth: 0,
+  },
+  topBar: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginLeft: -spacing.sm,
   },
   value: {
     ...typography.supporting,
