@@ -8,19 +8,22 @@ import { useNestraTheme } from '@/theme/themes';
 import type { ReleaseNote } from '../release-notes';
 
 type ReleaseNoteChangesProps = {
+  readonly isCompact?: boolean;
   readonly releaseNote: ReleaseNote;
 };
 
-export function ReleaseNoteChanges({ releaseNote }: ReleaseNoteChangesProps) {
+export function ReleaseNoteChanges({ isCompact = false, releaseNote }: ReleaseNoteChangesProps) {
   const { t } = useTranslation('releases');
   const theme = useNestraTheme();
+  const textStyle = isCompact ? styles.compactDescription : styles.description;
+  const bulletStyle = isCompact ? styles.compactBullet : styles.bullet;
 
   return (
-    <View style={styles.list}>
+    <View style={[styles.list, isCompact ? styles.compactList : null]}>
       {releaseNote.changes.map((change) => (
         <View key={change.descriptionTranslationKey} style={styles.row}>
-          <Text style={[styles.bullet, { color: theme.colors.onSurfaceVariant }]}>•</Text>
-          <Text style={styles.description}>{t(change.descriptionTranslationKey)}</Text>
+          <Text style={[bulletStyle, { color: theme.colors.onSurfaceVariant }]}>•</Text>
+          <Text style={textStyle}>{t(change.descriptionTranslationKey)}</Text>
         </View>
       ))}
     </View>
@@ -32,6 +35,18 @@ const styles = StyleSheet.create({
     ...typography.body,
     lineHeight: typography.body.lineHeight,
     minWidth: 16,
+  },
+  compactBullet: {
+    ...typography.supporting,
+    lineHeight: typography.supporting.lineHeight,
+    minWidth: 12,
+  },
+  compactDescription: {
+    ...typography.supporting,
+    flex: 1,
+  },
+  compactList: {
+    gap: spacing.sm,
   },
   description: {
     ...typography.body,
