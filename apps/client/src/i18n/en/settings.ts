@@ -27,6 +27,9 @@ export const enSettings = {
     entryTitle: 'Developer diagnostics',
     entryDescription: 'View safe runtime and connection information.',
     title: 'Developer diagnostics',
+    actions: {
+      back: 'Back',
+    },
     sections: {
       application: 'Application',
       api: 'API',

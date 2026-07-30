@@ -27,6 +27,9 @@ export const plSettings = {
     entryTitle: 'Diagnostyka deweloperska',
     entryDescription: 'Zobacz bezpieczne informacje o środowisku i połączeniu.',
     title: 'Diagnostyka deweloperska',
+    actions: {
+      back: 'Wstecz',
+    },
     sections: {
       application: 'Aplikacja',
       api: 'API',
