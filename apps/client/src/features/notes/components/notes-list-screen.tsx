@@ -61,7 +61,9 @@ export function NotesListScreen({
   return (
     <Screen>
       <View style={styles.headerRow}>
-        <Header title={title} />
+        <View style={styles.headerTitle}>
+          <Header title={title} />
+        </View>
         <View style={styles.headerActions}>
           {hasTrashedNotes ? (
             <Button
@@ -212,9 +214,15 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     justifyContent: 'space-between',
   },
+  headerTitle: {
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 0,
+  },
   headerActions: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexShrink: 0,
     flexWrap: 'wrap',
     gap: spacing.sm,
     justifyContent: 'flex-end',

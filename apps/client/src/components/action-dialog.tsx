@@ -3,6 +3,7 @@ import { StyleSheet, useWindowDimensions } from 'react-native';
 import { Dialog, Portal, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { getResponsiveLayout } from '@/theme/breakpoints';
 import { spacing } from '@/theme/tokens';
 
 const DIALOG_MAX_WIDTH_PX = 560;
@@ -25,7 +26,11 @@ export function ActionDialog({
 }: ActionDialogProps) {
   const { width: windowWidth } = useWindowDimensions();
   const safeAreaInsets = useSafeAreaInsets();
-  const horizontalMarginPx = Math.max(safeAreaInsets.left, safeAreaInsets.right, spacing.xl);
+  const horizontalMarginPx = Math.max(
+    safeAreaInsets.left,
+    safeAreaInsets.right,
+    getResponsiveLayout(windowWidth) === 'compact' ? spacing.lg : spacing.xl,
+  );
   const availableWidthPx = Math.max(0, windowWidth - horizontalMarginPx * 2);
   const dialogWidthPx = Math.min(DIALOG_MAX_WIDTH_PX, availableWidthPx);
 

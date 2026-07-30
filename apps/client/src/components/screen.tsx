@@ -35,6 +35,8 @@ export function Screen({
   const responsiveLayout = getResponsiveLayout(width);
   const theme = useNestraTheme();
 
+  const contentPadding = responsiveLayout === 'compact' ? spacing.lg : spacing.xl;
+
   const content = (
     <View
       style={[
@@ -56,14 +58,16 @@ export function Screen({
     >
       {isScrollable ? (
         <ScrollView
-          contentContainerStyle={[styles.container, containerStyle]}
+          contentContainerStyle={[styles.container, { padding: contentPadding }, containerStyle]}
           keyboardShouldPersistTaps="handled"
           style={styles.scrollView}
         >
           {content}
         </ScrollView>
       ) : (
-        <View style={[styles.container, containerStyle]}>{content}</View>
+        <View style={[styles.container, { padding: contentPadding }, containerStyle]}>
+          {content}
+        </View>
       )}
     </SafeAreaView>
   );
@@ -73,7 +77,6 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     flexGrow: 1,
-    padding: spacing.xl,
   },
   content: {
     alignSelf: 'center',

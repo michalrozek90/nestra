@@ -1,8 +1,14 @@
+/**
+ * Compact starts at the minimum supported layout width.
+ * Widths below this floor still use the compact layout; they are not a supported design target.
+ */
 export const BREAKPOINTS = {
-  compact: 0,
+  compact: 320,
   medium: 768,
   expanded: 1200,
 } as const;
+
+export const MINIMUM_SUPPORTED_LAYOUT_WIDTH = BREAKPOINTS.compact;
 
 export type ResponsiveLayout = keyof typeof BREAKPOINTS;
 
