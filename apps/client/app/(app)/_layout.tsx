@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, useWindowDimensions, type ColorValue } from 'react-native';
 import { Text } from 'react-native-paper';
 
+import { WhatsNewHost } from '@/features/releases/components/whats-new-host';
 import { getResponsiveLayout } from '@/theme/breakpoints';
 import { sizes } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
@@ -30,102 +31,105 @@ export default function ApplicationLayout() {
   }
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        sceneStyle: { backgroundColor: theme.colors.background },
-        tabBarActiveBackgroundColor: isCompact
-          ? theme.colors.surface
-          : theme.colors.primaryContainer,
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
-        tabBarItemStyle: isCompact
-          ? styles.compactTab
-          : isExpanded
-            ? styles.sideTab
-            : styles.railTab,
-        ...(isCompact
-          ? {
-              tabBarLabel: ({ children, color }) => (
-                <Text numberOfLines={2} style={[styles.compactTabLabel, { color }]}>
-                  {children}
-                </Text>
-              ),
-            }
-          : {}),
-        // Medium rail uses below-icon so React Navigation applies equal item padding
-        // (tabVerticalMaterial) instead of the labeled-sidebar asymmetry (16/24).
-        tabBarLabelPosition: isExpanded ? 'beside-icon' : 'below-icon',
-        tabBarLabelStyle: styles.tabLabel,
-        tabBarPosition: isCompact ? 'bottom' : 'left',
-        tabBarShowLabel: isCompact || isExpanded,
-        tabBarStyle: [
-          styles.tabBar,
-          {
-            backgroundColor: theme.colors.surface,
-            borderColor: theme.colors.outlineVariant,
-          },
-          isCompact
-            ? null
-            : {
-                minWidth: isExpanded ? sizes.navigationSidebarWidth : sizes.navigationRailWidth,
-                width: isExpanded ? sizes.navigationSidebarWidth : sizes.navigationRailWidth,
-              },
-        ],
-        tabBarVariant: isCompact ? 'uikit' : 'material',
-      }}
-    >
-      <Tabs.Screen
-        name="notes"
-        options={{
-          tabBarAccessibilityLabel: t('navigation.notes'),
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon color={color} name="document-text-outline" size={size} />
-          ),
-          title: t('navigation.notes'),
+    <>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          sceneStyle: { backgroundColor: theme.colors.background },
+          tabBarActiveBackgroundColor: isCompact
+            ? theme.colors.surface
+            : theme.colors.primaryContainer,
+          tabBarActiveTintColor: theme.colors.primary,
+          tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
+          tabBarItemStyle: isCompact
+            ? styles.compactTab
+            : isExpanded
+              ? styles.sideTab
+              : styles.railTab,
+          ...(isCompact
+            ? {
+                tabBarLabel: ({ children, color }) => (
+                  <Text numberOfLines={2} style={[styles.compactTabLabel, { color }]}>
+                    {children}
+                  </Text>
+                ),
+              }
+            : {}),
+          // Medium rail uses below-icon so React Navigation applies equal item padding
+          // (tabVerticalMaterial) instead of the labeled-sidebar asymmetry (16/24).
+          tabBarLabelPosition: isExpanded ? 'beside-icon' : 'below-icon',
+          tabBarLabelStyle: styles.tabLabel,
+          tabBarPosition: isCompact ? 'bottom' : 'left',
+          tabBarShowLabel: isCompact || isExpanded,
+          tabBarStyle: [
+            styles.tabBar,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.outlineVariant,
+            },
+            isCompact
+              ? null
+              : {
+                  minWidth: isExpanded ? sizes.navigationSidebarWidth : sizes.navigationRailWidth,
+                  width: isExpanded ? sizes.navigationSidebarWidth : sizes.navigationRailWidth,
+                },
+          ],
+          tabBarVariant: isCompact ? 'uikit' : 'material',
         }}
-      />
-      <Tabs.Screen
-        name="shopping"
-        options={{
-          tabBarAccessibilityLabel: t('navigation.shopping'),
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon color={color} name="cart-outline" size={size} />
-          ),
-          title: t('navigation.shopping'),
-        }}
-      />
-      <Tabs.Screen
-        name="reminders"
-        options={{
-          tabBarAccessibilityLabel: t('navigation.reminders'),
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon color={color} name="notifications-outline" size={size} />
-          ),
-          title: t('navigation.reminders'),
-        }}
-      />
-      <Tabs.Screen
-        name="relax"
-        options={{
-          tabBarAccessibilityLabel: t('navigation.relax'),
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon color={color} name="headset-outline" size={size} />
-          ),
-          title: t('navigation.relax'),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          tabBarAccessibilityLabel: t('navigation.settings'),
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon color={color} name="settings-outline" size={size} />
-          ),
-          title: t('navigation.settings'),
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="notes"
+          options={{
+            tabBarAccessibilityLabel: t('navigation.notes'),
+            tabBarIcon: ({ color, size }) => (
+              <TabIcon color={color} name="document-text-outline" size={size} />
+            ),
+            title: t('navigation.notes'),
+          }}
+        />
+        <Tabs.Screen
+          name="shopping"
+          options={{
+            tabBarAccessibilityLabel: t('navigation.shopping'),
+            tabBarIcon: ({ color, size }) => (
+              <TabIcon color={color} name="cart-outline" size={size} />
+            ),
+            title: t('navigation.shopping'),
+          }}
+        />
+        <Tabs.Screen
+          name="reminders"
+          options={{
+            tabBarAccessibilityLabel: t('navigation.reminders'),
+            tabBarIcon: ({ color, size }) => (
+              <TabIcon color={color} name="notifications-outline" size={size} />
+            ),
+            title: t('navigation.reminders'),
+          }}
+        />
+        <Tabs.Screen
+          name="relax"
+          options={{
+            tabBarAccessibilityLabel: t('navigation.relax'),
+            tabBarIcon: ({ color, size }) => (
+              <TabIcon color={color} name="headset-outline" size={size} />
+            ),
+            title: t('navigation.relax'),
+          }}
+        />
+        <Tabs.Screen
+          name="settings"
+          options={{
+            tabBarAccessibilityLabel: t('navigation.settings'),
+            tabBarIcon: ({ color, size }) => (
+              <TabIcon color={color} name="settings-outline" size={size} />
+            ),
+            title: t('navigation.settings'),
+          }}
+        />
+      </Tabs>
+      <WhatsNewHost />
+    </>
   );
 }
 

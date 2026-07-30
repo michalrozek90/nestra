@@ -137,6 +137,15 @@ export default function SettingsScreen() {
         ) : null}
       </View>
 
+      <View style={styles.section}>
+        <SectionHeader title={t('sections.about')} />
+        <SettingsRow
+          description={t('about.entryDescription')}
+          onPress={() => router.push('/settings/about')}
+          title={t('about.entryTitle')}
+        />
+      </View>
+
       {runtimeConfig.showDeveloperDiagnostics ? (
         <View style={styles.section}>
           <SectionHeader title={t('sections.developer')} />

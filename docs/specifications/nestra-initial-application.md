@@ -421,17 +421,11 @@ Do not manually add a dated `0.1.0` heading before the release PR. Release Pleas
 
 ### In-app release notes
 
-Use curated localized typed release notes:
+Use curated localized typed release notes shown as a simple bullet list (no per-item change
+categories in the UI):
 
 ```ts
-export type ReleaseChangeCategory =
-  | "added"
-  | "changed"
-  | "fixed"
-  | "removed";
-
 export type ReleaseChange = {
-  category: ReleaseChangeCategory;
   descriptionTranslationKey: string;
 };
 
@@ -999,7 +993,7 @@ app/
     └── settings/
         ├── _layout.tsx
         ├── index.tsx
-        ├── changelog.tsx
+        ├── about.tsx
         └── developer-diagnostics.tsx
 ```
 

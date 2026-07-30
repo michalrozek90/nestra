@@ -4,7 +4,12 @@ export const enSettings = {
     account: 'Account',
     language: 'Language',
     appearance: 'Appearance',
+    about: 'About',
     developer: 'Developer',
+  },
+  about: {
+    entryTitle: 'About Nestra',
+    entryDescription: 'View the current version and product release notes.',
   },
   account: {
     signOut: 'Sign out',
