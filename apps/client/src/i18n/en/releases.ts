@@ -14,24 +14,16 @@ export const enReleases = {
     intro: 'Here is what arrived in Nestra {{version}}.',
     dismiss: 'Got it',
   },
-  categories: {
-    added: 'Added',
-    changed: 'Changed',
-    fixed: 'Fixed',
-    removed: 'Removed',
-  },
   versions: {
     v010: {
-      title: 'First release',
+      title: 'Recent improvements',
       changes: {
-        createNotes: 'Create and edit personal notes with automatic saving.',
-        pinNotes: 'Pin important notes so they stay at the top of the list.',
-        trashNotes: 'Move notes to Trash and restore them later when needed.',
-        titleOnlyNotes: 'Save a note with only a title — the body is optional.',
-        secureSignIn: 'Sign in securely and stay signed in between sessions.',
-        appearance: 'Choose light, dark, or system appearance.',
-        languages: 'Use the app in English or Polish.',
-        windowsDesktop: 'Install Nestra as a Windows desktop application.',
+        diagnosticsBack:
+          'A back arrow on the developer diagnostics screen lets you return to Settings.',
+        narrowLayout: 'The layout works better on very narrow screens, starting at 320 px wide.',
+        centeredNavigation: 'Navigation icons stay visually centered on compact layouts.',
+        patientSessionRestore:
+          'Restoring your session waits longer and retries briefly when the connection is slow, instead of failing right away.',
       },
     },
   },

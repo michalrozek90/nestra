@@ -1,7 +1,4 @@
-export type ReleaseChangeCategory = 'added' | 'changed' | 'fixed' | 'removed';
-
 export type ReleaseChange = {
-  readonly category: ReleaseChangeCategory;
   readonly descriptionTranslationKey: string;
 };
 
@@ -15,40 +12,20 @@ export type ReleaseNote = {
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
   {
     version: '0.1.0',
-    releaseDate: '2026-07-29',
+    releaseDate: '2026-07-30',
     titleTranslationKey: 'versions.v010.title',
     changes: [
       {
-        category: 'added',
-        descriptionTranslationKey: 'versions.v010.changes.createNotes',
+        descriptionTranslationKey: 'versions.v010.changes.diagnosticsBack',
       },
       {
-        category: 'added',
-        descriptionTranslationKey: 'versions.v010.changes.pinNotes',
+        descriptionTranslationKey: 'versions.v010.changes.narrowLayout',
       },
       {
-        category: 'added',
-        descriptionTranslationKey: 'versions.v010.changes.trashNotes',
+        descriptionTranslationKey: 'versions.v010.changes.centeredNavigation',
       },
       {
-        category: 'added',
-        descriptionTranslationKey: 'versions.v010.changes.titleOnlyNotes',
-      },
-      {
-        category: 'added',
-        descriptionTranslationKey: 'versions.v010.changes.secureSignIn',
-      },
-      {
-        category: 'added',
-        descriptionTranslationKey: 'versions.v010.changes.appearance',
-      },
-      {
-        category: 'added',
-        descriptionTranslationKey: 'versions.v010.changes.languages',
-      },
-      {
-        category: 'added',
-        descriptionTranslationKey: 'versions.v010.changes.windowsDesktop',
+        descriptionTranslationKey: 'versions.v010.changes.patientSessionRestore',
       },
     ],
   },

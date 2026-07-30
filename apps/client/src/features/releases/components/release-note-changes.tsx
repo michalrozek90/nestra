@@ -5,7 +5,7 @@ import { Text } from 'react-native-paper';
 import { spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
 
-import type { ReleaseChangeCategory, ReleaseNote } from '../release-notes';
+import type { ReleaseNote } from '../release-notes';
 
 type ReleaseNoteChangesProps = {
   readonly releaseNote: ReleaseNote;
@@ -19,9 +19,7 @@ export function ReleaseNoteChanges({ releaseNote }: ReleaseNoteChangesProps) {
     <View style={styles.list}>
       {releaseNote.changes.map((change) => (
         <View key={change.descriptionTranslationKey} style={styles.row}>
-          <Text style={[styles.category, { color: theme.colors.onSurfaceVariant }]}>
-            {t(getCategoryTranslationKey(change.category))}
-          </Text>
+          <Text style={[styles.bullet, { color: theme.colors.onSurfaceVariant }]}>•</Text>
           <Text style={styles.description}>{t(change.descriptionTranslationKey)}</Text>
         </View>
       ))}
@@ -29,31 +27,21 @@ export function ReleaseNoteChanges({ releaseNote }: ReleaseNoteChangesProps) {
   );
 }
 
-function getCategoryTranslationKey(category: ReleaseChangeCategory): string {
-  switch (category) {
-    case 'added':
-      return 'categories.added';
-    case 'changed':
-      return 'categories.changed';
-    case 'fixed':
-      return 'categories.fixed';
-    case 'removed':
-      return 'categories.removed';
-  }
-}
-
 const styles = StyleSheet.create({
-  category: {
-    ...typography.supporting,
-    fontWeight: '600',
+  bullet: {
+    ...typography.body,
+    lineHeight: typography.body.lineHeight,
+    minWidth: 16,
   },
   description: {
     ...typography.body,
+    flex: 1,
   },
   list: {
     gap: spacing.md,
   },
   row: {
-    gap: spacing.xs,
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
 });
