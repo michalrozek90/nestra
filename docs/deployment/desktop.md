@@ -175,7 +175,9 @@ authentication secrets.
 ## Continuous integration packaging
 
 The workflow `.github/workflows/desktop-package.yml` builds the Windows x64 installer on
-`windows-latest` for pull requests, pushes to `main`, and manual `workflow_dispatch` runs.
+`windows-latest` for pushes to `main` and manual `workflow_dispatch` runs. It does not run on
+pull requests, so PR review stays on the faster quality gate; use `workflow_dispatch` when you
+need an installer artifact before merge.
 
 It reuses the baseline CI conventions from `.github/workflows/ci.yml`:
 

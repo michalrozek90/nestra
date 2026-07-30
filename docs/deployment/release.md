@@ -96,8 +96,8 @@ Behavior:
 4. Upload `Nestra_{version}_x64-setup.exe` to that GitHub Release (`gh release upload --clobber`).
 
 The packaging workflow in `.github/workflows/desktop-package.yml` continues to upload short-lived
-workflow artifacts for pull requests and `main` verification. The release-assets workflow is the
-path that associates a verified installer with a release candidate tag.
+workflow artifacts for `main` verification and manual `workflow_dispatch` runs. The release-assets
+workflow is the path that associates a verified installer with a release candidate tag.
 
 ## Hosted API dependency for release candidates
 
