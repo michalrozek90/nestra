@@ -1,7 +1,7 @@
 import type { Note } from '@nestra/contracts';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { SegmentedButtons, Text } from 'react-native-paper';
 
 import { Button } from '@/components/button';
@@ -37,6 +37,8 @@ export function NotesListScreen({
   const theme = useNestraTheme();
   const [pendingPermanentDeletion, setPendingPermanentDeletion] = useState<Note | null>(null);
   const [isEmptyTrashDialogVisible, setIsEmptyTrashDialogVisible] = useState(false);
+  const [isHeaderStacked, setIsHeaderStacked] = useState(false);
+  const headerTitleOffsetYRef = useRef(0);
   const notesQuery = useNotesListQuery(isTrashed);
   const actionMutation = useNoteActionMutation();
   const emptyTrashMutation = useEmptyTrashMutation();
@@ -58,23 +60,38 @@ export function NotesListScreen({
       : null;
   const hasTrashedNotes = isTrashed && notesQuery.isSuccess && notesQuery.data.length > 0;
 
+  function handleHeaderTitleLayout(event: LayoutChangeEvent): void {
+    headerTitleOffsetYRef.current = event.nativeEvent.layout.y;
+  }
+
+  function handleHeaderActionsLayout(event: LayoutChangeEvent): void {
+    const nextIsHeaderStacked = event.nativeEvent.layout.y > headerTitleOffsetYRef.current + 0.5;
+    setIsHeaderStacked((currentIsHeaderStacked) =>
+      currentIsHeaderStacked === nextIsHeaderStacked ? currentIsHeaderStacked : nextIsHeaderStacked,
+    );
+  }
+
   return (
     <Screen>
       <View style={styles.headerRow}>
-        <View style={styles.headerTitle}>
+        <View onLayout={handleHeaderTitleLayout} style={styles.headerTitle}>
           <Header title={title} />
         </View>
-        <View style={styles.headerActions}>
+        <View
+          onLayout={handleHeaderActionsLayout}
+          style={[styles.headerActions, isHeaderStacked ? styles.headerActionsStacked : null]}
+        >
           {hasTrashedNotes ? (
             <Button
               isDisabled={actionMutation.isPending}
+              isFullWidth={isHeaderStacked}
               isLoading={emptyTrashMutation.isPending}
               label={t('actions.emptyTrash')}
               onPress={() => setIsEmptyTrashDialogVisible(true)}
               variant="destructive"
             />
           ) : null}
-          <Button label={t('actions.new')} onPress={onCreateNote} />
+          <Button isFullWidth={isHeaderStacked} label={t('actions.new')} onPress={onCreateNote} />
         </View>
       </View>
 
@@ -226,6 +243,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
     justifyContent: 'flex-end',
+  },
+  headerActionsStacked: {
+    width: '100%',
   },
   notes: {
     gap: spacing.lg,
