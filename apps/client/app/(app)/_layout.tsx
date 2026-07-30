@@ -39,7 +39,11 @@ export default function ApplicationLayout() {
           : theme.colors.primaryContainer,
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
-        tabBarItemStyle: isCompact ? styles.compactTab : styles.sideTab,
+        tabBarItemStyle: isCompact
+          ? styles.compactTab
+          : isExpanded
+            ? styles.sideTab
+            : styles.railTab,
         ...(isCompact
           ? {
               tabBarLabel: ({ children, color }) => (
@@ -49,7 +53,9 @@ export default function ApplicationLayout() {
               ),
             }
           : {}),
-        tabBarLabelPosition: isCompact ? 'below-icon' : 'beside-icon',
+        // Medium rail uses below-icon so React Navigation applies equal item padding
+        // (tabVerticalMaterial) instead of the labeled-sidebar asymmetry (16/24).
+        tabBarLabelPosition: isExpanded ? 'beside-icon' : 'below-icon',
         tabBarLabelStyle: styles.tabLabel,
         tabBarPosition: isCompact ? 'bottom' : 'left',
         tabBarShowLabel: isCompact || isExpanded,
@@ -133,6 +139,12 @@ const styles = StyleSheet.create({
   compactTabLabel: {
     fontSize: 10,
     maxWidth: 64,
+  },
+  railTab: {
+    alignItems: 'center',
+    borderRadius: 0,
+    justifyContent: 'center',
+    minHeight: 56,
   },
   sideTab: {
     borderRadius: 0,
