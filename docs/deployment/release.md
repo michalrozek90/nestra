@@ -69,9 +69,10 @@ Bootstrap choices validated against current Release Please manifest documentatio
 
 On pushes to `main`, Release Please analyzes Conventional Commits and maintains one release PR that
 updates `CHANGELOG.md`, the root product version, the Release Please manifest, and the desktop
-Cargo package version. Merging that PR creates the Git tag and a draft GitHub Release. Do not merge
-it until the checklist below is complete and the operator explicitly approves publication
-preparation.
+Cargo package version. Merging that PR creates a draft GitHub Release that reserves the pending tag
+name and targets the exact release commit. Publishing the draft creates the corresponding Git tag.
+Do not merge the release PR until the checklist below is complete and the operator explicitly
+approves publication preparation.
 
 The release workflow also synchronizes the open Release Please branch with `main`, formats the
 generated `CHANGELOG.md` using the repository Prettier configuration, and starts CI for the
@@ -94,19 +95,23 @@ Workflow: `.github/workflows/desktop-release-assets.yml`
 Triggers:
 
 1. Automatic after Release Please creates a draft GitHub Release: the release-please workflow
-   dispatches this workflow with the new tag.
-2. Manual: `workflow_dispatch` with an existing release `tag_name` such as `v0.1.0`.
+   dispatches this workflow with the pending tag name and exact release commit.
+2. Manual: `workflow_dispatch` with an existing draft `tag_name` such as `v0.2.0`; the commit is
+   resolved from the draft when `release_sha` is omitted.
 
 Behavior:
 
-1. Check out the release tag.
-2. Verify the tag matches the root product version and the existing release is a non-prerelease
-   draft.
-3. Build the Windows x64 NSIS updater with the release-only Tauri configuration and the signing
+1. Resolve the unique non-prerelease draft by its pending tag name.
+2. Verify its target is an exact commit, compare it with the SHA supplied by Release Please when
+   present, and check out that immutable commit even though the Git tag does not exist yet.
+3. Verify the pending tag name matches the root product version and revalidate the draft identity
+   and target commit after checkout.
+4. Build the Windows x64 NSIS updater with the release-only Tauri configuration and the signing
    secrets.
-4. Upload `Nestra_{version}_x64-setup.exe`, its `.sig`, and `latest.json` through the pinned official
+5. Upload `Nestra_{version}_x64-setup.exe`, its `.sig`, and `latest.json` through the pinned official
    `tauri-apps/tauri-action`.
-5. Re-read the release and validate all three assets, the manifest version, Windows x64 URL, and a
+6. Re-read the release by its immutable ID and validate its identity, target commit, all three
+   assets, the manifest version, Windows x64 URL, and a
    non-empty signature. Validation never prints the signature.
 
 The packaging workflow in `.github/workflows/desktop-package.yml` continues to upload short-lived

@@ -148,13 +148,15 @@ jobs:
         if: ${{ steps.release.outputs.release_created == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_SHA: ${{ steps.release.outputs.sha }}
           RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
         run: |
-          if [ -z "${RELEASE_TAG}" ]; then
-            echo "Release Please reported release_created without tag_name."
+          if [ -z "${RELEASE_TAG}" ] || [ -z "${RELEASE_SHA}" ]; then
+            echo "Release Please reported release_created without tag_name or sha."
             exit 1
           fi
 
           gh workflow run desktop-release-assets.yml \
             --repo "${{ github.repository }}" \
-            -f "tag_name=${RELEASE_TAG}"
+            -f "tag_name=${RELEASE_TAG}" \
+            -f "release_sha=${RELEASE_SHA}"

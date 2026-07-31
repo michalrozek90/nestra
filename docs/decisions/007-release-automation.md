@@ -30,8 +30,9 @@ Use Google Release Please with a single repository-wide `node` package at the re
   forcing `1.0.0`.
 - GitHub Releases created by Release Please are drafts until an operator explicitly publishes them.
   After a draft release is created, the release-please workflow dispatches the Windows
-  release-assets workflow so the installer can be attached without requiring a personal access
-  token. Operators can also re-run that workflow manually for an existing tag.
+  release-assets workflow with both the pending tag name and exact release commit so the installer
+  can be attached without requiring a personal access token. Operators can also re-run that
+  workflow manually for an existing draft.
 - Release Please also updates `apps/desktop/src-tauri/Cargo.toml` `package.version` so the Rust
   crate metadata stays aligned with the product version. Tauri continues to read the installer and
   application version from root `package.json` through `tauri.conf.json`.
@@ -45,11 +46,13 @@ Use Google Release Please with a single repository-wide `node` package at the re
 - Workspace package versions under `apps/` and `packages/` remain internal metadata and are not
   treated as the product version.
 
-The Windows installer association is a separate workflow. When a GitHub Release is created
-(including a draft) for a tag, or when an operator dispatches the workflow with an existing tag,
-CI builds `Nestra_{version}_x64-setup.exe` from that tag and uploads it to the release. The
-installer talks to the hosted API documented in `docs/deployment/hosted-api.md` and does not
-require the developer computer to remain online.
+The Windows installer association is a separate workflow. A draft release may reserve a tag name
+before the corresponding Git tag exists. The workflow therefore resolves the draft through the
+GitHub Releases API, verifies that the exact commit supplied by Release Please matches the draft's
+target commit, checks out that immutable commit, and uploads `Nestra_{version}_x64-setup.exe` to the
+draft. Manual runs resolve the same exact commit from the draft. The installer talks to the hosted
+API documented in `docs/deployment/hosted-api.md` and does not require the developer computer to
+remain online.
 
 `pnpm check:product-version` verifies that the root product version, Release Please manifest,
 Tauri version reference, Cargo package version, Expo app config wiring, and contracts version
@@ -60,8 +63,9 @@ injection stay synchronized.
 - Version preparation and technical changelog generation become automated on pushes to `main`.
 - Generated release pull requests remain formatting-clean and receive CI for their final formatted
   commit without requiring a manual changelog-only correction.
-- Merging a Release Please PR still creates a Git tag and a draft GitHub Release. That merge
-  remains an explicit operator action and is outside autonomous agent publication authority.
+- Merging a Release Please PR creates a draft GitHub Release that reserves a tag name and targets
+  the exact release commit. Publishing creates the corresponding tag and remains an explicit
+  operator action outside autonomous agent publication authority.
 - Draft releases allow installer attachment and smoke testing without a public release
   publication.
 - Operators must still follow the release checklist for hosted-API readiness, cold-start
