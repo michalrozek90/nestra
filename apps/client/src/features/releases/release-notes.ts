@@ -11,21 +11,52 @@ export type ReleaseNote = {
 
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
   {
+    version: '0.2.0',
+    releaseDate: '2026-07-31',
+    titleTranslationKey: 'versions.v020.title',
+    changes: [
+      {
+        descriptionTranslationKey: 'versions.v020.changes.desktopUpdates',
+      },
+      {
+        descriptionTranslationKey: 'versions.v020.changes.safeUpdateRestart',
+      },
+      {
+        descriptionTranslationKey: 'versions.v020.changes.quietAutomaticChecks',
+      },
+      {
+        descriptionTranslationKey: 'versions.v020.changes.diagnosticsBack',
+      },
+      {
+        descriptionTranslationKey: 'versions.v020.changes.narrowLayout',
+      },
+      {
+        descriptionTranslationKey: 'versions.v020.changes.centeredNavigation',
+      },
+      {
+        descriptionTranslationKey: 'versions.v020.changes.releaseHistory',
+      },
+    ],
+  },
+  {
     version: '0.1.0',
-    releaseDate: '2026-07-30',
+    releaseDate: '2026-07-29',
     titleTranslationKey: 'versions.v010.title',
     changes: [
       {
-        descriptionTranslationKey: 'versions.v010.changes.diagnosticsBack',
+        descriptionTranslationKey: 'versions.v010.changes.responsiveDialogs',
       },
       {
-        descriptionTranslationKey: 'versions.v010.changes.narrowLayout',
+        descriptionTranslationKey: 'versions.v010.changes.editorFocus',
       },
       {
-        descriptionTranslationKey: 'versions.v010.changes.centeredNavigation',
+        descriptionTranslationKey: 'versions.v010.changes.titleOnlyNotes',
       },
       {
         descriptionTranslationKey: 'versions.v010.changes.patientSessionRestore',
+      },
+      {
+        descriptionTranslationKey: 'versions.v010.changes.packagedDesktopAssets',
       },
     ],
   },

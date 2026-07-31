@@ -35,6 +35,11 @@ Use Google Release Please with a single repository-wide `node` package at the re
 - Release Please also updates `apps/desktop/src-tauri/Cargo.toml` `package.version` so the Rust
   crate metadata stays aligned with the product version. Tauri continues to read the installer and
   application version from root `package.json` through `tauri.conf.json`.
+- After Release Please creates or updates its pull request, the same workflow finds the single open
+  pull request labeled `autorelease: pending`, synchronizes its branch with `main`, formats the
+  generated `CHANGELOG.md` with the repository-pinned Prettier version, and pushes the correction
+  when needed. It then dispatches CI explicitly for the updated branch because a normal push made
+  with `GITHUB_TOKEN` does not reliably start another workflow run.
 - Workspace package versions under `apps/` and `packages/` remain internal metadata and are not
   treated as the product version.
 
@@ -51,6 +56,8 @@ injection stay synchronized.
 ## Consequences
 
 - Version preparation and technical changelog generation become automated on pushes to `main`.
+- Generated release pull requests remain formatting-clean and receive CI for their final formatted
+  commit without requiring a manual changelog-only correction.
 - Merging a Release Please PR still creates a Git tag and a draft GitHub Release. That merge
   remains an explicit operator action and is outside autonomous agent publication authority.
 - Draft releases allow installer attachment and smoke testing without a public release

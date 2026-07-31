@@ -301,6 +301,10 @@ Do not silently ignore caught errors. Handle them, convert them into an expected
 
 - Write code, comments, technical documentation, commit messages, and ADRs in English.
 - Comments should explain why, not restate what the code does.
+- Include every user-facing feature, improvement, or bug fix in the curated in-app release notes as
+  part of the same change. Update both English and Polish content under the anticipated Release
+  Please version. Internal-only changes do not require an in-app note. The autonomous workflow in
+  `docs/workflows/agent-task-workflow.md` defines the detailed procedure.
 - Record meaningful architectural decisions under `docs/decisions/`.
 - Create an ADR for decisions that are difficult to reverse, affect multiple modules, introduce important dependencies, or concern security, build, or release processes.
 - Keep README instructions accurate whenever commands or setup requirements change.

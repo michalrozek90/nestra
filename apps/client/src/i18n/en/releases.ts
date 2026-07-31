@@ -49,15 +49,34 @@ export const enReleases = {
     },
   },
   versions: {
+    v020: {
+      title: 'Desktop updates and release notes',
+      changes: {
+        desktopUpdates:
+          'Nestra can check for signed Windows updates and install a new version from the application.',
+        safeUpdateRestart:
+          'Open notes are saved locally before an update is installed and Nestra restarts.',
+        quietAutomaticChecks:
+          'An unavailable update service no longer shows an error during the automatic startup check.',
+        diagnosticsBack:
+          'A back arrow on the developer diagnostics screen lets you return to Settings.',
+        narrowLayout:
+          'The layout and note header actions work better on very narrow screens, starting at 320 px wide.',
+        centeredNavigation: 'Navigation icons stay visually centered on compact layouts.',
+        releaseHistory:
+          'The About screen now includes a curated version history, with a What\u2019s new summary after an update.',
+      },
+    },
     v010: {
       title: 'Recent improvements',
       changes: {
-        diagnosticsBack:
-          'A back arrow on the developer diagnostics screen lets you return to Settings.',
-        narrowLayout: 'The layout works better on very narrow screens, starting at 320 px wide.',
-        centeredNavigation: 'Navigation icons stay visually centered on compact layouts.',
+        responsiveDialogs: 'Action dialogs adapt to smaller screens instead of overflowing them.',
+        editorFocus: 'The note editor keeps focus after creating or opening a note.',
+        titleOnlyNotes: 'Notes containing only a title are preserved correctly.',
         patientSessionRestore:
           'Restoring your session waits longer and retries briefly when the connection is slow, instead of failing right away.',
+        packagedDesktopAssets:
+          'The packaged Windows application reliably loads its icons and connects to the hosted service.',
       },
     },
   },
