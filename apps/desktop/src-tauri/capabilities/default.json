@@ -3,5 +3,12 @@
   "identifier": "default",
   "description": "Minimal capability set for the hardened Nestra desktop shell",
   "windows": ["main"],
-  "permissions": ["core:default", "allow-auth-secret-storage"]
+  "permissions": [
+    "core:default",
+    "allow-auth-secret-storage",
+    "updater:allow-check",
+    "updater:allow-download",
+    "updater:allow-install",
+    "process:allow-restart"
+  ]
 }

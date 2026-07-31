@@ -231,8 +231,9 @@ pnpm build:desktop
 NSIS installer `Nestra_{version}_x64-setup.exe`, where `{version}` is the root `package.json`
 product version. Local builds copy the finished installer to `D:\Nestra-setup\` (override with
 `NESTRA_INSTALLER_OUTPUT_DIR`). Cargo intermediates remain under
-`%LOCALAPPDATA%\nestra\desktop-cargo-target\`. Signing and release publishing remain separate
-tasks. Packaging details and the clean-machine smoke test live in
+`%LOCALAPPDATA%\nestra\desktop-cargo-target\`. Ordinary local builds remain unsigned; the
+release-only workflow signs updater artifacts. Packaging details, updater behavior, and the
+clean-machine smoke test live in
 [`docs/deployment/desktop.md`](docs/deployment/desktop.md).
 
 The configurable API base URLs for client runtimes are:
@@ -313,9 +314,11 @@ The Windows packaging workflow in `.github/workflows/desktop-package.yml` runs o
 Release Please runs on pushes to `main` through `.github/workflows/release-please.yml`. It maintains
 one release PR, updates `CHANGELOG.md` and the root product version, and creates draft GitHub
 Releases only after that PR is merged. The Windows release-assets workflow in
-`.github/workflows/desktop-release-assets.yml` builds the installer for a release tag and uploads
-it to that draft or published GitHub Release. Public publication still requires explicit operator
-approval. See [`docs/deployment/release.md`](docs/deployment/release.md).
+`.github/workflows/desktop-release-assets.yml` builds the signed NSIS updater for an existing
+non-prerelease draft, uploads the installer, `.sig`, and `latest.json`, and validates the update
+metadata. Packaged production builds check the published stable release channel once per launch;
+download and installation always require a user action. Public publication still requires
+explicit operator approval. See [`docs/deployment/release.md`](docs/deployment/release.md).
 
 CI assumptions:
 
@@ -366,9 +369,8 @@ The alias works in Cursor Agent Chat, the Codex extension in Cursor, and the nat
 
 Post-`0.1.0` milestones cover automated tests, refinement of the established design system and
 product branding, observability, shopping lists, server-scheduled reminders, R2-backed ambient
-audio, offline synchronization, and desktop distribution hardening such as updates, signing, and
-additional operating systems. The authoritative scope and detailed boundaries are in the
-specification.
+audio, offline synchronization, Authenticode signing, and additional operating systems. The
+authoritative scope and detailed boundaries are in the specification.
 
 ## License
 

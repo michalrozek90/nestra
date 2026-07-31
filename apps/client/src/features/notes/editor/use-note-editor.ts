@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { logger } from '@/infrastructure/logging/logger';
+import { registerApplicationRestartPreparation } from '@/infrastructure/lifecycle/application-restart';
 import { reconcileNoteLists, updateNoteCache } from '../api/note-cache';
 import { createNote, updateNote } from '../api/notes-api';
 import {
@@ -274,6 +275,30 @@ export function useNoteEditor({
     await writeCurrentDraft();
     await flushServerSave();
   }, [flushServerSave, writeCurrentDraft]);
+
+  const prepareForRestart = useCallback(async (): Promise<boolean> => {
+    if (!isInitializedRef.current || !hasUnsavedChangesRef.current) {
+      return true;
+    }
+
+    if (localTimerRef.current) {
+      clearTimeout(localTimerRef.current);
+      localTimerRef.current = null;
+    }
+    if (serverTimerRef.current) {
+      clearTimeout(serverTimerRef.current);
+      serverTimerRef.current = null;
+    }
+
+    if (!(await writeCurrentDraft())) {
+      return false;
+    }
+
+    await flushServerSave();
+    return writeCurrentDraft();
+  }, [flushServerSave, writeCurrentDraft]);
+
+  useEffect(() => registerApplicationRestartPreparation(prepareForRestart), [prepareForRestart]);
 
   const discard = useCallback(async (): Promise<void> => {
     hasUnsavedChangesRef.current = false;

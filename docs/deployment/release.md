@@ -14,7 +14,7 @@ Goals:
 - Automate product-version preparation and technical changelog generation with Release Please.
 - Keep product version values synchronized across the client, Tauri shell, installer, and release
   asset naming.
-- Attach `Nestra_{version}_x64-setup.exe` to a draft or otherwise testable GitHub Release.
+- Attach the signed NSIS updater package, its `.sig`, and `latest.json` to a draft GitHub Release.
 - Document hosted-API dependency, cold-start expectations, rollback, and the absence of a custom
   domain for the family/demo phase.
 
@@ -23,7 +23,7 @@ Non-goals:
 - Publishing a public GitHub Release, creating a release tag, or distributing installers without
   explicit operator approval.
 - Buying or configuring a custom domain.
-- macOS or Linux releases, automatic updates, or purchased code signing.
+- macOS or Linux releases, prerelease update channels, or purchased Authenticode code signing.
 - Relax audio, R2 provisioning, user uploads, or notifications.
 
 ## Version source of truth
@@ -84,20 +84,42 @@ Workflow: `.github/workflows/desktop-release-assets.yml`
 Triggers:
 
 1. Automatic after Release Please creates a draft GitHub Release: the release-please workflow
-   dispatches this workflow with the new tag. Direct `release: created` events are also supported
-   when an operator creates a release outside Release Please.
+   dispatches this workflow with the new tag.
 2. Manual: `workflow_dispatch` with an existing release `tag_name` such as `v0.1.0`.
 
 Behavior:
 
 1. Check out the release tag.
-2. Run `pnpm check:product-version`.
-3. Build the Windows x64 NSIS installer with the desktop production environment file.
-4. Upload `Nestra_{version}_x64-setup.exe` to that GitHub Release (`gh release upload --clobber`).
+2. Verify the tag matches the root product version and the existing release is a non-prerelease
+   draft.
+3. Build the Windows x64 NSIS updater with the release-only Tauri configuration and the signing
+   secrets.
+4. Upload `Nestra_{version}_x64-setup.exe`, its `.sig`, and `latest.json` through the pinned official
+   `tauri-apps/tauri-action`.
+5. Re-read the release and validate all three assets, the manifest version, Windows x64 URL, and a
+   non-empty signature. Validation never prints the signature.
 
 The packaging workflow in `.github/workflows/desktop-package.yml` continues to upload short-lived
 workflow artifacts for `main` verification and manual `workflow_dispatch` runs. The release-assets
 workflow is the path that associates a verified installer with a release candidate tag.
+
+### Updater signing key operations
+
+The release workflow requires these repository Actions secrets:
+
+- `TAURI_SIGNING_PRIVATE_KEY` — the complete contents of the Tauri private key file;
+- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — the password selected when the key was generated.
+
+The private key and its password must never be committed, pasted into logs, or placed in release
+assets. Keep at least one tested backup of the private key outside the repository and store the
+password separately. The `.pub` value is not secret and belongs in Tauri configuration.
+
+Losing either the private key or its password blocks releases that can update existing installs.
+Generating a new pair does not let the new key sign an update trusted by old applications. Planned
+rotation therefore requires a bridge release signed with the old key whose application config
+trusts the new public key; only later releases use the new private key. If the old key is already
+lost or compromised, affected users must manually install a new bootstrap installer and should be
+given explicit recovery instructions.
 
 ## Hosted API dependency for release candidates
 
@@ -130,13 +152,14 @@ Complete before merging a Release Please PR or publishing a draft release:
    `#42`, `#43`, `#44`) are complete.
 2. `pnpm verify` passes on the intended release commit.
 3. `pnpm check:product-version` passes.
-4. Windows packaging has produced `Nestra_{version}_x64-setup.exe` for the intended version.
+4. Signed Windows packaging has produced the installer, `.sig`, and validated `latest.json` for
+   the intended version.
 5. Clean-machine smoke test from [`desktop.md`](./desktop.md) passes against the hosted API,
    including an acceptable first-request cold start.
 6. Hosted health, authentication, and owned Notes operations work while the developer coding
    machine can be offline from the API process.
 7. Draft GitHub Release exists or will be created by merging the Release Please PR.
-8. Desktop release-assets workflow has attached the matching installer to that release.
+8. Desktop release-assets workflow has attached and validated all updater assets on that release.
 9. Release notes, docs, and workflow logs contain no secrets or private user data.
 10. Operator explicitly approves merging the Release Please PR and later publishing the draft
     release.
@@ -163,6 +186,7 @@ Confirm before publication:
 - Logs and diagnostics do not expose tokens, note content, drafts, credentials, or complete private
   payloads.
 - Release assets and documentation do not embed provider secrets or private environment values.
+- The signing key and password exist only in protected Actions secrets and controlled backups.
 - The installer does not require the developer computer to remain online.
 - No custom domain is required for the family/demo phase; the provider-assigned HTTPS endpoint is
   accepted application configuration.

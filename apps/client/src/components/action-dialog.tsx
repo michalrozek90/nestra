@@ -1,4 +1,4 @@
-import type { PropsWithChildren } from 'react';
+import type { PropsWithChildren, ReactNode } from 'react';
 import { StyleSheet, useWindowDimensions } from 'react-native';
 import { Dialog, Portal, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ const DIALOG_MAX_WIDTH_PX = 560;
 
 type ActionDialogProps = PropsWithChildren<{
   readonly description: string;
+  readonly descriptionAccessory?: ReactNode;
   readonly dismissable?: boolean;
   readonly onDismiss?: () => void;
   readonly title: string;
@@ -19,6 +20,7 @@ type ActionDialogProps = PropsWithChildren<{
 export function ActionDialog({
   children,
   description,
+  descriptionAccessory,
   dismissable = true,
   onDismiss,
   title,
@@ -43,8 +45,9 @@ export function ActionDialog({
         visible={visible}
       >
         <Dialog.Title>{title}</Dialog.Title>
-        <Dialog.Content>
+        <Dialog.Content style={styles.content}>
           <Text>{description}</Text>
+          {descriptionAccessory}
         </Dialog.Content>
         <Dialog.Actions style={styles.actions}>{children}</Dialog.Actions>
       </Dialog>
@@ -56,6 +59,9 @@ const styles = StyleSheet.create({
   actions: {
     flexWrap: 'wrap',
     rowGap: spacing.sm,
+  },
+  content: {
+    gap: spacing.md,
   },
   dialog: {
     alignSelf: 'center',
