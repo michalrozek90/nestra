@@ -26,6 +26,90 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
+      - name: Find the open Release Please pull request
+        id: release-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          release_pr_json="$(gh pr list \
+            --repo "${{ github.repository }}" \
+            --state open \
+            --base "${{ github.ref_name }}" \
+            --label "autorelease: pending" \
+            --limit 2 \
+            --json headRefName,number)"
+          release_pr_count="$(jq 'length' <<< "${release_pr_json}")"
+
+          if [ "${release_pr_count}" -eq 0 ]; then
+            echo "found=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          if [ "${release_pr_count}" -ne 1 ]; then
+            echo "Expected exactly one open Release Please pull request, found ${release_pr_count}."
+            exit 1
+          fi
+
+          echo "found=true" >> "${GITHUB_OUTPUT}"
+          echo "branch=$(jq -r '.[0].headRefName' <<< "${release_pr_json}")" >> "${GITHUB_OUTPUT}"
+
+      - name: Check out the Release Please pull request
+        if: ${{ steps.release-pr.outputs.found == 'true' }}
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.release-pr.outputs.branch }}
+
+      - name: Set up pnpm
+        if: ${{ steps.release-pr.outputs.found == 'true' }}
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: 11.13.1
+
+      - name: Set up Node.js
+        if: ${{ steps.release-pr.outputs.found == 'true' }}
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install formatting dependencies
+        if: ${{ steps.release-pr.outputs.found == 'true' }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Synchronize and format the Release Please pull request
+        if: ${{ steps.release-pr.outputs.found == 'true' }}
+        id: format-release-pr
+        env:
+          RELEASE_PR_BRANCH: ${{ steps.release-pr.outputs.branch }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "${{ github.ref_name }}"
+          git merge --no-edit "origin/${{ github.ref_name }}"
+
+          pnpm exec prettier CHANGELOG.md --write
+
+          if ! git diff --quiet -- CHANGELOG.md; then
+            git add CHANGELOG.md
+            git commit -m "chore: format generated changelog"
+          fi
+
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse "origin/${RELEASE_PR_BRANCH}")" ]; then
+            echo "updated=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          git push origin "HEAD:${RELEASE_PR_BRANCH}"
+          echo "updated=true" >> "${GITHUB_OUTPUT}"
+
+      - name: Verify the updated Release Please pull request
+        if: ${{ steps.format-release-pr.outputs.updated == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_PR_BRANCH: ${{ steps.release-pr.outputs.branch }}
+        run: gh workflow run ci.yml --repo "${{ github.repository }}" --ref "${RELEASE_PR_BRANCH}"
+
       - name: Dispatch Windows installer attachment
         if: ${{ steps.release.outputs.release_created == 'true' }}
         env:

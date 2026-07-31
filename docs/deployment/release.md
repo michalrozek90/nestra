@@ -73,6 +73,11 @@ Cargo package version. Merging that PR creates the Git tag and a draft GitHub Re
 it until the checklist below is complete and the operator explicitly approves publication
 preparation.
 
+The release workflow also synchronizes the open Release Please branch with `main`, formats the
+generated `CHANGELOG.md` using the repository Prettier configuration, and explicitly dispatches CI
+for the resulting commit. Release pull requests should therefore remain formatting-clean without a
+manual follow-up commit.
+
 Do not manually add a dated `0.1.0` heading to `CHANGELOG.md` before the release PR. Release Please
 owns the technical release history. In-app product notes remain curated localization content and
 must not parse `CHANGELOG.md` at runtime.
