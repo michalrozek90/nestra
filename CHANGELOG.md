@@ -4,29 +4,27 @@ All notable changes to this project will be documented in this file.
 
 ## [0.2.0](https://github.com/michalrozek90/nestra/compare/v0.1.0...v0.2.0) (2026-07-31)
 
-
 ### Features
 
-* **client:** add curated What's new and About release notes ([c65c1b5](https://github.com/michalrozek90/nestra/commit/c65c1b53d202f97ca3839f613f845ba998454f11))
-* **client:** curated What’s new and Settings About ([607ad7a](https://github.com/michalrozek90/nestra/commit/607ad7a915aebf6b4dc8f520a7e85c8ad10f4749))
-* **client:** establish 320px as minimum supported layout width ([415ba13](https://github.com/michalrozek90/nestra/commit/415ba13cb0d7e05fdd57c60eec583aa541997de9)), closes [#54](https://github.com/michalrozek90/nestra/issues/54)
-* **desktop:** add signed application updates ([cdffb2a](https://github.com/michalrozek90/nestra/commit/cdffb2ae78d3aa9d2c8f12270d22a6645e401fa1))
-
+- **client:** add curated What's new and About release notes ([c65c1b5](https://github.com/michalrozek90/nestra/commit/c65c1b53d202f97ca3839f613f845ba998454f11))
+- **client:** curated What’s new and Settings About ([607ad7a](https://github.com/michalrozek90/nestra/commit/607ad7a915aebf6b4dc8f520a7e85c8ad10f4749))
+- **client:** establish 320px as minimum supported layout width ([415ba13](https://github.com/michalrozek90/nestra/commit/415ba13cb0d7e05fdd57c60eec583aa541997de9)), closes [#54](https://github.com/michalrozek90/nestra/issues/54)
+- **desktop:** add signed application updates ([cdffb2a](https://github.com/michalrozek90/nestra/commit/cdffb2ae78d3aa9d2c8f12270d22a6645e401fa1))
 
 ### Bug Fixes
 
-* **client:** add back navigation on developer diagnostics ([1b032c1](https://github.com/michalrozek90/nestra/commit/1b032c16d1c8e43684c62d92f8fd10c07a2e354f))
-* **client:** add back navigation on developer diagnostics ([345dabb](https://github.com/michalrozek90/nestra/commit/345dabbdd30e79879cdb0845bd998bb88e16251f))
-* **client:** center compact navigation rail icons ([9a19238](https://github.com/michalrozek90/nestra/commit/9a192384ae6331a9324e25b7fe7529da74f640eb))
-* **client:** center compact navigation rail icons ([5fe851d](https://github.com/michalrozek90/nestra/commit/5fe851d246f1baac7efe83d2193319b8a3f91199)), closes [#53](https://github.com/michalrozek90/nestra/issues/53)
-* **client:** keep release note dates timezone-stable ([43c7b97](https://github.com/michalrozek90/nestra/commit/43c7b9765d202db2d84145d6673d5bc3b9564a1f))
-* **client:** simplify release notes into plain bullets ([416724b](https://github.com/michalrozek90/nestra/commit/416724b42741a64adf6290cdbbfbd85e315821fa))
-* **client:** stretch notes header actions when wrapped ([c45eab0](https://github.com/michalrozek90/nestra/commit/c45eab0d523edea2ea79b56681377b85a5763247))
-* **client:** tighten What's new dialog on compact layouts ([eabf79d](https://github.com/michalrozek90/nestra/commit/eabf79dd8b84167b9d93ab342d211a4a447a6c5c))
-* **desktop:** keep automatic update failures silent ([4407b15](https://github.com/michalrozek90/nestra/commit/4407b159655e25c404aee007753535b6a6681661))
-* **desktop:** refine update recovery and release trigger ([a237d2e](https://github.com/michalrozek90/nestra/commit/a237d2e2d410134695634d384ce2deb5c917b8e6))
-* format Release Please CHANGELOG with Prettier ([c8e5958](https://github.com/michalrozek90/nestra/commit/c8e595841c879da18579ed694d63a5f0f20b9c04))
-* format Release Please CHANGELOG with Prettier ([e3b9f6a](https://github.com/michalrozek90/nestra/commit/e3b9f6aa328ba7a150a343eab7c117f5686d9651))
+- **client:** add back navigation on developer diagnostics ([1b032c1](https://github.com/michalrozek90/nestra/commit/1b032c16d1c8e43684c62d92f8fd10c07a2e354f))
+- **client:** add back navigation on developer diagnostics ([345dabb](https://github.com/michalrozek90/nestra/commit/345dabbdd30e79879cdb0845bd998bb88e16251f))
+- **client:** center compact navigation rail icons ([9a19238](https://github.com/michalrozek90/nestra/commit/9a192384ae6331a9324e25b7fe7529da74f640eb))
+- **client:** center compact navigation rail icons ([5fe851d](https://github.com/michalrozek90/nestra/commit/5fe851d246f1baac7efe83d2193319b8a3f91199)), closes [#53](https://github.com/michalrozek90/nestra/issues/53)
+- **client:** keep release note dates timezone-stable ([43c7b97](https://github.com/michalrozek90/nestra/commit/43c7b9765d202db2d84145d6673d5bc3b9564a1f))
+- **client:** simplify release notes into plain bullets ([416724b](https://github.com/michalrozek90/nestra/commit/416724b42741a64adf6290cdbbfbd85e315821fa))
+- **client:** stretch notes header actions when wrapped ([c45eab0](https://github.com/michalrozek90/nestra/commit/c45eab0d523edea2ea79b56681377b85a5763247))
+- **client:** tighten What's new dialog on compact layouts ([eabf79d](https://github.com/michalrozek90/nestra/commit/eabf79dd8b84167b9d93ab342d211a4a447a6c5c))
+- **desktop:** keep automatic update failures silent ([4407b15](https://github.com/michalrozek90/nestra/commit/4407b159655e25c404aee007753535b6a6681661))
+- **desktop:** refine update recovery and release trigger ([a237d2e](https://github.com/michalrozek90/nestra/commit/a237d2e2d410134695634d384ce2deb5c917b8e6))
+- format Release Please CHANGELOG with Prettier ([c8e5958](https://github.com/michalrozek90/nestra/commit/c8e595841c879da18579ed694d63a5f0f20b9c04))
+- format Release Please CHANGELOG with Prettier ([e3b9f6a](https://github.com/michalrozek90/nestra/commit/e3b9f6aa328ba7a150a343eab7c117f5686d9651))
 
 ## 0.1.0 (2026-07-29)
 
