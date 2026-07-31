@@ -3,7 +3,8 @@
 This document covers the Windows desktop shell that packages the existing Expo web client through
 Tauri. Architecture decisions live in
 [ADR 005](../decisions/005-desktop-and-hosted-service-architecture.md) and
-[ADR 006](../decisions/006-desktop-auth-storage-and-runtime-hardening.md).
+[ADR 006](../decisions/006-desktop-auth-storage-and-runtime-hardening.md), and
+[ADR 008](../decisions/008-desktop-application-updates.md).
 
 ## What this package does
 
@@ -12,8 +13,8 @@ export from `@nestra/client` is the only feature surface.
 
 - `pnpm dev:desktop` starts Expo web on port `8081` and opens a Tauri window against that URL.
 - `pnpm build:desktop` builds the Expo web export with the desktop environment file, then produces
-  the per-user NSIS Windows x64 installer. Signing, public release publication, and automatic
-  updates remain separate work; draft release-candidate attachment is documented in
+  the per-user NSIS Windows x64 installer. This ordinary build remains unsigned. The release-only
+  workflow signs updater artifacts and attaches them to a draft GitHub Release as documented in
   [`release.md`](./release.md).
 
 ## Prerequisites (Windows)
@@ -134,8 +135,38 @@ The default capability grants only:
 
 - `core:default`
 - `allow-auth-secret-storage` (read/write/clear auth secrets in the OS credential store)
+- `updater:allow-check`, `updater:allow-download`, and `updater:allow-install`
+- `process:allow-restart`
 
 No filesystem, shell, notification, or generic HTTP plugin permissions are enabled.
+
+## Application updates
+
+Packaged production builds use the official Tauri updater against the stable GitHub Releases feed:
+
+```text
+https://github.com/michalrozek90/nestra/releases/latest/download/latest.json
+```
+
+The updater is Windows x64 NSIS-only. It checks once in the background after client initialization
+and can also be checked manually under **Settings > About**. Development, browser, Android, and iOS
+builds do not expose updater controls. A discovered update is never downloaded or installed until
+the user chooses that action; choosing **Later** leaves the current session running normally.
+
+Before installation and restart, every open note editor must persist its current draft locally.
+The application also attempts any pending valid server save. A server/API failure does not block
+the update when the local draft is safe, but a local draft write failure stops installation and
+shows a retryable error. Updater logs contain only operation names, safe error codes, and versions;
+they never contain manifest payloads, signatures, URLs returned by the server, or note content.
+
+The configured updater public key is intentionally committed in `tauri.conf.json`; it verifies
+signatures and cannot create them. `tauri.release.conf.json` enables updater artifacts only for the
+signed release workflow, while ordinary `pnpm build:desktop` keeps
+`createUpdaterArtifacts: false` and needs no signing secrets.
+
+Existing installations made from an installer that predates updater support cannot bootstrap the
+updater themselves. Install one updater-capable Nestra release manually; subsequent published
+stable releases can then be installed in-app.
 
 WebView outbound access is further constrained by Content Security Policy in
 `apps/desktop/src-tauri/tauri.conf.json`:
@@ -210,16 +241,18 @@ Prerequisites:
 - Hosted `CORS_ALLOWED_ORIGINS` includes `http://tauri.localhost`.
 - Installer was built with `.env.desktop` pointing at that hosted API.
 
-| Step            | Expectation                                                                                                                                                  |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1. Install      | Run the NSIS setup without elevation. Installation completes for the current user.                                                                           |
-| 2. Launch       | Start Nestra from the Start Menu or desktop shortcut. No Expo/Metro development server is required.                                                          |
-| 3. Cold start   | The first API call after hosted idle may take several seconds; the UI should recover once the API wakes.                                                     |
-| 4. Authenticate | Register or sign in against the hosted API while the developer coding machine can be offline.                                                                |
-| 5. Notes        | Create, open, edit, and save at least one owned note.                                                                                                        |
-| 6. Restart      | Quit the application fully and reopen it. The authenticated session is restored from OS credential storage without storing tokens in browser `localStorage`. |
-| 7. Sign-out     | Sign out removes desktop credentials; a subsequent launch requires authentication again.                                                                     |
-| 8. Uninstall    | Remove Nestra through Windows Apps & features (or the NSIS uninstaller). The application no longer launches from the previous shortcuts.                     |
+| Step            | Expectation                                                                                                                                                            |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Install      | Run the NSIS setup without elevation. Installation completes for the current user.                                                                                     |
+| 2. Launch       | Start Nestra from the Start Menu or desktop shortcut. No Expo/Metro development server is required.                                                                    |
+| 3. Cold start   | The first API call after hosted idle may take several seconds; the UI should recover once the API wakes.                                                               |
+| 4. Authenticate | Register or sign in against the hosted API while the developer coding machine can be offline.                                                                          |
+| 5. Notes        | Create, open, edit, and save at least one owned note.                                                                                                                  |
+| 6. Restart      | Quit the application fully and reopen it. The authenticated session is restored from OS credential storage without storing tokens in browser `localStorage`.           |
+| 7. Sign-out     | Sign out removes desktop credentials; a subsequent launch requires authentication again.                                                                               |
+| 8. Update       | From an older updater-capable published version, detect the latest stable release, choose Later once, then download/install and confirm the new version after restart. |
+| 9. Draft safety | Repeat with an edited note and a temporarily unavailable API; the local draft survives the update. A simulated local-storage failure must stop installation.           |
+| 10. Uninstall   | Remove Nestra through Windows Apps & features (or the NSIS uninstaller). The application no longer launches from the previous shortcuts.                               |
 
 Do not paste tokens, note content, or provider secrets into issues, PR comments, or logs while recording smoke-test results.
 
@@ -251,8 +284,8 @@ after the prerequisites above are installed, or download the CI workflow artifac
 
 ## Out of scope
 
-- Installer signing, automatic updates, and public GitHub Release publication without explicit
-  operator approval
+- Public GitHub Release publication without explicit operator approval
+- Windows Authenticode code signing
 - Ambient audio caching, notifications, and related platform plugins
 - macOS or Linux packaging
 

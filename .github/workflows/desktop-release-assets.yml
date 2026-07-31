@@ -70,22 +70,73 @@ jobs:
       - name: Verify product version synchronization
         run: pnpm check:product-version
 
+      - name: Validate draft release
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $productVersion = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $expectedTag = "v$productVersion"
+          if ($env:RELEASE_TAG -ne $expectedTag) {
+            Write-Error "Release tag must match the product version ($expectedTag)."
+            exit 1
+          }
+
+          $release = gh api "repos/${{ github.repository }}/releases/tags/$env:RELEASE_TAG" | ConvertFrom-Json
+          if (-not $release.draft -or $release.prerelease) {
+            Write-Error "Desktop update assets can only be attached to a non-prerelease draft."
+            exit 1
+          }
+          "release_id=$($release.id)" >> $env:GITHUB_OUTPUT
+
       - name: Prepare desktop production environment file
         shell: pwsh
         run: |
           Copy-Item apps/client/.env.desktop.example apps/client/.env.desktop
 
-      - name: Build Windows x64 NSIS installer
-        run: pnpm build:desktop
+      - name: Build and attach signed Windows updater assets
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # action-v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          releaseId: ${{ steps.release.outputs.release_id }}
+          tagName: ${{ env.RELEASE_TAG }}
+          releaseDraft: true
+          projectPath: apps/desktop
+          tauriScript: pnpm tauri
+          args: --config src-tauri/tauri.release.conf.json --target x86_64-pc-windows-msvc
+          updaterJsonPreferNsis: true
+          uploadUpdaterJson: true
+          uploadUpdaterSignatures: true
 
-      - name: Resolve installer artifact path
-        id: installer
-        run: node ./apps/desktop/scripts/installer-artifact.mjs
-
-      - name: Upload installer to GitHub Release
+      - name: Validate attached updater assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          INSTALLER_PATH: ${{ steps.installer.outputs.path }}
         shell: pwsh
         run: |
-          gh release upload "$env:RELEASE_TAG" "$env:INSTALLER_PATH" --clobber
+          $productVersion = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $installerName = "Nestra_${productVersion}_x64-setup.exe"
+          $requiredAssets = @($installerName, "$installerName.sig", "latest.json")
+          $release = gh api "repos/${{ github.repository }}/releases/tags/$env:RELEASE_TAG" | ConvertFrom-Json
+
+          if (-not $release.draft -or $release.prerelease) {
+            Write-Error "The release changed state while updater assets were being built."
+            exit 1
+          }
+          foreach ($assetName in $requiredAssets) {
+            if ($release.assets.name -notcontains $assetName) {
+              Write-Error "Required updater asset is missing: $assetName"
+              exit 1
+            }
+          }
+
+          $validationDirectory = Join-Path $env:RUNNER_TEMP "nestra-updater-validation"
+          New-Item -ItemType Directory -Path $validationDirectory -Force | Out-Null
+          gh release download "$env:RELEASE_TAG" --pattern "latest.json" --dir $validationDirectory --clobber
+          node ./apps/desktop/scripts/validate-updater-manifest.mjs `
+            --manifest (Join-Path $validationDirectory "latest.json") `
+            --tag "$env:RELEASE_TAG" `
+            --repository "${{ github.repository }}"
