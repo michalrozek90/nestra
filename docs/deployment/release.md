@@ -111,8 +111,8 @@ Behavior:
 5. Upload `Nestra_{version}_x64-setup.exe`, its `.sig`, and `latest.json` through the pinned official
    `tauri-apps/tauri-action`.
 6. Re-read the release by its immutable ID and validate its identity, target commit, all three
-   assets, the manifest version, Windows x64 URL, and a
-   non-empty signature. Validation never prints the signature.
+   assets, the manifest version, both Windows x64 updater entries, their exact installer asset URL,
+   and a non-empty matching signature. Validation never prints the signature.
 
 The packaging workflow in `.github/workflows/desktop-package.yml` continues to upload short-lived
 workflow artifacts for `main` verification and manual `workflow_dispatch` runs. The release-assets

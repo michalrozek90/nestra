@@ -50,9 +50,11 @@ The Windows installer association is a separate workflow. A draft release may re
 before the corresponding Git tag exists. The workflow therefore resolves the draft through the
 GitHub Releases API, verifies that the exact commit supplied by Release Please matches the draft's
 target commit, checks out that immutable commit, and uploads `Nestra_{version}_x64-setup.exe` to the
-draft. Manual runs resolve the same exact commit from the draft. The installer talks to the hosted
-API documented in `docs/deployment/hosted-api.md` and does not require the developer computer to
-remain online.
+draft. Manual runs resolve the same exact commit from the draft. Manifest validation compares its
+Windows download URL with the immutable API URL of the installer asset returned by GitHub, matching
+the contract of the pinned Tauri action without accepting an unrelated asset. The installer talks
+to the hosted API documented in `docs/deployment/hosted-api.md` and does not require the developer
+computer to remain online.
 
 `pnpm check:product-version` verifies that the root product version, Release Please manifest,
 Tauri version reference, Cargo package version, Expo app config wiring, and contracts version
