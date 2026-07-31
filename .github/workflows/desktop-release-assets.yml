@@ -190,11 +190,14 @@ jobs:
             Write-Error "The release identity or target commit changed while assets were being built."
             exit 1
           }
+          $releaseAssetsByName = @{}
           foreach ($assetName in $requiredAssets) {
-            if ($release.assets.name -notcontains $assetName) {
-              Write-Error "Required updater asset is missing: $assetName"
+            $matchingAssets = @($release.assets | Where-Object { $_.name -eq $assetName })
+            if ($matchingAssets.Count -ne 1) {
+              Write-Error "Expected exactly one updater asset named ${assetName}, found $($matchingAssets.Count)."
               exit 1
             }
+            $releaseAssetsByName[$assetName] = $matchingAssets[0]
           }
 
           $validationDirectory = Join-Path $env:RUNNER_TEMP "nestra-updater-validation"
@@ -203,4 +206,4 @@ jobs:
           node ./apps/desktop/scripts/validate-updater-manifest.mjs `
             --manifest (Join-Path $validationDirectory "latest.json") `
             --tag "$env:RELEASE_TAG" `
-            --repository "${{ github.repository }}"
+            --installer-asset-url ($releaseAssetsByName[$installerName].url)
