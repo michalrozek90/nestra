@@ -159,6 +159,34 @@ Use an existing task branch instead when resuming the same issue.
 3. Keep documentation and architecture decisions current when required.
 4. Do not expand the issue scope with unrelated features or refactors.
 
+### Maintain the in-app release notes
+
+Before quality verification, decide whether the completed issue changes behavior that an application
+user can observe. A user-facing feature, improvement, or bug fix must update the curated in-app
+release notes in the same task branch and pull request. Documentation, CI, workflow, refactoring,
+and other internal-only changes do not require an in-app entry.
+
+For a required entry:
+
+1. Read `.release-please-manifest.json`, `release-please-config.json`, and the Conventional Commits
+   since the latest release tag. Include the intended commit type for the current task when
+   anticipating the next Release Please version.
+2. Reuse the single pending release entry in
+   `apps/client/src/features/releases/release-notes.ts`. If the accumulated commits change the
+   anticipated target, for example from a patch to a minor release, move the pending notes to the
+   newly anticipated version instead of creating competing pending entries.
+3. Add a concise, user-oriented description of the outcome. Describe what became possible or what
+   was fixed, not implementation details, issue numbers, commit messages, or internal tooling.
+4. Update both `apps/client/src/i18n/en/releases.ts` and
+   `apps/client/src/i18n/pl/releases.ts`. Keep existing pending notes and avoid duplicate entries for
+   the same behavior.
+5. Use an explicitly planned publication date when one exists. Do not invent a release date merely
+   to complete the task; flag the missing date in the handoff so it can be set before publication.
+
+Do not postpone accumulated product-note content to a separate cleanup pull request. Release Please
+continues to own the technical `CHANGELOG.md`; the application release notes are a smaller curated
+summary and must not copy the technical changelog verbatim.
+
 ## 5. Quality verification loop
 
 Run the repository verification command:
@@ -250,15 +278,17 @@ When the user requests changes to the pull request:
 1. Confirm the active issue, branch, and pull request from the conversation and repository state.
 2. Move the work item from `Review` to `In Progress`.
 3. Implement only the requested corrections.
-4. Run `pnpm verify` with the four-cycle limit.
-5. Commit and push the corrections using a Conventional Commit.
-6. Review the corrections according to `docs/code-review.md`.
-7. Apply any required review corrections.
-8. Run `pnpm verify` again when review changes code.
-9. Commit and push any additional corrections.
-10. Mark the pull request ready for review if it became draft for any reason.
-11. Move the item back to `Review`.
-12. Return another short manual-review handoff.
+4. Reapply the in-app release-note rule from section 4 when the correction changes user-visible
+   behavior or makes an existing note inaccurate.
+5. Run `pnpm verify` with the four-cycle limit.
+6. Commit and push the corrections using a Conventional Commit.
+7. Review the corrections according to `docs/code-review.md`.
+8. Apply any required review corrections.
+9. Run `pnpm verify` again when review changes code.
+10. Commit and push any additional corrections.
+11. Mark the pull request ready for review if it became draft for any reason.
+12. Move the item back to `Review`.
+13. Return another short manual-review handoff.
 
 New ideas outside the current issue scope should be created as separate GitHub Project work items when the user requests it.
 

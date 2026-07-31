@@ -77,6 +77,11 @@ Do not manually add a dated `0.1.0` heading to `CHANGELOG.md` before the release
 owns the technical release history. In-app product notes remain curated localization content and
 must not parse `CHANGELOG.md` at runtime.
 
+User-facing issue pull requests maintain the pending in-app entry incrementally according to
+`docs/workflows/agent-task-workflow.md`. Before merging a Release Please PR, confirm that the pending
+entry matches the version selected by Release Please and has the intended publication date. A
+separate aggregate pull request should not be needed to reconstruct product notes at release time.
+
 ## Associating the Windows installer with a release candidate
 
 Workflow: `.github/workflows/desktop-release-assets.yml`
@@ -160,7 +165,8 @@ Complete before merging a Release Please PR or publishing a draft release:
    machine can be offline from the API process.
 7. Draft GitHub Release exists or will be created by merging the Release Please PR.
 8. Desktop release-assets workflow has attached and validated all updater assets on that release.
-9. Release notes, docs, and workflow logs contain no secrets or private user data.
+9. The curated in-app notes match the target version and publication date, include both supported
+   languages, and contain no secrets or private user data.
 10. Operator explicitly approves merging the Release Please PR and later publishing the draft
     release.
 

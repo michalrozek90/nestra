@@ -50,15 +50,35 @@ export const plReleases = {
     },
   },
   versions: {
+    v020: {
+      title: 'Aktualizacje aplikacji i informacje o wersjach',
+      changes: {
+        desktopUpdates:
+          'Nestra może sprawdzać podpisane aktualizacje dla Windows i instalować nową wersję z poziomu aplikacji.',
+        safeUpdateRestart:
+          'Otwarte notatki są zapisywane lokalnie przed instalacją aktualizacji i ponownym uruchomieniem Nestry.',
+        quietAutomaticChecks:
+          'Niedostępna usługa aktualizacji nie wyświetla już błędu podczas automatycznego sprawdzania przy uruchomieniu.',
+        diagnosticsBack:
+          'Strzałka wstecz na ekranie diagnostyki deweloperskiej pozwala wrócić do Ustawień.',
+        narrowLayout:
+          'Układ i przyciski nagłówka notatki lepiej działają na bardzo wąskich ekranach, od szerokości 320 px.',
+        centeredNavigation: 'Ikony nawigacji pozostają wizualnie wyśrodkowane na wąskich układach.',
+        releaseHistory:
+          'Ekran O aplikacji zawiera teraz historię wersji oraz podsumowanie Co nowego wyświetlane po aktualizacji.',
+      },
+    },
     v010: {
       title: 'Ostatnie usprawnienia',
       changes: {
-        diagnosticsBack:
-          'Strzałka wstecz na ekranie diagnostyki deweloperskiej pozwala wrócić do Ustawień.',
-        narrowLayout: 'Układ lepiej działa na bardzo wąskich ekranach, od szerokości 320 px.',
-        centeredNavigation: 'Ikony nawigacji pozostają wizualnie wyśrodkowane na wąskich układach.',
+        responsiveDialogs:
+          'Okna dialogowe z działaniami dopasowują się do mniejszych ekranów i nie wychodzą poza ich obszar.',
+        editorFocus: 'Edytor zachowuje fokus po utworzeniu lub otwarciu notatki.',
+        titleOnlyNotes: 'Notatki zawierające wyłącznie tytuł są poprawnie zachowywane.',
         patientSessionRestore:
           'Przywracanie sesji dłużej czeka i krótko ponawia próbę przy wolnym połączeniu, zamiast od razu kończyć się błędem.',
+        packagedDesktopAssets:
+          'Spakowana aplikacja dla Windows niezawodnie ładuje ikony i łączy się z usługą sieciową.',
       },
     },
   },

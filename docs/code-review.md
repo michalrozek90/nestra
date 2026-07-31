@@ -181,6 +181,10 @@ Before reporting it:
   responsibility to an existing file.
 - Check whether the implementation satisfies the selected work item and active specification without
   adding unrelated functionality.
+- For a user-facing feature, improvement, or bug fix, verify that the same change updates the
+  curated in-app release notes in English and Polish under the anticipated Release Please version.
+  Report a missing, duplicated, misleading, or incorrectly versioned entry. Internal-only changes
+  do not require an in-app note.
 - Look for regressions in affected callers and consumers outside the changed files.
 - Check boundary conditions, invalid input, nullable values, partial failures, retries, and
   concurrent operations.
