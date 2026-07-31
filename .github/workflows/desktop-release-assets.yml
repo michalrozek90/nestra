@@ -203,7 +203,39 @@ jobs:
           $validationDirectory = Join-Path $env:RUNNER_TEMP "nestra-updater-validation"
           New-Item -ItemType Directory -Path $validationDirectory -Force | Out-Null
           gh release download "$env:RELEASE_TAG" --pattern "latest.json" --dir $validationDirectory --clobber
-          node ./apps/desktop/scripts/validate-updater-manifest.mjs `
-            --manifest (Join-Path $validationDirectory "latest.json") `
-            --tag "$env:RELEASE_TAG" `
-            --installer-asset-url ($releaseAssetsByName[$installerName].url)
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Could not download latest.json from the draft release."
+            exit 1
+          }
+
+          $manifest = Get-Content (Join-Path $validationDirectory "latest.json") -Raw | ConvertFrom-Json
+          if ([string]$manifest.version -ne $productVersion) {
+            Write-Error "Updater manifest version does not match the root product version."
+            exit 1
+          }
+
+          $windowsX64 = $manifest.platforms.'windows-x86_64'
+          $windowsX64Nsis = $manifest.platforms.'windows-x86_64-nsis'
+          if ($null -eq $windowsX64 -or $null -eq $windowsX64Nsis) {
+            Write-Error "Updater manifest is missing a Windows x64 NSIS platform entry."
+            exit 1
+          }
+
+          $installerAssetUrl = [string]$releaseAssetsByName[$installerName].url
+          if (
+            [string]$windowsX64.url -ne $installerAssetUrl -or
+            [string]$windowsX64Nsis.url -ne $installerAssetUrl
+          ) {
+            Write-Error "Windows x64 updater URL does not match the release installer asset."
+            exit 1
+          }
+
+          $windowsX64Signature = [string]$windowsX64.signature
+          if ([string]::IsNullOrWhiteSpace($windowsX64Signature)) {
+            Write-Error "Windows x64 updater signature is missing."
+            exit 1
+          }
+          if ([string]$windowsX64Nsis.signature -ne $windowsX64Signature) {
+            Write-Error "Windows x64 NSIS updater signature does not match the primary entry."
+            exit 1
+          }

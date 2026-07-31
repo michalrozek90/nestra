@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "node ./scripts/run-tauri.mjs dev",
     "build": "node ./scripts/run-tauri.mjs build",
-    "tauri": "tauri",
-    "validate:updater-manifest": "node ./scripts/validate-updater-manifest.mjs"
+    "tauri": "tauri"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.11.4"
