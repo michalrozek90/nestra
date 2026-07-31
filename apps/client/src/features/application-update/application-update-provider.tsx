@@ -28,6 +28,8 @@ type ApplicationUpdateContextValue = {
   readonly dismissError: () => void;
 };
 
+type ApplicationUpdateCheckOrigin = 'automatic' | 'manual';
+
 const ApplicationUpdateContext = createContext<ApplicationUpdateContextValue | null>(null);
 
 function toAvailableState(update: ApplicationUpdateHandle): ApplicationUpdateState {
@@ -72,7 +74,7 @@ export function ApplicationUpdateProvider({ children }: PropsWithChildren) {
   }, []);
 
   const runCheck = useCallback(
-    async (showPrompt: boolean) => {
+    async (checkOrigin: ApplicationUpdateCheckOrigin) => {
       if (!applicationUpdatePlatform.isSupported) {
         return;
       }
@@ -104,11 +106,18 @@ export function ApplicationUpdateProvider({ children }: PropsWithChildren) {
           }
 
           setState(toAvailableState(update));
-          if (showPrompt) {
+          if (checkOrigin === 'automatic') {
             setIsPromptVisible(true);
           }
         } catch {
-          setSafeError('check-failed');
+          if (checkOrigin === 'automatic') {
+            logger.warn('Automatic application update check failed', { code: 'check-failed' });
+            if (isMountedRef.current) {
+              setState({ status: 'idle' });
+            }
+          } else {
+            setSafeError('check-failed');
+          }
         }
       })().finally(() => {
         operationPromiseRef.current = null;
@@ -120,7 +129,7 @@ export function ApplicationUpdateProvider({ children }: PropsWithChildren) {
     [setSafeError],
   );
 
-  const checkForUpdate = useCallback(async () => runCheck(false), [runCheck]);
+  const checkForUpdate = useCallback(async () => runCheck('manual'), [runCheck]);
 
   useEffect(() => {
     if (
@@ -132,7 +141,7 @@ export function ApplicationUpdateProvider({ children }: PropsWithChildren) {
     }
 
     hasStartedAutomaticCheckRef.current = true;
-    void runCheck(true);
+    void runCheck('automatic');
   }, [authStatus, runCheck]);
 
   const installAvailableUpdate = useCallback(async () => {
