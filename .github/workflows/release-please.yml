@@ -103,12 +103,46 @@ jobs:
           git push origin "HEAD:${RELEASE_PR_BRANCH}"
           echo "updated=true" >> "${GITHUB_OUTPUT}"
 
-      - name: Verify the updated Release Please pull request
+      - name: Start checks for the updated Release Please pull request
         if: ${{ steps.format-release-pr.outputs.updated == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_PR_BRANCH: ${{ steps.release-pr.outputs.branch }}
-        run: gh workflow run ci.yml --repo "${{ github.repository }}" --ref "${RELEASE_PR_BRANCH}"
+        run: |
+          release_pr_sha="$(git rev-parse HEAD)"
+          checks_approved=false
+
+          for attempt in {1..10}; do
+            mapfile -t pending_run_ids < <(gh api \
+              --method GET \
+              "repos/${{ github.repository }}/actions/runs" \
+              -f head_sha="${release_pr_sha}" \
+              -f event="pull_request" \
+              -f status="action_required" \
+              -f per_page=10 \
+              --jq '.workflow_runs[] | select(.name == "CI") | .id')
+
+            if [ "${#pending_run_ids[@]}" -gt 0 ]; then
+              checks_approved=true
+
+              for run_id in "${pending_run_ids[@]}"; do
+                if ! gh api \
+                  --method POST \
+                  "repos/${{ github.repository }}/actions/runs/${run_id}/approve"; then
+                  checks_approved=false
+                fi
+              done
+
+              break
+            fi
+
+            sleep 2
+          done
+
+          if [ "${checks_approved}" = false ]; then
+            echo "Bot-triggered pull request checks could not be approved; dispatching CI directly."
+            gh workflow run ci.yml --repo "${{ github.repository }}" --ref "${RELEASE_PR_BRANCH}"
+          fi
 
       - name: Dispatch Windows installer attachment
         if: ${{ steps.release.outputs.release_created == 'true' }}

@@ -38,8 +38,10 @@ Use Google Release Please with a single repository-wide `node` package at the re
 - After Release Please creates or updates its pull request, the same workflow finds the single open
   pull request labeled `autorelease: pending`, synchronizes its branch with `main`, formats the
   generated `CHANGELOG.md` with the repository-pinned Prettier version, and pushes the correction
-  when needed. It then dispatches CI explicitly for the updated branch because a normal push made
-  with `GITHUB_TOKEN` does not reliably start another workflow run.
+  when needed. It then approves the checks GitHub creates in an `action_required` state for that
+  trusted bot update. If approval is unavailable, it dispatches CI explicitly for the updated
+  branch because a normal push made with `GITHUB_TOKEN` does not reliably start another workflow
+  run.
 - Workspace package versions under `apps/` and `packages/` remain internal metadata and are not
   treated as the product version.
 
