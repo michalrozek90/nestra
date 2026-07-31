@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
+import { ProgressBar } from 'react-native-paper';
 
 import { ActionDialog } from '@/components/action-dialog';
 import { Button } from '@/components/button';
@@ -46,10 +47,23 @@ export function ApplicationUpdateHost() {
       state.status === 'restart-required' ||
       state.status === 'recoverable-error');
   const isBusy = state.status === 'downloading' || state.status === 'installing';
+  const downloadProgress =
+    state.status === 'downloading' && state.totalBytes
+      ? Math.min(1, state.downloadedBytes / state.totalBytes)
+      : undefined;
 
   return (
     <ActionDialog
       description={getDescription(state, t)}
+      descriptionAccessory={
+        state.status === 'downloading' ? (
+          <ProgressBar
+            accessibilityLabel={t('update.downloadProgressAccessibilityLabel')}
+            indeterminate={downloadProgress === undefined}
+            {...(downloadProgress === undefined ? {} : { progress: downloadProgress })}
+          />
+        ) : undefined
+      }
       dismissable={!isBusy}
       onDismiss={state.status === 'recoverable-error' ? dismissError : dismissPrompt}
       title={t('update.title')}

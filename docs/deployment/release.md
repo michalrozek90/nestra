@@ -84,8 +84,7 @@ Workflow: `.github/workflows/desktop-release-assets.yml`
 Triggers:
 
 1. Automatic after Release Please creates a draft GitHub Release: the release-please workflow
-   dispatches this workflow with the new tag. Direct `release: created` events are also supported
-   when an operator creates a release outside Release Please.
+   dispatches this workflow with the new tag.
 2. Manual: `workflow_dispatch` with an existing release `tag_name` such as `v0.1.0`.
 
 Behavior:

@@ -64,6 +64,7 @@ export default function AboutScreen() {
     state.status === 'checking' || state.status === 'downloading' || state.status === 'installing';
   const canInstallUpdate =
     state.status === 'available' ||
+    state.status === 'restart-required' ||
     (state.status === 'recoverable-error' && state.version !== undefined);
 
   return (
@@ -109,7 +110,11 @@ export default function AboutScreen() {
             />
             {canInstallUpdate ? (
               <Button
-                label={t('update.actions.install')}
+                label={
+                  state.status === 'restart-required'
+                    ? t('update.actions.restart')
+                    : t('update.actions.install')
+                }
                 onPress={() => void installAvailableUpdate()}
               />
             ) : null}

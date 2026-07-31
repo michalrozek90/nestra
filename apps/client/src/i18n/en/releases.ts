@@ -21,6 +21,7 @@ export const enReleases = {
     availableWithNotes: 'Nestra {{version}} is ready to download and install.\n\n{{notes}}',
     downloading: 'Downloading the update…',
     downloadingProgress: 'Downloading the update… {{progressPercent}}%',
+    downloadProgressAccessibilityLabel: 'Update download progress',
     installing: 'Installing the update. Nestra will restart when it is ready.',
     restartRequired: 'The update was installed. Restart Nestra to finish.',
     status: {

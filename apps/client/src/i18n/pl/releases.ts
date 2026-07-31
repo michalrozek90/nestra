@@ -21,6 +21,7 @@ export const plReleases = {
     availableWithNotes: 'Nestra {{version}} jest gotowa do pobrania i instalacji.\n\n{{notes}}',
     downloading: 'Pobieranie aktualizacji…',
     downloadingProgress: 'Pobieranie aktualizacji… {{progressPercent}}%',
+    downloadProgressAccessibilityLabel: 'Postęp pobierania aktualizacji',
     installing: 'Instalowanie aktualizacji. Nestra uruchomi się ponownie, gdy będzie gotowa.',
     restartRequired: 'Aktualizacja została zainstalowana. Uruchom Nestrę ponownie, aby zakończyć.',
     status: {

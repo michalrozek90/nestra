@@ -207,7 +207,15 @@ export function ApplicationUpdateProvider({ children }: PropsWithChildren) {
 
   const dismissError = useCallback(() => {
     const update = updateRef.current;
-    setState(update ? toAvailableState(update) : { status: 'idle' });
+    setState((currentState) =>
+      update &&
+      currentState.status === 'recoverable-error' &&
+      currentState.code === 'restart-failed'
+        ? { status: 'restart-required', version: update.version }
+        : update
+          ? toAvailableState(update)
+          : { status: 'idle' },
+    );
     setIsPromptVisible(false);
   }, []);
 
