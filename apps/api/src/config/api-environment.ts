@@ -11,6 +11,14 @@ function isCanonicalCorsAllowedOrigin(origin: string): boolean {
   }
 }
 
+function usesVerifiedDatabaseTls(databaseUrl: string): boolean {
+  const parsedDatabaseUrl = new URL(databaseUrl);
+  const sslMode = parsedDatabaseUrl.searchParams.get('sslmode');
+  const usesLibpqCompatibility = parsedDatabaseUrl.searchParams.get('uselibpqcompat') === 'true';
+
+  return sslMode === 'verify-full' || (sslMode === 'require' && !usesLibpqCompatibility);
+}
+
 const corsAllowedOriginSchema = z
   .url({ protocol: /^https?$/ })
   .refine(isCanonicalCorsAllowedOrigin, {
@@ -40,6 +48,17 @@ const rawApiEnvironmentSchema = z
         code: 'custom',
         path: ['JWT_ACCESS_SECRET'],
         message: 'The example JWT access secret is not allowed outside development.',
+      });
+    }
+
+    if (
+      environment.NODE_ENV !== 'development' &&
+      !usesVerifiedDatabaseTls(environment.DATABASE_URL)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['DATABASE_URL'],
+        message: 'DATABASE_URL must require verified TLS outside development.',
       });
     }
   })

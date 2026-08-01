@@ -76,9 +76,11 @@ Example Neon pooled URL shape (placeholders only):
 postgresql://USER:PASSWORD@HOST-pooler.REGION.aws.neon.tech/neondb?sslmode=require
 ```
 
-The API uses the standard `pg` driver through TypeORM and honors TLS settings from the URL. Do not
-add Neon or Render SDKs into domain or application code. Production never enables TypeORM
-`synchronize`.
+The API uses the standard `pg` driver through TypeORM and requires verified TLS outside local
+development. Use `sslmode=require` with the pinned driver defaults shown above, or
+`sslmode=verify-full`; do not enable `uselibpqcompat=true` with `sslmode=require`, because that mode
+does not verify the server certificate. Do not add Neon or Render SDKs into domain or application
+code. Production never enables TypeORM `synchronize`.
 
 ## CORS for desktop clients
 
