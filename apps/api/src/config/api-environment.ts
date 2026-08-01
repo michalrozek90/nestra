@@ -3,6 +3,33 @@ import { z } from 'zod';
 const durationSchema = z.string().regex(/^[1-9]\d*[smhd]$/);
 const exampleJwtAccessSecret = 'replace_with_a_long_random_secret';
 
+function isCanonicalCorsAllowedOrigin(origin: string): boolean {
+  try {
+    return new URL(origin).origin === origin;
+  } catch {
+    return false;
+  }
+}
+
+function usesAllowedDatabaseTransport(databaseUrl: string): boolean {
+  const parsedDatabaseUrl = new URL(databaseUrl);
+  const localDatabaseHosts = new Set(['localhost', '127.0.0.1', '[::1]', 'host.docker.internal']);
+  const sslMode = parsedDatabaseUrl.searchParams.get('sslmode');
+  const usesLibpqCompatibility = parsedDatabaseUrl.searchParams.get('uselibpqcompat') === 'true';
+
+  return (
+    localDatabaseHosts.has(parsedDatabaseUrl.hostname) ||
+    sslMode === 'verify-full' ||
+    (sslMode === 'require' && !usesLibpqCompatibility)
+  );
+}
+
+const corsAllowedOriginSchema = z
+  .url({ protocol: /^https?$/ })
+  .refine(isCanonicalCorsAllowedOrigin, {
+    message: 'CORS origins must use canonical HTTP(S) origin syntax.',
+  });
+
 const rawApiEnvironmentSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'preview', 'production']),
@@ -15,7 +42,7 @@ const rawApiEnvironmentSchema = z
     CORS_ALLOWED_ORIGINS: z
       .string()
       .transform((origins) => origins.split(',').map((origin) => origin.trim()))
-      .pipe(z.array(z.url()).min(1)),
+      .pipe(z.array(corsAllowedOriginSchema).min(1)),
   })
   .superRefine((environment, context) => {
     if (
@@ -26,6 +53,17 @@ const rawApiEnvironmentSchema = z
         code: 'custom',
         path: ['JWT_ACCESS_SECRET'],
         message: 'The example JWT access secret is not allowed outside development.',
+      });
+    }
+
+    if (
+      environment.NODE_ENV !== 'development' &&
+      !usesAllowedDatabaseTransport(environment.DATABASE_URL)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['DATABASE_URL'],
+        message: 'Remote DATABASE_URL values must require verified TLS outside development.',
       });
     }
   })

@@ -13,8 +13,10 @@ export async function persistAuthenticationSessionTokens(
   session: AuthenticationSessionResponse,
 ): Promise<void> {
   try {
-    await authTokenStorage.setAccessToken(session.accessToken);
+    // Publishing the session identity first prevents stale requests from observing a new access
+    // token as if it still belonged to the previous refresh session.
     await authTokenStorage.setRefreshToken(session.refreshToken);
+    await authTokenStorage.setAccessToken(session.accessToken);
   } catch (error: unknown) {
     try {
       await authTokenStorage.clear();

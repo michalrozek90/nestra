@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -11,6 +12,8 @@ import {
 import { UserEntity } from './user.entity';
 
 @Entity('refresh_sessions')
+@Index('refresh_sessions_user_id_idx', ['userId'])
+@Index('refresh_sessions_expires_at_idx', ['expiresAt'])
 export class RefreshSessionEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -19,7 +22,10 @@ export class RefreshSessionEntity {
   userId!: string;
 
   @ManyToOne(() => UserEntity, (user) => user.refreshSessions, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' })
+  @JoinColumn({
+    name: 'user_id',
+    foreignKeyConstraintName: 'refresh_sessions_user_id_fkey',
+  })
   user!: UserEntity;
 
   @Column({ name: 'token_hash', type: 'char', length: 64 })

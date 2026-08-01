@@ -22,7 +22,14 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
           descriptionTranslationKey: 'versions.v030.changes.completeReleaseHistory',
         },
       ],
-      fixes: [],
+      fixes: [
+        {
+          descriptionTranslationKey: 'versions.v030.changes.serviceOutageErrors',
+        },
+        {
+          descriptionTranslationKey: 'versions.v030.changes.sessionRequestIsolation',
+        },
+      ],
     },
   },
   {

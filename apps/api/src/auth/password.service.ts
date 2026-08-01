@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as argon2 from 'argon2';
 
 const ARGON2_MEMORY_COST_KIB = 19_456;
@@ -10,6 +10,8 @@ const NON_EXISTENT_USER_PASSWORD_HASH =
 
 @Injectable()
 export class PasswordService {
+  private readonly logger = new Logger(PasswordService.name);
+
   async hashPassword(password: string): Promise<string> {
     return argon2.hash(password, {
       type: argon2.argon2id,
@@ -28,6 +30,7 @@ export class PasswordService {
 
       return passwordHash !== null && isPasswordValid;
     } catch {
+      this.logger.error('Password verification failed: category=verifier_error');
       return false;
     }
   }

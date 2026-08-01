@@ -1,4 +1,4 @@
-import { HttpException, type HttpStatus } from '@nestjs/common';
+import { HttpException, type HttpExceptionOptions, type HttpStatus } from '@nestjs/common';
 import type { ApiErrorCode } from '@nestra/contracts';
 
 export class ApiException extends HttpException {
@@ -6,7 +6,8 @@ export class ApiException extends HttpException {
     readonly errorCode: ApiErrorCode,
     readonly safeMessage: string,
     statusCode: HttpStatus,
+    options?: HttpExceptionOptions,
   ) {
-    super(safeMessage, statusCode);
+    super(safeMessage, statusCode, options);
   }
 }
