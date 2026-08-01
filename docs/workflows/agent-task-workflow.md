@@ -177,10 +177,18 @@ For a required entry:
    newly anticipated version instead of creating competing pending entries.
 3. Add a concise, user-oriented description of the outcome. Describe what became possible or what
    was fixed, not implementation details, issue numbers, commit messages, or internal tooling.
-4. Update both `apps/client/src/i18n/en/releases.ts` and
+4. Classify every entry in exactly one group:
+   - `new` for a new user capability or a visible improvement;
+   - `fixes` for behavior that was broken, unreliable, or visually incorrect.
+
+   Keep every version as a separate entry. The application always renders `new` entries before
+   `fixes` and shows every unseen version after an update, so never move older notes into the newest
+   version or remove released history.
+
+5. Update both `apps/client/src/i18n/en/releases.ts` and
    `apps/client/src/i18n/pl/releases.ts`. Keep existing pending notes and avoid duplicate entries for
    the same behavior.
-5. Use an explicitly planned publication date when one exists. Do not invent a release date merely
+6. Use an explicitly planned publication date when one exists. Do not invent a release date merely
    to complete the task; flag the missing date in the handoff so it can be set before publication.
 
 Write both curated notes and release-ready `feat:` / `fix:` commit subjects in direct, satisfying

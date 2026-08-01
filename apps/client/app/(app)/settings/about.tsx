@@ -12,7 +12,7 @@ import { runtimeConfig } from '@/config/runtime-config';
 import { useApplicationUpdate } from '@/features/application-update/application-update-provider';
 import type { ApplicationUpdateState } from '@/features/application-update/application-update.types';
 import { ReleaseNotesHistory } from '@/features/releases/components/release-notes-history';
-import { getPublishedReleaseNotesNewestFirst } from '@/features/releases/release-notes';
+import { getReleaseNotesNewestFirst } from '@/features/releases/release-notes';
 import { spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
 
@@ -58,7 +58,7 @@ export default function AboutScreen() {
   const router = useRouter();
   const theme = useNestraTheme();
   const applicationVersion = runtimeConfig.applicationVersion;
-  const releaseNotes = getPublishedReleaseNotesNewestFirst();
+  const releaseNotes = getReleaseNotesNewestFirst(applicationVersion);
   const { state, checkForUpdate, installAvailableUpdate } = useApplicationUpdate();
   const isUpdateOperationActive =
     state.status === 'checking' || state.status === 'downloading' || state.status === 'installing';

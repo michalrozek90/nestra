@@ -9,9 +9,13 @@ export const enReleases = {
       back: 'Back',
     },
   },
+  changeTypes: {
+    new: 'New',
+    fix: 'Fix',
+  },
   whatsNew: {
     title: 'What’s new',
-    intro: 'Here is what arrived in Nestra {{version}}.',
+    intro: 'Here is everything you have missed up to Nestra {{version}}.',
     dismiss: 'Got it',
   },
   update: {
@@ -49,8 +53,13 @@ export const enReleases = {
     },
   },
   versions: {
+    v030: {
+      changes: {
+        completeReleaseHistory:
+          'What’s new now shows every version you missed, with new features and fixes clearly grouped.',
+      },
+    },
     v020: {
-      title: 'Desktop updates and release notes',
       changes: {
         desktopUpdates:
           'Nestra can check for signed Windows updates and install a new version from the application.',
@@ -68,7 +77,6 @@ export const enReleases = {
       },
     },
     v010: {
-      title: 'Recent improvements',
       changes: {
         responsiveDialogs: 'Action dialogs adapt to smaller screens instead of overflowing them.',
         editorFocus: 'The note editor keeps focus after creating or opening a note.',

@@ -8,19 +8,19 @@ import {
   writeLastSeenReleaseNotesVersion,
 } from '@/infrastructure/storage/preference-storage';
 
-import { getReleaseNoteForVersion, type ReleaseNote } from './release-notes';
+import { getUnseenReleaseNotesNewestFirst, type ReleaseNote } from './release-notes';
 
 type WhatsNewState = {
   readonly isReady: boolean;
   readonly isVisible: boolean;
-  readonly releaseNote: ReleaseNote | undefined;
+  readonly releaseNotes: readonly ReleaseNote[];
   readonly version: string | null;
 };
 
 const initialState: WhatsNewState = {
   isReady: false,
   isVisible: false,
-  releaseNote: undefined,
+  releaseNotes: [],
   version: null,
 };
 
@@ -32,23 +32,9 @@ export function useWhatsNew() {
     let isCancelled = false;
 
     async function resolveWhatsNewVisibility(): Promise<void> {
-      const releaseNote = getReleaseNoteForVersion(applicationVersion);
-
-      if (!releaseNote) {
-        if (!isCancelled) {
-          setState({
-            isReady: true,
-            isVisible: false,
-            releaseNote: undefined,
-            version: null,
-          });
-        }
-
-        return;
-      }
-
       try {
         const lastSeenVersion = await readLastSeenReleaseNotesVersion();
+        const releaseNotes = getUnseenReleaseNotesNewestFirst(lastSeenVersion, applicationVersion);
 
         if (isCancelled) {
           return;
@@ -56,8 +42,8 @@ export function useWhatsNew() {
 
         setState({
           isReady: true,
-          isVisible: lastSeenVersion !== applicationVersion,
-          releaseNote,
+          isVisible: releaseNotes.length > 0,
+          releaseNotes,
           version: applicationVersion,
         });
       } catch (error: unknown) {
@@ -68,7 +54,7 @@ export function useWhatsNew() {
           setState({
             isReady: true,
             isVisible: false,
-            releaseNote: undefined,
+            releaseNotes: [],
             version: null,
           });
         }
@@ -106,7 +92,7 @@ export function useWhatsNew() {
     dismiss,
     isReady: state.isReady,
     isVisible: state.isVisible,
-    releaseNote: state.isVisible ? state.releaseNote : undefined,
+    releaseNotes: state.isVisible ? state.releaseNotes : [],
     version: state.version,
   };
 }

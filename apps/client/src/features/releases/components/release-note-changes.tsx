@@ -17,15 +17,24 @@ export function ReleaseNoteChanges({ isCompact = false, releaseNote }: ReleaseNo
   const theme = useNestraTheme();
   const textStyle = isCompact ? styles.compactDescription : styles.description;
   const bulletStyle = isCompact ? styles.compactBullet : styles.bullet;
+  const groupedChanges = [
+    { changes: releaseNote.changes.new, label: t('changeTypes.new') },
+    { changes: releaseNote.changes.fixes, label: t('changeTypes.fix') },
+  ] as const;
 
   return (
     <View style={[styles.list, isCompact ? styles.compactList : null]}>
-      {releaseNote.changes.map((change) => (
-        <View key={change.descriptionTranslationKey} style={styles.row}>
-          <Text style={[bulletStyle, { color: theme.colors.onSurfaceVariant }]}>•</Text>
-          <Text style={textStyle}>{t(change.descriptionTranslationKey)}</Text>
-        </View>
-      ))}
+      {groupedChanges.flatMap(({ changes, label }) =>
+        changes.map((change) => (
+          <View key={change.descriptionTranslationKey} style={styles.row}>
+            <Text style={[bulletStyle, { color: theme.colors.onSurfaceVariant }]}>•</Text>
+            <Text style={textStyle}>
+              <Text style={styles.changeType}>{label}: </Text>
+              {t(change.descriptionTranslationKey)}
+            </Text>
+          </View>
+        )),
+      )}
     </View>
   );
 }
@@ -47,6 +56,9 @@ const styles = StyleSheet.create({
   },
   compactList: {
     gap: spacing.sm,
+  },
+  changeType: {
+    fontWeight: '700',
   },
   description: {
     ...typography.body,

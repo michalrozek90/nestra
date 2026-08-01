@@ -61,10 +61,9 @@ function ReleaseNotesHistoryItem({
   onToggle,
   releaseNote,
 }: ReleaseNotesHistoryItemProps) {
-  const { i18n, t } = useTranslation('releases');
+  const { i18n } = useTranslation('releases');
   const theme = useNestraTheme();
   const formattedDate = formatReleaseDate(releaseNote.releaseDate, i18n.language);
-  const title = t(releaseNote.titleTranslationKey);
 
   return (
     <View
@@ -84,10 +83,11 @@ function ReleaseNotesHistoryItem({
       >
         <View style={styles.headerCopy}>
           <Text style={styles.version}>{releaseNote.version}</Text>
-          <Text style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}>
-            {title}
-            {formattedDate ? ` · ${formattedDate}` : ''}
-          </Text>
+          {formattedDate ? (
+            <Text style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}>
+              {formattedDate}
+            </Text>
+          ) : null}
         </View>
         <Icon
           color={theme.colors.onSurfaceVariant}
@@ -104,7 +104,11 @@ function ReleaseNotesHistoryItem({
   );
 }
 
-function formatReleaseDate(releaseDate: string, language: string): string {
+function formatReleaseDate(releaseDate: string | undefined, language: string): string {
+  if (!releaseDate) {
+    return '';
+  }
+
   const parsedDate = new Date(`${releaseDate}T00:00:00.000Z`);
 
   if (Number.isNaN(parsedDate.getTime())) {

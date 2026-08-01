@@ -9,9 +9,13 @@ export const plReleases = {
       back: 'Wstecz',
     },
   },
+  changeTypes: {
+    new: 'Nowość',
+    fix: 'Naprawiono',
+  },
   whatsNew: {
     title: 'Co nowego',
-    intro: 'Oto co pojawiło się w Nestrze {{version}}.',
+    intro: 'Oto wszystko, co Cię ominęło do wersji Nestry {{version}}.',
     dismiss: 'Rozumiem',
   },
   update: {
@@ -50,8 +54,13 @@ export const plReleases = {
     },
   },
   versions: {
+    v030: {
+      changes: {
+        completeReleaseHistory:
+          'Sekcja Co nowego pokazuje teraz każdą pominiętą wersję, z wyraźnie pogrupowanymi nowościami i naprawami.',
+      },
+    },
     v020: {
-      title: 'Aktualizacje aplikacji i informacje o wersjach',
       changes: {
         desktopUpdates:
           'Nestra może sprawdzać podpisane aktualizacje dla Windows i instalować nową wersję z poziomu aplikacji.',
@@ -69,7 +78,6 @@ export const plReleases = {
       },
     },
     v010: {
-      title: 'Ostatnie usprawnienia',
       changes: {
         responsiveDialogs:
           'Okna dialogowe z działaniami dopasowują się do mniejszych ekranów i nie wychodzą poza ich obszar.',

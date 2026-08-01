@@ -2,77 +2,104 @@ export type ReleaseChange = {
   readonly descriptionTranslationKey: string;
 };
 
+export type ReleaseChangeGroups = {
+  readonly fixes: readonly ReleaseChange[];
+  readonly new: readonly ReleaseChange[];
+};
+
 export type ReleaseNote = {
   readonly version: string;
-  readonly releaseDate: string;
-  readonly titleTranslationKey: string;
-  readonly changes: readonly ReleaseChange[];
+  readonly releaseDate?: string;
+  readonly changes: ReleaseChangeGroups;
 };
 
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
   {
+    version: '0.3.0',
+    changes: {
+      new: [
+        {
+          descriptionTranslationKey: 'versions.v030.changes.completeReleaseHistory',
+        },
+      ],
+      fixes: [],
+    },
+  },
+  {
     version: '0.2.0',
     releaseDate: '2026-07-31',
-    titleTranslationKey: 'versions.v020.title',
-    changes: [
-      {
-        descriptionTranslationKey: 'versions.v020.changes.desktopUpdates',
-      },
-      {
-        descriptionTranslationKey: 'versions.v020.changes.safeUpdateRestart',
-      },
-      {
-        descriptionTranslationKey: 'versions.v020.changes.quietAutomaticChecks',
-      },
-      {
-        descriptionTranslationKey: 'versions.v020.changes.diagnosticsBack',
-      },
-      {
-        descriptionTranslationKey: 'versions.v020.changes.narrowLayout',
-      },
-      {
-        descriptionTranslationKey: 'versions.v020.changes.centeredNavigation',
-      },
-      {
-        descriptionTranslationKey: 'versions.v020.changes.releaseHistory',
-      },
-    ],
+    changes: {
+      new: [
+        {
+          descriptionTranslationKey: 'versions.v020.changes.desktopUpdates',
+        },
+        {
+          descriptionTranslationKey: 'versions.v020.changes.safeUpdateRestart',
+        },
+        {
+          descriptionTranslationKey: 'versions.v020.changes.diagnosticsBack',
+        },
+        {
+          descriptionTranslationKey: 'versions.v020.changes.releaseHistory',
+        },
+      ],
+      fixes: [
+        {
+          descriptionTranslationKey: 'versions.v020.changes.quietAutomaticChecks',
+        },
+        {
+          descriptionTranslationKey: 'versions.v020.changes.narrowLayout',
+        },
+        {
+          descriptionTranslationKey: 'versions.v020.changes.centeredNavigation',
+        },
+      ],
+    },
   },
   {
     version: '0.1.0',
     releaseDate: '2026-07-29',
-    titleTranslationKey: 'versions.v010.title',
-    changes: [
-      {
-        descriptionTranslationKey: 'versions.v010.changes.responsiveDialogs',
-      },
-      {
-        descriptionTranslationKey: 'versions.v010.changes.editorFocus',
-      },
-      {
-        descriptionTranslationKey: 'versions.v010.changes.titleOnlyNotes',
-      },
-      {
-        descriptionTranslationKey: 'versions.v010.changes.patientSessionRestore',
-      },
-      {
-        descriptionTranslationKey: 'versions.v010.changes.packagedDesktopAssets',
-      },
-    ],
+    changes: {
+      new: [
+        {
+          descriptionTranslationKey: 'versions.v010.changes.titleOnlyNotes',
+        },
+      ],
+      fixes: [
+        {
+          descriptionTranslationKey: 'versions.v010.changes.responsiveDialogs',
+        },
+        {
+          descriptionTranslationKey: 'versions.v010.changes.editorFocus',
+        },
+        {
+          descriptionTranslationKey: 'versions.v010.changes.patientSessionRestore',
+        },
+        {
+          descriptionTranslationKey: 'versions.v010.changes.packagedDesktopAssets',
+        },
+      ],
+    },
   },
 ] as const;
 
-export function getPublishedReleaseNotesNewestFirst(): readonly ReleaseNote[] {
-  return [...RELEASE_NOTES].sort((left, right) =>
-    compareVersionsDescending(left.version, right.version),
+export function getReleaseNotesNewestFirst(applicationVersion: string): readonly ReleaseNote[] {
+  return RELEASE_NOTES.filter(
+    (releaseNote) => compareVersions(releaseNote.version, applicationVersion) <= 0,
+  ).sort((left, right) => compareVersions(right.version, left.version));
+}
+
+export function getUnseenReleaseNotesNewestFirst(
+  lastSeenVersion: string | null,
+  applicationVersion: string,
+): readonly ReleaseNote[] {
+  return getReleaseNotesNewestFirst(applicationVersion).filter(
+    (releaseNote) =>
+      lastSeenVersion === null || compareVersions(releaseNote.version, lastSeenVersion) > 0,
   );
 }
 
-export function getReleaseNoteForVersion(version: string): ReleaseNote | undefined {
-  return RELEASE_NOTES.find((releaseNote) => releaseNote.version === version);
-}
-
-function compareVersionsDescending(leftVersion: string, rightVersion: string): number {
+function compareVersions(leftVersion: string, rightVersion: string): number {
   const leftParts = parseVersionParts(leftVersion);
   const rightParts = parseVersionParts(rightVersion);
   const partCount = Math.max(leftParts.length, rightParts.length);
@@ -82,7 +109,7 @@ function compareVersionsDescending(leftVersion: string, rightVersion: string): n
     const rightPart = rightParts[index] ?? 0;
 
     if (leftPart !== rightPart) {
-      return rightPart - leftPart;
+      return leftPart - rightPart;
     }
   }
 
