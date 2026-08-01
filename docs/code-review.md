@@ -185,6 +185,9 @@ Before reporting it:
   curated in-app release notes in English and Polish under the anticipated Release Please version.
   Report a missing, duplicated, misleading, or incorrectly versioned entry. Internal-only changes
   do not require an in-app note.
+- Review user-facing release notes and `feat:` / `fix:` subjects as public product copy. They should
+  state the visible outcome directly, read naturally and satisfyingly, avoid implementation-led
+  wording, and use celebratory emphasis only when the feature is substantial enough to earn it.
 - Look for regressions in affected callers and consumers outside the changed files.
 - Check boundary conditions, invalid input, nullable values, partial failures, retries, and
   concurrent operations.

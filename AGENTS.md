@@ -305,6 +305,10 @@ Do not silently ignore caught errors. Handle them, convert them into an expected
   part of the same change. Update both English and Polish content under the anticipated Release
   Please version. Internal-only changes do not require an in-app note. The autonomous workflow in
   `docs/workflows/agent-task-workflow.md` defines the detailed procedure.
+- Write user-facing release copy in direct, satisfying language that names the outcome immediately.
+  Prefer natural statements such as `Nestra now has automatic updates` or `You can now...` over
+  implementation-led phrases such as `add`, `implement`, `introduce`, or `launch`. Keep claims
+  accurate, and reserve celebratory wording or emoji for genuinely substantial features.
 - Record meaningful architectural decisions under `docs/decisions/`.
 - Create an ADR for decisions that are difficult to reverse, affect multiple modules, introduce important dependencies, or concern security, build, or release processes.
 - Keep README instructions accurate whenever commands or setup requirements change.
@@ -326,6 +330,10 @@ messages. Prefer an optional scope when it clarifies the change, for example `fe
 Guidelines:
 
 - Use `feat:` / `fix:` only for user-facing or product behavior changes that should ship in a release.
+- Treat the subject of every user-facing `feat:` or `fix:` commit as public release copy because
+  Release Please can place it directly in the GitHub Release changelog. Make the result clear and
+  rewarding to read, for example `feat(desktop): Nestra now has automatic updates 🚀`, rather than
+  describing the implementation activity.
 - Use `chore:` (or another non-bumping type) for tooling, formatting, workflow, and post-release
   housekeeping so those commits do not open a needless release PR.
 - Do not commit unless the user explicitly asks for a commit.

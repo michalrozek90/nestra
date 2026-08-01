@@ -3,6 +3,7 @@
   "version": "0.2.0",
   "private": true,
   "description": "Cross-platform personal organization application",
+  "license": "AGPL-3.0-only",
   "engines": {
     "node": "24.18.0"
   },

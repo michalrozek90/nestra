@@ -83,6 +83,35 @@ if (cargoPackageVersionMatch === null) {
   );
 }
 
+const cargoLock = readText('apps/desktop/src-tauri/Cargo.lock');
+const cargoLockPackageSections =
+  cargoLock.value.match(/\[\[package\]\][\s\S]*?(?=\r?\n\[\[package\]\]|$)/g) ?? [];
+const desktopCargoLockPackageSections = cargoLockPackageSections.filter((packageSection) =>
+  /^name\s*=\s*"nestra-desktop"$/m.test(packageSection),
+);
+
+if (desktopCargoLockPackageSections.length !== 1) {
+  fail(
+    `apps/desktop/src-tauri/Cargo.lock must contain exactly one nestra-desktop package entry. Found: ${desktopCargoLockPackageSections.length}`,
+  );
+} else {
+  const cargoLockVersionMatch = /^version\s*=\s*"([^"]+)"$/m.exec(
+    desktopCargoLockPackageSections[0],
+  );
+
+  if (cargoLockVersionMatch === null) {
+    fail('The nestra-desktop Cargo.lock package entry must declare a version.');
+  } else if (cargoLockVersionMatch[1] !== productVersion) {
+    fail(
+      [
+        'Desktop Cargo.lock package version must match the root product version.',
+        `  root package.json: ${productVersion}`,
+        `  Cargo.lock nestra-desktop version: ${cargoLockVersionMatch[1]}`,
+      ].join('\n'),
+    );
+  }
+}
+
 const appConfig = readText('apps/client/app.config.ts');
 const appConfigChecks = [
   {
@@ -127,6 +156,6 @@ console.log(
   [
     'Product version synchronization checks passed.',
     `  product version: ${productVersion}`,
-    '  sources: root package.json, Release Please manifest, Tauri config, Cargo.toml, Expo app config, contracts build injection',
+    '  sources: root package.json, Release Please manifest, Tauri config, Cargo.toml, Cargo.lock, Expo app config, contracts build injection',
   ].join('\n'),
 );

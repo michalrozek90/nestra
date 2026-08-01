@@ -3,6 +3,7 @@ name = "nestra-desktop"
 version = "0.2.0"
 description = "Nestra desktop shell"
 authors = ["Nestra"]
+license = "AGPL-3.0-only"
 edition = "2021"
 rust-version = "1.77.2"
 

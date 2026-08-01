@@ -39,13 +39,22 @@ future work. See
 [ADR 005](docs/decisions/005-desktop-and-hosted-service-architecture.md) for the accepted
 boundaries, trade-offs, and migration path.
 
-This is a private pnpm monorepo containing:
+This is an open-source pnpm monorepo containing:
 
 - `@nestra/client`
 - `@nestra/api`
 - `@nestra/desktop`
 - `@nestra/contracts`
 - `@nestra/tsconfig`
+
+## Download
+
+Published Windows test builds are available from
+[GitHub Releases](https://github.com/michalrozek90/nestra/releases). Download Nestra only from that
+page. Current installers are not yet Windows Authenticode signed, so Windows may show security
+warnings. Treat any malware detection seriously and report it before running the file. See the
+[code signing policy](docs/security/code-signing-policy.md) for the current status and build-origin
+controls.
 
 ## Prerequisites
 
@@ -338,6 +347,8 @@ Android, and `com.michalrozek.nestra` for iOS; they must be reviewed before stor
 ## Documentation
 
 - [`0.1.0` product and technical specification](docs/specifications/nestra-initial-application.md)
+- [Privacy notice](PRIVACY.md)
+- [Code signing policy](docs/security/code-signing-policy.md)
 - [Hosted API deployment (Render + Neon)](docs/deployment/hosted-api.md)
 - [Desktop shell (Tauri)](docs/deployment/desktop.md)
 - [Desktop release candidate checklist](docs/deployment/release.md)
@@ -354,6 +365,16 @@ Start or resume the autonomous GitHub issue workflow with the repository alias:
 ```
 
 The alias works in Cursor Agent Chat, the Codex extension in Cursor, and the native Codex application. The workflow source of truth is `docs/workflows/agent-task-workflow.md`.
+
+## Code signing policy
+
+Nestra is preparing an application to the SignPath Foundation open-source program. Current
+Windows installers are not Authenticode signed. The repository's build-origin requirements,
+review roles, manual approval gate, incident response, and planned SignPath attribution are defined
+in the [code signing policy](docs/security/code-signing-policy.md).
+
+The Tauri updater signature protects update-package integrity but is separate from Windows
+Authenticode publisher signing.
 
 ## Roadmap
 
@@ -374,5 +395,10 @@ authoritative scope and detailed boundaries are in the specification.
 
 ## License
 
-No license has been selected. This repository must not be treated as open source unless a license
-is chosen explicitly in a later licensing decision.
+Copyright (C) 2026 Nestra contributors.
+
+Nestra is free software licensed under the
+[GNU Affero General Public License version 3](LICENSE), without any later-version option
+(`AGPL-3.0-only`). Modified versions offered to users over a network must make their corresponding
+source code available under the same license. Third-party dependencies and assets remain subject
+to their respective licenses.
