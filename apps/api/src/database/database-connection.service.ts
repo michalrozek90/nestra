@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
-const databaseHealthTimeoutMs = 3_000;
+import { DatabaseUnavailableException } from './database-unavailable.exception';
+
+const databaseConnectionTimeoutMs = 3_000;
 
 @Injectable()
 export class DatabaseConnectionService {
@@ -10,11 +12,15 @@ export class DatabaseConnectionService {
   constructor(private readonly dataSource: DataSource) {}
 
   async verifyConnection(): Promise<void> {
-    await this.withTimeout(this.ensureInitialized(), databaseHealthTimeoutMs);
-    await this.withTimeout(
-      this.dataSource.query('SELECT 1').then(() => undefined),
-      databaseHealthTimeoutMs,
-    );
+    try {
+      await this.withTimeout(this.ensureInitialized(), databaseConnectionTimeoutMs);
+      await this.withTimeout(
+        this.dataSource.query('SELECT 1').then(() => undefined),
+        databaseConnectionTimeoutMs,
+      );
+    } catch (error: unknown) {
+      throw new DatabaseUnavailableException(error);
+    }
   }
 
   private async ensureInitialized(): Promise<void> {

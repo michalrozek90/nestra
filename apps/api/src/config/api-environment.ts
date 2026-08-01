@@ -3,6 +3,20 @@ import { z } from 'zod';
 const durationSchema = z.string().regex(/^[1-9]\d*[smhd]$/);
 const exampleJwtAccessSecret = 'replace_with_a_long_random_secret';
 
+function isCanonicalCorsAllowedOrigin(origin: string): boolean {
+  try {
+    return new URL(origin).origin === origin;
+  } catch {
+    return false;
+  }
+}
+
+const corsAllowedOriginSchema = z
+  .url({ protocol: /^https?$/ })
+  .refine(isCanonicalCorsAllowedOrigin, {
+    message: 'CORS origins must use canonical HTTP(S) origin syntax.',
+  });
+
 const rawApiEnvironmentSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'preview', 'production']),
@@ -15,7 +29,7 @@ const rawApiEnvironmentSchema = z
     CORS_ALLOWED_ORIGINS: z
       .string()
       .transform((origins) => origins.split(',').map((origin) => origin.trim()))
-      .pipe(z.array(z.url()).min(1)),
+      .pipe(z.array(corsAllowedOriginSchema).min(1)),
   })
   .superRefine((environment, context) => {
     if (

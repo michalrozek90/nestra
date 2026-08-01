@@ -13,7 +13,7 @@ import {
   type ApiErrorResponse,
   type ValidationIssue,
 } from '@nestra/contracts';
-import { ZodValidationException } from 'nestjs-zod';
+import { ZodSerializationException, ZodValidationException } from 'nestjs-zod';
 import { z } from 'zod';
 
 import { ApiException } from './api.exception';
@@ -43,9 +43,9 @@ export class ApiExceptionFilter implements ExceptionFilter<unknown> {
       timestamp: new Date().toISOString(),
     });
 
-    if (!(exception instanceof HttpException)) {
+    if (statusCode >= HttpStatus.INTERNAL_SERVER_ERROR) {
       this.logger.error(
-        `Unhandled API error: code=${errorCode} requestId=${request.requestId ?? 'unavailable'}`,
+        `API request failed: category=${this.getErrorCategory(exception)} code=${errorCode} statusCode=${statusCode} requestId=${request.requestId ?? 'unavailable'}`,
       );
     }
 
@@ -111,5 +111,21 @@ export class ApiExceptionFilter implements ExceptionFilter<unknown> {
       fieldPath: issue.path.join('.'),
       errorCode: issue.code,
     }));
+  }
+
+  private getErrorCategory(exception: unknown): string {
+    if (exception instanceof ZodSerializationException) {
+      return 'response_serialization';
+    }
+
+    if (exception instanceof ApiException) {
+      return 'api_exception';
+    }
+
+    if (exception instanceof HttpException) {
+      return 'http_exception';
+    }
+
+    return 'unhandled_exception';
   }
 }

@@ -14,24 +14,26 @@ export function deriveNoteTitle(document: string): string | null {
   return firstNonEmptyLine?.trim() ?? null;
 }
 
-export const noteDocumentSchema = z
-  .string()
-  .min(1)
-  .max(NOTE_DOCUMENT_MAX_LENGTH)
-  .refine((document) => deriveNoteTitle(document) !== null, {
-    message: 'The note document must contain a non-whitespace line.',
-  })
-  .refine(
-    (document) => {
-      const title = deriveNoteTitle(document);
-      return title === null || title.length <= NOTE_TITLE_MAX_LENGTH;
-    },
-    {
-      message: `The derived note title must contain at most ${NOTE_TITLE_MAX_LENGTH} characters.`,
-    },
-  );
+function createNoteDocumentSchema(documentSchema: z.ZodString) {
+  return documentSchema
+    .min(1)
+    .max(NOTE_DOCUMENT_MAX_LENGTH)
+    .refine((document) => deriveNoteTitle(document) !== null, {
+      message: 'The note document must contain a non-whitespace line.',
+    })
+    .refine(
+      (document) => {
+        const title = deriveNoteTitle(document);
+        return title === null || title.length <= NOTE_TITLE_MAX_LENGTH;
+      },
+      {
+        message: `The derived note title must contain at most ${NOTE_TITLE_MAX_LENGTH} characters.`,
+      },
+    );
+}
 
-export const normalizedNoteDocumentSchema = z
-  .string()
-  .transform(normalizeNoteDocument)
-  .pipe(noteDocumentSchema);
+export const noteDocumentSchema = createNoteDocumentSchema(z.string());
+
+export const normalizedNoteDocumentSchema = createNoteDocumentSchema(
+  z.string().overwrite(normalizeNoteDocument),
+);
