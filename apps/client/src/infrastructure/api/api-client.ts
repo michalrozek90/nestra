@@ -12,6 +12,7 @@ import { authTokenStorage } from '@/infrastructure/auth/auth-token-storage';
 
 type AuthenticatedRequestConfig = InternalAxiosRequestConfig & {
   _authRetryAttempted?: boolean;
+  _authSessionId?: string;
 };
 
 type AuthenticationFailureHandler = () => void;
@@ -28,6 +29,8 @@ const REFRESH_EXCLUDED_PATHS = [
   '/auth/refresh',
   '/auth/logout',
 ] as const;
+const REFRESH_SESSION_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const authenticationFailureHandlers = new Set<AuthenticationFailureHandler>();
 let refreshPromise: Promise<string> | null = null;
@@ -48,6 +51,20 @@ function requestMatchesPath(
   excludedPaths: readonly string[],
 ): boolean {
   return excludedPaths.some((path) => requestUrl?.endsWith(path) === true);
+}
+
+function getRefreshSessionId(refreshToken: string | null): string | null {
+  if (!refreshToken) {
+    return null;
+  }
+
+  const separatorIndex = refreshToken.indexOf('.');
+  if (separatorIndex <= 0) {
+    return null;
+  }
+
+  const refreshSessionId = refreshToken.slice(0, separatorIndex);
+  return REFRESH_SESSION_ID_PATTERN.test(refreshSessionId) ? refreshSessionId : null;
 }
 
 async function rotateSession(): Promise<string> {
@@ -96,7 +113,14 @@ apiClient.interceptors.request.use(async (config) => {
     return config;
   }
 
-  const accessToken = await authTokenStorage.getAccessToken();
+  const [accessToken, refreshToken] = await Promise.all([
+    authTokenStorage.getAccessToken(),
+    authTokenStorage.getRefreshToken(),
+  ]);
+  const refreshSessionId = getRefreshSessionId(refreshToken);
+  if (refreshSessionId) {
+    (config as AuthenticatedRequestConfig)._authSessionId = refreshSessionId;
+  }
   if (accessToken) {
     config.headers.set('Authorization', `Bearer ${accessToken}`);
   }
@@ -124,6 +148,15 @@ apiClient.interceptors.response.use(
       requestConfig._authRetryAttempted === true ||
       requestMatchesPath(requestConfig.url, REFRESH_EXCLUDED_PATHS)
     ) {
+      return Promise.reject(error);
+    }
+
+    const currentRefreshToken = await authTokenStorage.getRefreshToken();
+    if (
+      !requestConfig._authSessionId ||
+      getRefreshSessionId(currentRefreshToken) !== requestConfig._authSessionId
+    ) {
+      // A response from an earlier login must never be replayed under the current session.
       return Promise.reject(error);
     }
 
