@@ -5,7 +5,7 @@ export const refreshRequestSchema = z.strictObject({
 });
 
 export const logoutRequestSchema = z.strictObject({
-  refreshToken: z.string().min(1),
+  refreshToken: z.string(),
 });
 
 export type RefreshRequest = z.infer<typeof refreshRequestSchema>;
