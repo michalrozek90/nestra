@@ -40,13 +40,15 @@ Use Google Release Please with a single repository-wide `node` package at the re
   `apps/desktop/src-tauri/Cargo.toml` and `Cargo.lock` so the Rust crate metadata stays aligned with
   the product version. Tauri continues to read the installer and application version from root
   `package.json` through `tauri.conf.json`.
-- After Release Please creates or updates its pull request, the same workflow finds the single open
-  pull request labeled `autorelease: pending`, synchronizes its branch with `main`, formats the
-  generated `CHANGELOG.md` with the repository-pinned Prettier version, and pushes the correction
-  when needed. It then approves the checks GitHub creates in an `action_required` state for that
-  trusted bot update. If approval is unavailable, it dispatches CI explicitly for the updated
-  branch because a normal push made with `GITHUB_TOKEN` does not reliably start another workflow
-  run.
+- After Release Please creates or updates its pull request, the same workflow operates only on the
+  pull request returned by that specific action run. It verifies the live pull request identity,
+  requires its branch to contain the exact triggering `main` commit, and rejects versions that are
+  not strictly greater than the version on that commit. The workflow never merges `main` into an
+  arbitrary pending release branch. It formats the generated `CHANGELOG.md`, verifies complete
+  product-version synchronization, and only then pushes a formatting correction when needed. It
+  then approves the checks GitHub creates in an `action_required` state for that trusted bot update.
+  If approval is unavailable, it dispatches CI explicitly for the updated branch because a normal
+  push made with `GITHUB_TOKEN` does not reliably start another workflow run.
 - Workspace package versions under `apps/` and `packages/` remain internal metadata and are not
   treated as the product version.
 
@@ -69,6 +71,8 @@ lockfile fails instead of being modified during packaging.
 - Version preparation and technical changelog generation become automated on pushes to `main`.
 - Generated release pull requests remain formatting-clean and receive CI for their final formatted
   commit without requiring a manual changelog-only correction.
+- A stale `autorelease: pending` pull request cannot be revived by an unrelated workflow run, and a
+  release candidate cannot lower or desynchronize the product version.
 - Merging an explicitly approved Release Please PR creates a draft GitHub Release and its Git tag at
   the exact release commit. Publishing the draft remains a separate explicit operator action
   outside autonomous agent publication authority.
