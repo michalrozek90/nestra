@@ -78,10 +78,14 @@ the draft or expose its installer assets; publishing remains a later explicit op
 not merge the release PR until the checklist below is complete and the operator explicitly approves
 publication preparation.
 
-The release workflow also synchronizes the open Release Please branch with `main`, formats the
-generated `CHANGELOG.md` using the repository Prettier configuration, and starts CI for the
-resulting commit, including approval of the trusted bot-triggered checks when GitHub requires it.
-Release pull requests should therefore remain formatting-clean without a manual follow-up commit.
+The release workflow only post-processes the pull request returned by the current Release Please
+run. It confirms that the live pending pull request contains the exact `main` commit that triggered
+the workflow, rejects any version that is not strictly greater than the version on that commit, and
+checks complete product-version synchronization before pushing. It does not merge `main` into an
+older pending release branch. The workflow also formats the generated `CHANGELOG.md` using the
+repository Prettier configuration and starts CI for the resulting commit, including approval of the
+trusted bot-triggered checks when GitHub requires it. Release pull requests should therefore remain
+formatting-clean without a manual follow-up commit.
 
 Do not manually add a dated `0.1.0` heading to `CHANGELOG.md` before the release PR. Release Please
 owns the technical release history. In-app product notes remain curated localization content and

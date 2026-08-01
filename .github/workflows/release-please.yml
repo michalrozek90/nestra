@@ -26,32 +26,45 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      - name: Find the open Release Please pull request
+      - name: Read the updated Release Please pull request
         id: release-pr
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_PR_JSON: ${{ steps.release.outputs.pr }}
         run: |
-          release_pr_json="$(gh pr list \
-            --repo "${{ github.repository }}" \
-            --state open \
-            --base "${{ github.ref_name }}" \
-            --label "autorelease: pending" \
-            --limit 2 \
-            --json headRefName,number)"
-          release_pr_count="$(jq 'length' <<< "${release_pr_json}")"
-
-          if [ "${release_pr_count}" -eq 0 ]; then
-            echo "found=false" >> "${GITHUB_OUTPUT}"
-            exit 0
+          if [ -z "${RELEASE_PR_JSON}" ] || [ "${RELEASE_PR_JSON}" = "null" ]; then
+            echo "Release Please reported an updated pull request without pull request metadata."
+            exit 1
           fi
 
-          if [ "${release_pr_count}" -ne 1 ]; then
-            echo "Expected exactly one open Release Please pull request, found ${release_pr_count}."
+          release_pr_number="$(jq -er '.number' <<< "${RELEASE_PR_JSON}")"
+          release_pr_branch="$(jq -er '.headBranchName' <<< "${RELEASE_PR_JSON}")"
+          release_pr_base="$(jq -er '.baseBranchName' <<< "${RELEASE_PR_JSON}")"
+
+          if [ "${release_pr_base}" != "${{ github.ref_name }}" ]; then
+            echo "Release Please returned a pull request for ${release_pr_base}, expected ${{ github.ref_name }}."
+            exit 1
+          fi
+
+          live_release_pr_json="$(gh pr view "${release_pr_number}" \
+            --repo "${{ github.repository }}" \
+            --json baseRefName,headRefName,labels,state)"
+
+          if ! jq -e \
+            --arg base "${release_pr_base}" \
+            --arg branch "${release_pr_branch}" \
+            '.state == "OPEN" and
+             .baseRefName == $base and
+             .headRefName == $branch and
+             ([.labels[].name] | index("autorelease: pending") != null)' \
+            <<< "${live_release_pr_json}" > /dev/null; then
+            echo "Release Please pull request metadata no longer matches the open pending pull request."
             exit 1
           fi
 
           echo "found=true" >> "${GITHUB_OUTPUT}"
-          echo "branch=$(jq -r '.[0].headRefName' <<< "${release_pr_json}")" >> "${GITHUB_OUTPUT}"
+          echo "branch=${release_pr_branch}" >> "${GITHUB_OUTPUT}"
 
       - name: Check out the Release Please pull request
         if: ${{ steps.release-pr.outputs.found == 'true' }}
@@ -77,7 +90,7 @@ jobs:
         if: ${{ steps.release-pr.outputs.found == 'true' }}
         run: pnpm install --frozen-lockfile
 
-      - name: Synchronize and format the Release Please pull request
+      - name: Validate and format the Release Please pull request
         if: ${{ steps.release-pr.outputs.found == 'true' }}
         id: format-release-pr
         env:
@@ -85,10 +98,23 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin "${{ github.ref_name }}"
-          git merge --no-edit "origin/${{ github.ref_name }}"
+
+          if ! git merge-base --is-ancestor "${GITHUB_SHA}" HEAD; then
+            echo "Release Please pull request does not contain the triggering ${GITHUB_SHA} commit."
+            exit 1
+          fi
+
+          base_version="$(git show "${GITHUB_SHA}:package.json" | jq -er '.version')"
+          release_version="$(jq -er '.version' package.json)"
+          highest_version="$(printf '%s\n%s\n' "${base_version}" "${release_version}" | sort -V | tail -n 1)"
+
+          if [ "${release_version}" = "${base_version}" ] || [ "${highest_version}" != "${release_version}" ]; then
+            echo "Release version ${release_version} must be greater than base version ${base_version}."
+            exit 1
+          fi
 
           pnpm exec prettier CHANGELOG.md --write
+          pnpm check:product-version
 
           if ! git diff --quiet -- CHANGELOG.md; then
             git add CHANGELOG.md
