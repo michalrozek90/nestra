@@ -151,11 +151,20 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const currentRefreshToken = await authTokenStorage.getRefreshToken();
-    if (
-      !requestConfig._authSessionId ||
-      getRefreshSessionId(currentRefreshToken) !== requestConfig._authSessionId
-    ) {
+    let currentRefreshSessionId: string | null;
+    try {
+      currentRefreshSessionId = getRefreshSessionId(await authTokenStorage.getRefreshToken());
+    } catch (storageError: unknown) {
+      await invalidateAuthentication();
+      return Promise.reject(storageError);
+    }
+
+    if (!currentRefreshSessionId) {
+      await invalidateAuthentication();
+      return Promise.reject(error);
+    }
+
+    if (!requestConfig._authSessionId || currentRefreshSessionId !== requestConfig._authSessionId) {
       // A response from an earlier login must never be replayed under the current session.
       return Promise.reject(error);
     }
