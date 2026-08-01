@@ -62,19 +62,12 @@ export const plReleases = {
     },
     v020: {
       changes: {
-        desktopUpdates:
-          'Nestra może sprawdzać podpisane aktualizacje dla Windows i instalować nową wersję z poziomu aplikacji.',
-        safeUpdateRestart:
-          'Otwarte notatki są zapisywane lokalnie przed instalacją aktualizacji i ponownym uruchomieniem Nestry.',
-        quietAutomaticChecks:
-          'Niedostępna usługa aktualizacji nie wyświetla już błędu podczas automatycznego sprawdzania przy uruchomieniu.',
-        diagnosticsBack:
-          'Strzałka wstecz na ekranie diagnostyki deweloperskiej pozwala wrócić do Ustawień.',
-        narrowLayout:
-          'Układ i przyciski nagłówka notatki lepiej działają na bardzo wąskich ekranach, od szerokości 320 px.',
+        desktopUpdates: 'Nestra ma autoupdater!',
+        diagnosticsBack: 'Dodano przycisk strzałki wstecz na ekranie diagnostyki deweloperskiej.',
+        narrowLayout: 'Nestra działa teraz na ekranach o szerokości od 320 px.',
         centeredNavigation: 'Ikony nawigacji pozostają wizualnie wyśrodkowane na wąskich układach.',
         releaseHistory:
-          'Ekran O aplikacji zawiera teraz historię wersji oraz podsumowanie Co nowego wyświetlane po aktualizacji.',
+          'Ekran O aplikacji zawiera teraz historię wersji oraz podsumowanie „Co nowego” wyświetlane po aktualizacji.',
       },
     },
     v010: {

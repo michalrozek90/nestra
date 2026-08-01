@@ -34,9 +34,6 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
           descriptionTranslationKey: 'versions.v020.changes.desktopUpdates',
         },
         {
-          descriptionTranslationKey: 'versions.v020.changes.safeUpdateRestart',
-        },
-        {
           descriptionTranslationKey: 'versions.v020.changes.diagnosticsBack',
         },
         {
@@ -44,9 +41,6 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
         },
       ],
       fixes: [
-        {
-          descriptionTranslationKey: 'versions.v020.changes.quietAutomaticChecks',
-        },
         {
           descriptionTranslationKey: 'versions.v020.changes.narrowLayout',
         },

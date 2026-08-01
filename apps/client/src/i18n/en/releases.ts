@@ -61,19 +61,12 @@ export const enReleases = {
     },
     v020: {
       changes: {
-        desktopUpdates:
-          'Nestra can check for signed Windows updates and install a new version from the application.',
-        safeUpdateRestart:
-          'Open notes are saved locally before an update is installed and Nestra restarts.',
-        quietAutomaticChecks:
-          'An unavailable update service no longer shows an error during the automatic startup check.',
-        diagnosticsBack:
-          'A back arrow on the developer diagnostics screen lets you return to Settings.',
-        narrowLayout:
-          'The layout and note header actions work better on very narrow screens, starting at 320 px wide.',
+        desktopUpdates: 'Nestra has an autoupdater!',
+        diagnosticsBack: 'Back arrow button added to the developer diagnostics screen.',
+        narrowLayout: 'Nestra now works on screens as narrow as 320 px.',
         centeredNavigation: 'Navigation icons stay visually centered on compact layouts.',
         releaseHistory:
-          'The About screen now includes a curated version history, with a What\u2019s new summary after an update.',
+          'The About screen now includes a curated version history, with a "What’s new" summary after an update.',
       },
     },
     v010: {
