@@ -57,6 +57,8 @@ export const enReleases = {
       changes: {
         completeReleaseHistory:
           'What’s new now shows every version you missed, with new features and fixes clearly grouped.',
+        serviceOutageErrors:
+          'Temporary service outages now show a clear connection message instead of an unexpected error.',
       },
     },
     v020: {

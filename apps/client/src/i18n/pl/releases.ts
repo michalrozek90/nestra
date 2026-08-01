@@ -58,6 +58,8 @@ export const plReleases = {
       changes: {
         completeReleaseHistory:
           'Sekcja Co nowego pokazuje teraz każdą pominiętą wersję, z wyraźnie pogrupowanymi nowościami i naprawami.',
+        serviceOutageErrors:
+          'Tymczasowa niedostępność usługi wyświetla teraz czytelny komunikat o połączeniu zamiast nieoczekiwanego błędu.',
       },
     },
     v020: {

@@ -68,7 +68,7 @@ issues, or share them in chat.
 | `JWT_ACCESS_SECRET`          | yes     | At least 32 characters; never the example placeholder              |
 | `JWT_ACCESS_EXPIRES_IN`      | no      | Example: `15m`                                                     |
 | `REFRESH_SESSION_EXPIRES_IN` | no      | Example: `30d`                                                     |
-| `CORS_ALLOWED_ORIGINS`       | no      | Comma-separated absolute origins for browser clients               |
+| `CORS_ALLOWED_ORIGINS`       | no      | Comma-separated canonical HTTP(S) origins for browser clients      |
 
 Example Neon pooled URL shape (placeholders only):
 
@@ -81,6 +81,10 @@ add Neon or Render SDKs into domain or application code. Production never enable
 `synchronize`.
 
 ## CORS for desktop clients
+
+Each configured value must be an exact browser origin containing only the HTTP(S) scheme, host,
+and optional non-default port. Do not include credentials, a trailing slash, path, query, or
+fragment.
 
 Configure an explicit allow-list so browser and Tauri WebView clients can call the API without
 changing server code for each origin. Include every origin you actually use:
