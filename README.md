@@ -47,6 +47,15 @@ This is an open-source pnpm monorepo containing:
 - `@nestra/contracts`
 - `@nestra/tsconfig`
 
+## Download
+
+Published Windows test builds are available from
+[GitHub Releases](https://github.com/michalrozek90/nestra/releases). Download Nestra only from that
+page. Current installers are not yet Windows Authenticode signed, so Windows may show security
+warnings. Treat any malware detection seriously and report it before running the file. See the
+[code signing policy](docs/security/code-signing-policy.md) for the current status and build-origin
+controls.
+
 ## Prerequisites
 
 - [Node.js `24.18.0`](https://nodejs.org/en/download) (pinned in `.nvmrc`, `.node-version`, and

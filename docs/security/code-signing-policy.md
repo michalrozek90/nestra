@@ -46,7 +46,7 @@ Before a signing request can be approved:
 2. Repository formatting, linting, strict type checking, version synchronization, and required
    builds must pass.
 3. The Windows packaging workflow must validate the release version, source commit, updater
-   signature, and published asset metadata.
+   signature, and uploaded draft asset metadata.
 4. The approver must verify that the request belongs to Nestra and contains only expected build
    outputs.
 
