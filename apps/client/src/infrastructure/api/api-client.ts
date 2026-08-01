@@ -151,9 +151,15 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    let currentAccessToken: string | null;
     let currentRefreshSessionId: string | null;
     try {
-      currentRefreshSessionId = getRefreshSessionId(await authTokenStorage.getRefreshToken());
+      const [storedAccessToken, storedRefreshToken] = await Promise.all([
+        authTokenStorage.getAccessToken(),
+        authTokenStorage.getRefreshToken(),
+      ]);
+      currentAccessToken = storedAccessToken;
+      currentRefreshSessionId = getRefreshSessionId(storedRefreshToken);
     } catch (storageError: unknown) {
       await invalidateAuthentication();
       return Promise.reject(storageError);
@@ -170,6 +176,13 @@ apiClient.interceptors.response.use(
     }
 
     requestConfig._authRetryAttempted = true;
+    if (
+      currentAccessToken &&
+      requestConfig.headers.get('Authorization') !== `Bearer ${currentAccessToken}`
+    ) {
+      requestConfig.headers.set('Authorization', `Bearer ${currentAccessToken}`);
+      return apiClient.request(requestConfig);
+    }
 
     try {
       const accessToken = await getRotatedAccessToken();
