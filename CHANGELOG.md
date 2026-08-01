@@ -9,7 +9,7 @@ All notable changes to this project will be documented in this file.
 - **client:** add curated What's new and About release notes ([c65c1b5](https://github.com/michalrozek90/nestra/commit/c65c1b53d202f97ca3839f613f845ba998454f11))
 - **client:** curated What’s new and Settings About ([607ad7a](https://github.com/michalrozek90/nestra/commit/607ad7a915aebf6b4dc8f520a7e85c8ad10f4749))
 - **client:** establish 320px as minimum supported layout width ([415ba13](https://github.com/michalrozek90/nestra/commit/415ba13cb0d7e05fdd57c60eec583aa541997de9)), closes [#54](https://github.com/michalrozek90/nestra/issues/54)
-- **desktop:** add signed application updates ([cdffb2a](https://github.com/michalrozek90/nestra/commit/cdffb2ae78d3aa9d2c8f12270d22a6645e401fa1))
+- **desktop:** Nestra now has automatic updates 🚀 ([cdffb2a](https://github.com/michalrozek90/nestra/commit/cdffb2ae78d3aa9d2c8f12270d22a6645e401fa1))
 
 ### Bug Fixes
 

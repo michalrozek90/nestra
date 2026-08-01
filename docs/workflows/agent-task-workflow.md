@@ -183,6 +183,22 @@ For a required entry:
 5. Use an explicitly planned publication date when one exists. Do not invent a release date merely
    to complete the task; flag the missing date in the handoff so it can be set before publication.
 
+Write both curated notes and release-ready `feat:` / `fix:` commit subjects in direct, satisfying
+language:
+
+- Name the visible result immediately: `Nestra now...`, `You can now...`, or an equally natural
+  product statement.
+- Avoid generic implementation verbs such as `add`, `implement`, `introduce`, or `launch` when they
+  hide the user outcome.
+- Give major features appropriate emphasis while staying accurate. A short celebratory phrase or
+  emoji is welcome for a genuinely substantial capability, not for every maintenance fix.
+- Write idiomatic English and Polish rather than translating mechanically.
+
+Release Please can place a `feat:` or `fix:` subject directly in the public GitHub Release
+changelog, so review that subject as user-facing copy before committing. For example, prefer
+`feat(desktop): Nestra now has automatic updates 🚀` over
+`feat(desktop): add signed application updates`.
+
 Do not postpone accumulated product-note content to a separate cleanup pull request. Release Please
 continues to own the technical `CHANGELOG.md`; the application release notes are a smaller curated
 summary and must not copy the technical changelog verbatim.
