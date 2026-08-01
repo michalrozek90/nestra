@@ -80,7 +80,9 @@ The API uses the standard `pg` driver through TypeORM and requires verified TLS 
 development. Use `sslmode=require` with the pinned driver defaults shown above, or
 `sslmode=verify-full`; do not enable `uselibpqcompat=true` with `sslmode=require`, because that mode
 does not verify the server certificate. Do not add Neon or Render SDKs into domain or application
-code. Production never enables TypeORM `synchronize`.
+code. The production-mode smoke command above permits plaintext only for loopback hosts and
+`host.docker.internal`; remote database hosts must use verified TLS. Production never enables
+TypeORM `synchronize`.
 
 ## CORS for desktop clients
 

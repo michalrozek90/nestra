@@ -11,12 +11,17 @@ function isCanonicalCorsAllowedOrigin(origin: string): boolean {
   }
 }
 
-function usesVerifiedDatabaseTls(databaseUrl: string): boolean {
+function usesAllowedDatabaseTransport(databaseUrl: string): boolean {
   const parsedDatabaseUrl = new URL(databaseUrl);
+  const localDatabaseHosts = new Set(['localhost', '127.0.0.1', '[::1]', 'host.docker.internal']);
   const sslMode = parsedDatabaseUrl.searchParams.get('sslmode');
   const usesLibpqCompatibility = parsedDatabaseUrl.searchParams.get('uselibpqcompat') === 'true';
 
-  return sslMode === 'verify-full' || (sslMode === 'require' && !usesLibpqCompatibility);
+  return (
+    localDatabaseHosts.has(parsedDatabaseUrl.hostname) ||
+    sslMode === 'verify-full' ||
+    (sslMode === 'require' && !usesLibpqCompatibility)
+  );
 }
 
 const corsAllowedOriginSchema = z
@@ -53,12 +58,12 @@ const rawApiEnvironmentSchema = z
 
     if (
       environment.NODE_ENV !== 'development' &&
-      !usesVerifiedDatabaseTls(environment.DATABASE_URL)
+      !usesAllowedDatabaseTransport(environment.DATABASE_URL)
     ) {
       context.addIssue({
         code: 'custom',
         path: ['DATABASE_URL'],
-        message: 'DATABASE_URL must require verified TLS outside development.',
+        message: 'Remote DATABASE_URL values must require verified TLS outside development.',
       });
     }
   })
