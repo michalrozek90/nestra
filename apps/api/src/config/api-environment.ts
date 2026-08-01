@@ -11,6 +11,19 @@ function isCanonicalCorsAllowedOrigin(origin: string): boolean {
   }
 }
 
+function usesAllowedDatabaseTransport(databaseUrl: string): boolean {
+  const parsedDatabaseUrl = new URL(databaseUrl);
+  const localDatabaseHosts = new Set(['localhost', '127.0.0.1', '[::1]', 'host.docker.internal']);
+  const sslMode = parsedDatabaseUrl.searchParams.get('sslmode');
+  const usesLibpqCompatibility = parsedDatabaseUrl.searchParams.get('uselibpqcompat') === 'true';
+
+  return (
+    localDatabaseHosts.has(parsedDatabaseUrl.hostname) ||
+    sslMode === 'verify-full' ||
+    (sslMode === 'require' && !usesLibpqCompatibility)
+  );
+}
+
 const corsAllowedOriginSchema = z
   .url({ protocol: /^https?$/ })
   .refine(isCanonicalCorsAllowedOrigin, {
@@ -40,6 +53,17 @@ const rawApiEnvironmentSchema = z
         code: 'custom',
         path: ['JWT_ACCESS_SECRET'],
         message: 'The example JWT access secret is not allowed outside development.',
+      });
+    }
+
+    if (
+      environment.NODE_ENV !== 'development' &&
+      !usesAllowedDatabaseTransport(environment.DATABASE_URL)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['DATABASE_URL'],
+        message: 'Remote DATABASE_URL values must require verified TLS outside development.',
       });
     }
   })

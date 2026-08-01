@@ -60,10 +60,16 @@ export class UnifyNoteDocument1785153600000 implements MigrationInterface {
         IF EXISTS (
           SELECT 1
           FROM notes
-          WHERE char_length(title) > 120 OR char_length(content) > 20000
+          WHERE
+            char_length(title) > 120
+            OR char_length(content) > 20000
+            OR document != CASE
+              WHEN content = '' THEN title
+              ELSE title || E'\n\n' || content
+            END
         ) THEN
           RAISE EXCEPTION
-            'Unified note data exceeds the legacy title or content limit; downgrade aborted.';
+            'Unified note data cannot be represented losslessly by the legacy schema; downgrade aborted.';
         END IF;
       END
       $$
