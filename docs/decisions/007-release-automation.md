@@ -10,7 +10,7 @@ Nestra needs a controlled path from Conventional Commits on `main` to a versione
 desktop release candidate. The root `package.json` version is already the product-version source
 for Expo, compiled contracts metadata, Tauri configuration, and the NSIS installer name. The
 repository must automate changelog preparation and version bumps without publishing a public
-release, tag, or installer distribution until an explicit operator approval.
+release or distributing an installer until an explicit operator approval.
 
 ADR numbering note: earlier planning documents referred to this decision as
 `004-release-automation.md`, but ADR `004` already records the unified note document model. This
@@ -29,10 +29,13 @@ Use Google Release Please with a single repository-wide `node` package at the re
 - `bump-minor-pre-major` is enabled so pre-1.0 breaking changes bump the minor version instead of
   forcing `1.0.0`.
 - GitHub Releases created by Release Please are drafts until an operator explicitly publishes them.
-  After a draft release is created, the release-please workflow dispatches the Windows
-  release-assets workflow with both the pending tag name and exact release commit so the installer
-  can be attached without requiring a personal access token. Operators can also re-run that
-  workflow manually for an existing draft.
+  Release Please forces creation of the corresponding Git tag at the exact release commit so later
+  runs can identify the previous release without reconstructing an incorrect changelog. The tag
+  anchors version history but does not publish the draft or expose its installer assets. After a
+  draft release is created, the release-please workflow dispatches the Windows release-assets
+  workflow with both the tag name and exact release commit so the installer can be attached without
+  requiring a personal access token. Operators can also re-run that workflow manually for an
+  existing draft.
 - Release Please also updates `apps/desktop/src-tauri/Cargo.toml` `package.version` so the Rust
   crate metadata stays aligned with the product version. Tauri continues to read the installer and
   application version from root `package.json` through `tauri.conf.json`.
@@ -46,15 +49,14 @@ Use Google Release Please with a single repository-wide `node` package at the re
 - Workspace package versions under `apps/` and `packages/` remain internal metadata and are not
   treated as the product version.
 
-The Windows installer association is a separate workflow. A draft release may reserve a tag name
-before the corresponding Git tag exists. The workflow therefore resolves the draft through the
-GitHub Releases API, verifies that the exact commit supplied by Release Please matches the draft's
-target commit, checks out that immutable commit, and uploads `Nestra_{version}_x64-setup.exe` to the
-draft. Manual runs resolve the same exact commit from the draft. Manifest validation compares its
-Windows download URL with the immutable API URL of the installer asset returned by GitHub, matching
-the contract of the pinned Tauri action without accepting an unrelated asset. The installer talks
-to the hosted API documented in `docs/deployment/hosted-api.md` and does not require the developer
-computer to remain online.
+The Windows installer association is a separate workflow. It resolves the draft through the GitHub
+Releases API, verifies that the exact commit supplied by Release Please matches the draft's target
+commit, checks out that immutable commit independently of tag availability, and uploads
+`Nestra_{version}_x64-setup.exe` to the draft. Manual runs resolve the same exact commit from the
+draft. Manifest validation compares its Windows download URL with the immutable API URL of the
+installer asset returned by GitHub, matching the contract of the pinned Tauri action without
+accepting an unrelated asset. The installer talks to the hosted API documented in
+`docs/deployment/hosted-api.md` and does not require the developer computer to remain online.
 
 `pnpm check:product-version` verifies that the root product version, Release Please manifest,
 Tauri version reference, Cargo package version, Expo app config wiring, and contracts version
@@ -65,9 +67,9 @@ injection stay synchronized.
 - Version preparation and technical changelog generation become automated on pushes to `main`.
 - Generated release pull requests remain formatting-clean and receive CI for their final formatted
   commit without requiring a manual changelog-only correction.
-- Merging a Release Please PR creates a draft GitHub Release that reserves a tag name and targets
-  the exact release commit. Publishing creates the corresponding tag and remains an explicit
-  operator action outside autonomous agent publication authority.
+- Merging an explicitly approved Release Please PR creates a draft GitHub Release and its Git tag at
+  the exact release commit. Publishing the draft remains a separate explicit operator action
+  outside autonomous agent publication authority.
 - Draft releases allow installer attachment and smoke testing without a public release
   publication.
 - Operators must still follow the release checklist for hosted-API readiness, cold-start

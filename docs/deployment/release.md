@@ -20,8 +20,7 @@ Goals:
 
 Non-goals:
 
-- Publishing a public GitHub Release, creating a release tag, or distributing installers without
-  explicit operator approval.
+- Publishing a public GitHub Release or distributing installers without explicit operator approval.
 - Buying or configuring a custom domain.
 - macOS or Linux releases, prerelease update channels, or purchased Authenticode code signing.
 - Relax audio, R2 provisioning, user uploads, or notifications.
@@ -65,14 +64,18 @@ Bootstrap choices validated against current Release Please manifest documentatio
 - Tags use the `v` prefix and omit a component name (`v0.1.0`).
 - `bump-minor-pre-major: true` prevents pre-1.0 breaking changes from forcing `1.0.0`.
 - `draft: true` creates draft GitHub Releases so publication remains an explicit operator step.
+- `force-tag-creation: true` creates the release tag immediately at the immutable release commit so
+  subsequent Release Please runs can find the correct previous version while the release stays a
+  draft.
 - Do not create local tags during development or agent workflows.
 
 On pushes to `main`, Release Please analyzes Conventional Commits and maintains one release PR that
 updates `CHANGELOG.md`, the root product version, the Release Please manifest, and the desktop
-Cargo package version. Merging that PR creates a draft GitHub Release that reserves the pending tag
-name and targets the exact release commit. Publishing the draft creates the corresponding Git tag.
-Do not merge the release PR until the checklist below is complete and the operator explicitly
-approves publication preparation.
+Cargo package version. Merging that PR after explicit operator approval creates a draft GitHub
+Release and the corresponding tag at the exact release commit. Creating the tag does not publish
+the draft or expose its installer assets; publishing remains a later explicit operator action. Do
+not merge the release PR until the checklist below is complete and the operator explicitly approves
+publication preparation.
 
 The release workflow also synchronizes the open Release Please branch with `main`, formats the
 generated `CHANGELOG.md` using the repository Prettier configuration, and starts CI for the
@@ -103,7 +106,7 @@ Behavior:
 
 1. Resolve the unique non-prerelease draft by its pending tag name.
 2. Verify its target is an exact commit, compare it with the SHA supplied by Release Please when
-   present, and check out that immutable commit even though the Git tag does not exist yet.
+   present, and check out that immutable commit independently of tag availability.
 3. Verify the pending tag name matches the root product version and revalidate the draft identity
    and target commit after checkout.
 4. Build the Windows x64 NSIS updater with the release-only Tauri configuration and the signing
@@ -177,7 +180,9 @@ Complete before merging a Release Please PR or publishing a draft release:
 8. Desktop release-assets workflow has attached and validated all updater assets on that release.
 9. The curated in-app notes match the target version and publication date, include both supported
    languages, and contain no secrets or private user data.
-10. Operator explicitly approves merging the Release Please PR and later publishing the draft
+10. Important GitHub Release changelog entries use direct, satisfying product language rather than
+    generic implementation phrases, while remaining accurate about user-visible behavior.
+11. Operator explicitly approves merging the Release Please PR and later publishing the draft
     release.
 
 ## Rollback considerations
