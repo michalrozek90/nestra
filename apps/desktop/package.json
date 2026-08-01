@@ -6,7 +6,7 @@
   "license": "AGPL-3.0-only",
   "scripts": {
     "dev": "node ./scripts/run-tauri.mjs dev",
-    "build": "node ./scripts/run-tauri.mjs build",
+    "build": "node ./scripts/run-tauri.mjs build -- --locked",
     "tauri": "tauri"
   },
   "devDependencies": {

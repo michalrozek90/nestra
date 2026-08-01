@@ -36,9 +36,10 @@ Use Google Release Please with a single repository-wide `node` package at the re
   workflow with both the tag name and exact release commit so the installer can be attached without
   requiring a personal access token. Operators can also re-run that workflow manually for an
   existing draft.
-- Release Please also updates `apps/desktop/src-tauri/Cargo.toml` `package.version` so the Rust
-  crate metadata stays aligned with the product version. Tauri continues to read the installer and
-  application version from root `package.json` through `tauri.conf.json`.
+- Release Please also updates the `nestra-desktop` package version in both
+  `apps/desktop/src-tauri/Cargo.toml` and `Cargo.lock` so the Rust crate metadata stays aligned with
+  the product version. Tauri continues to read the installer and application version from root
+  `package.json` through `tauri.conf.json`.
 - After Release Please creates or updates its pull request, the same workflow finds the single open
   pull request labeled `autorelease: pending`, synchronizes its branch with `main`, formats the
   generated `CHANGELOG.md` with the repository-pinned Prettier version, and pushes the correction
@@ -59,8 +60,9 @@ accepting an unrelated asset. The installer talks to the hosted API documented i
 `docs/deployment/hosted-api.md` and does not require the developer computer to remain online.
 
 `pnpm check:product-version` verifies that the root product version, Release Please manifest,
-Tauri version reference, Cargo package version, Expo app config wiring, and contracts version
-injection stay synchronized.
+Tauri version reference, Cargo manifest and lockfile package versions, Expo app config wiring, and
+contracts version injection stay synchronized. Desktop builds pass `--locked` to Cargo so a stale
+lockfile fails instead of being modified during packaging.
 
 ## Consequences
 

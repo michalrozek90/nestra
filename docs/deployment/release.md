@@ -35,6 +35,7 @@ The root `package.json` `version` is the only product version.
 | API / contracts diagnostics   | `packages/contracts` injects root version at build time        |
 | Tauri application / installer | `tauri.conf.json` → `../../../package.json`                    |
 | Desktop Cargo crate metadata  | Release Please updates `apps/desktop/src-tauri/Cargo.toml`     |
+| Desktop Cargo locked metadata | Release Please updates `apps/desktop/src-tauri/Cargo.lock`     |
 | Release Please tracking       | `.release-please-manifest.json` must match root `package.json` |
 | Installer file name           | `Nestra_{version}_x64-setup.exe`                               |
 
@@ -71,8 +72,8 @@ Bootstrap choices validated against current Release Please manifest documentatio
 
 On pushes to `main`, Release Please analyzes Conventional Commits and maintains one release PR that
 updates `CHANGELOG.md`, the root product version, the Release Please manifest, and the desktop
-Cargo package version. Merging that PR after explicit operator approval creates a draft GitHub
-Release and the corresponding tag at the exact release commit. Creating the tag does not publish
+Cargo package and lockfile versions. Merging that PR after explicit operator approval creates a
+draft GitHub Release and the corresponding tag at the exact release commit. Creating the tag does not publish
 the draft or expose its installer assets; publishing remains a later explicit operator action. Do
 not merge the release PR until the checklist below is complete and the operator explicitly approves
 publication preparation.
