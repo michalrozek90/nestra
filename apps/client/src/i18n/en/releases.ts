@@ -63,6 +63,8 @@ export const enReleases = {
           'Requests from a previous sign-in can no longer continue after you switch sessions.',
         signOutRefreshRace:
           'Signing out now fully ends your session even if a token refresh was already in progress.',
+        newNoteDraftMigration:
+          'Creating a note now keeps your latest edits and no longer leaves a leftover draft that can reopen in a new note.',
       },
     },
     v020: {
