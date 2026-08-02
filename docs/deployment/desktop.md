@@ -82,7 +82,9 @@ D:\Nestra-setup\Nestra_{version}_x64-setup.exe
 ```
 
 Override that convenience copy with `NESTRA_INSTALLER_OUTPUT_DIR`. CI skips the copy unless that
-variable is set, and continues to upload from `CARGO_TARGET_DIR`.
+variable is set, and continues to upload from `CARGO_TARGET_DIR`. A failed convenience copy prints a
+warning and leaves the Cargo target installer as the successful build output; it does not fail the
+build.
 
 ## API configuration boundary
 
@@ -171,16 +173,16 @@ stable releases can then be installed in-app.
 WebView outbound access is further constrained by Content Security Policy in
 `apps/desktop/src-tauri/tauri.conf.json`:
 
-- production `csp` allow-lists Tauri IPC and the configured API origins only;
-- `devCsp` additionally allow-lists Expo Metro on port `8081` (including WebSocket) and the script
-  sources Metro needs during `pnpm dev:desktop`.
+- production `csp` allow-lists Tauri IPC and the hosted API origin only;
+- `devCsp` additionally allow-lists the local API, Expo Metro on port `8081` (including WebSocket),
+  and the script sources Metro needs during `pnpm dev:desktop`.
 
-| Target                                                         | Purpose                                       |
-| -------------------------------------------------------------- | --------------------------------------------- |
-| `ipc:` / `http://ipc.localhost`                                | Tauri IPC                                     |
-| `https://nestra-api-nkr9.onrender.com`                         | Hosted API origin from `.env.desktop.example` |
-| `http://localhost:3000` / `http://127.0.0.1:3000`              | Local API during development                  |
-| `http://localhost:8081` / `ws://localhost:8081` (and loopback) | Expo Metro for `pnpm dev:desktop` (`devCsp`)  |
+| Target                                                         | CSP      | Purpose                                       |
+| -------------------------------------------------------------- | -------- | --------------------------------------------- |
+| `ipc:` / `http://ipc.localhost`                                | both     | Tauri IPC                                     |
+| `https://nestra-api-nkr9.onrender.com`                         | both     | Hosted API origin from `.env.desktop.example` |
+| `http://localhost:3000` / `http://127.0.0.1:3000`              | `devCsp` | Local API during development                  |
+| `http://localhost:8081` / `ws://localhost:8081` (and loopback) | `devCsp` | Expo Metro for `pnpm dev:desktop`             |
 
 When the hosted API host changes, update `EXPO_PUBLIC_API_BASE_URL`, the CSP `connect-src` entry,
 and hosted `CORS_ALLOWED_ORIGINS` together.

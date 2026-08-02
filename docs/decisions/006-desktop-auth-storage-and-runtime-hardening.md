@@ -34,14 +34,16 @@ clears desktop credentials through `clear_auth_secrets` and also removes any lef
 ### Capabilities and outbound network policy
 
 The default Tauri capability remains minimal: `core:default` plus the auth-secret-storage
-permission. No filesystem, shell, notification, or generic HTTP plugin permissions are granted.
+permission. Application updates later add only updater check/download/install and process restart
+permissions ([ADR 008](./008-desktop-application-updates.md)). No filesystem, shell, notification,
+or generic HTTP plugin permissions are granted.
 
 Outbound browser requests from the WebView are constrained by Content Security Policy
 `connect-src`. Production CSP allow-lists `'self'` (required once `connect-src` is set, otherwise
-same-origin fetches are blocked), Tauri IPC, and the configured API origins. Development CSP
-additionally allow-lists the Expo Metro origin used by `pnpm dev:desktop`. Changing the hosted
-API host requires updating both `EXPO_PUBLIC_API_BASE_URL` and the CSP `connect-src` entries, and
-keeping `CORS_ALLOWED_ORIGINS` aligned on the API.
+same-origin fetches are blocked), Tauri IPC, and the hosted API origin. Development CSP
+additionally allow-lists the local API and the Expo Metro origin used by `pnpm dev:desktop`.
+Changing the hosted API host requires updating both `EXPO_PUBLIC_API_BASE_URL` and the production
+CSP `connect-src` entries, and keeping `CORS_ALLOWED_ORIGINS` aligned on the API.
 
 ### Future boundaries (documentation only)
 

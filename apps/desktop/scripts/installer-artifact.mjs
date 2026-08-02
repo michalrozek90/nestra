@@ -94,7 +94,19 @@ export function assertInstallerArtifact(cargoTargetDirectory) {
   const installerOutputDirectory = resolveInstallerOutputDirectory();
 
   if (installerOutputDirectory !== null) {
-    return copyInstallerArtifact(installerPath, installerOutputDirectory);
+    try {
+      return copyInstallerArtifact(installerPath, installerOutputDirectory);
+    } catch (error) {
+      // The Cargo target artifact is the build success criterion. The local copy is convenience only.
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(
+        [
+          `Windows x64 installer is ready at: ${installerPath}`,
+          `Local convenience copy to ${installerOutputDirectory} failed: ${message}`,
+          'Set NESTRA_INSTALLER_OUTPUT_DIR to a writable directory to retry the copy.',
+        ].join('\n'),
+      );
+    }
   }
 
   return installerPath;
