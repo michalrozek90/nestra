@@ -55,7 +55,8 @@ export async function persistAuthenticationSessionTokens(
     }
 
     try {
-      await clearPersistedTokensIfCurrent(session.refreshToken);
+      // Storage failed while writing this session; clear local auth material unconditionally.
+      await clearAuthenticationSessionTokens();
     } catch {
       // Preserve the original storage failure while still making a best-effort cleanup.
     }
