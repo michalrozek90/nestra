@@ -3,6 +3,7 @@ export const plReleases = {
     title: 'O aplikacji',
     productName: 'Nestra',
     versionLabel: 'Wersja {{version}}',
+    creatorCredit: 'Autor: Michał Rożek',
     historyTitle: 'Historia nowości',
     historyDescription: 'Przeglądaj wybrane informacje o produkcie dla każdej wydanej wersji.',
     actions: {
@@ -58,6 +59,7 @@ export const plReleases = {
       changes: {
         completeReleaseHistory:
           'Sekcja Co nowego pokazuje teraz każdą pominiętą wersję, z wyraźnie pogrupowanymi nowościami i naprawami.',
+        creatorCredit: 'Ekran O aplikacji pokazuje teraz autora: Michał Rożek.',
         developerDiagnosticsHealth:
           'Diagnostyka deweloperska sprawdza teraz kondycję API przy otwarciu i odświeżeniu oraz pokazuje, czy pamięć szkiców jest dostępna.',
         serviceOutageErrors:

@@ -3,6 +3,7 @@ export const enReleases = {
     title: 'About',
     productName: 'Nestra',
     versionLabel: 'Version {{version}}',
+    creatorCredit: 'Author: Michał Rożek',
     historyTitle: 'What’s new history',
     historyDescription: 'Browse curated product notes for each released version.',
     actions: {
@@ -57,6 +58,7 @@ export const enReleases = {
       changes: {
         completeReleaseHistory:
           'What’s new now shows every version you missed, with new features and fixes clearly grouped.',
+        creatorCredit: 'The About screen now shows the author: Michał Rożek.',
         developerDiagnosticsHealth:
           'Developer diagnostics now checks API health on open and refresh, and reports whether draft storage is available.',
         serviceOutageErrors:

@@ -92,6 +92,9 @@ export default function AboutScreen() {
         <Text style={[styles.version, { color: theme.colors.onSurfaceVariant }]}>
           {t('about.versionLabel', { version: applicationVersion })}
         </Text>
+        <Text style={[styles.creatorCredit, { color: theme.colors.onSurfaceVariant }]}>
+          {t('about.creatorCredit')}
+        </Text>
       </View>
 
       {state.status !== 'unsupported' ? (
@@ -165,5 +168,8 @@ const styles = StyleSheet.create({
   },
   version: {
     ...typography.body,
+  },
+  creatorCredit: {
+    ...typography.supporting,
   },
 });
