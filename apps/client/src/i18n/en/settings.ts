@@ -34,12 +34,14 @@ export const enSettings = {
     title: 'Developer diagnostics',
     actions: {
       back: 'Back',
+      refresh: 'Refresh',
     },
     sections: {
       application: 'Application',
       api: 'API',
       authentication: 'Authentication',
       localization: 'Localization',
+      storage: 'Storage',
     },
     labels: {
       name: 'Name',
@@ -47,6 +49,8 @@ export const enSettings = {
       environment: 'Environment',
       platform: 'Platform',
       apiBaseUrl: 'Base URL',
+      healthResult: 'Health result',
+      lastChecked: 'Last checked',
       lastSuccessfulRequest: 'Last successful request',
       lastFailedRequest: 'Last failed request',
       lastErrorCode: 'Last error code',
@@ -54,15 +58,29 @@ export const enSettings = {
       selectedLanguage: 'Selected language',
       detectedLanguage: 'Detected system language',
       preferenceStorage: 'Preference storage',
+      draftStorage: 'Draft storage',
       authenticated: 'Authenticated',
       accessTokenPresent: 'Access token present',
       refreshTokenPresent: 'Refresh token present',
       authStorage: 'Authentication storage',
     },
+    health: {
+      result: '{{status}} (database {{database}})',
+      status: {
+        ok: 'OK',
+        degraded: 'Degraded',
+      },
+      database: {
+        reachable: 'reachable',
+        unreachable: 'unreachable',
+      },
+    },
     values: {
       available: 'Available',
       unavailable: 'Unavailable',
       notAvailable: 'Not available',
+      checking: 'Checking…',
+      healthCheckFailed: 'Health check failed',
       yes: 'Yes',
       no: 'No',
     },

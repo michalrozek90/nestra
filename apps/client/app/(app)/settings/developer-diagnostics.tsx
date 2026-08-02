@@ -1,18 +1,24 @@
-import { applicationMetadata } from '@nestra/contracts';
+import { applicationMetadata, type HealthResponse } from '@nestra/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { Redirect, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, View } from 'react-native';
 import { IconButton, Text } from 'react-native-paper';
 
+import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Header } from '@/components/header';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
 import { runtimeConfig } from '@/config/runtime-config';
+import { noteDraftStorage } from '@/features/notes/drafts/note-draft-storage';
 import { getSelectedLanguage } from '@/i18n/i18n';
 import { getDetectedSystemLanguage } from '@/i18n/system-language';
 import { useApiDiagnostics } from '@/infrastructure/diagnostics/api-diagnostics';
+import {
+  diagnosticsQueryKeys,
+  useApiHealthQuery,
+} from '@/infrastructure/diagnostics/use-diagnostics-queries';
 import { getPreferenceStorageAvailability } from '@/infrastructure/storage/preference-storage';
 import { spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
@@ -42,14 +48,45 @@ function formatTimestamp(timestamp: string | null, fallback: string): string {
   return timestamp ? new Date(timestamp).toLocaleString() : fallback;
 }
 
+function formatEpochTimestamp(timestampMs: number, fallback: string): string {
+  return timestampMs > 0 ? new Date(timestampMs).toLocaleString() : fallback;
+}
+
+function formatHealthResult(
+  health: HealthResponse,
+  translate: ReturnType<typeof useTranslation<'settings'>>['t'],
+): string {
+  const statusLabel =
+    health.status === 'ok'
+      ? translate('diagnostics.health.status.ok')
+      : translate('diagnostics.health.status.degraded');
+  const databaseLabel =
+    health.database === 'reachable'
+      ? translate('diagnostics.health.database.reachable')
+      : translate('diagnostics.health.database.unreachable');
+
+  return translate('diagnostics.health.result', {
+    status: statusLabel,
+    database: databaseLabel,
+  });
+}
+
 export default function DeveloperDiagnosticsScreen() {
   const { t } = useTranslation('settings');
   const router = useRouter();
   const apiDiagnostics = useApiDiagnostics();
   const { status } = useAuth();
+  const healthQuery = useApiHealthQuery();
   const tokenPresenceQuery = useQuery({
-    queryKey: ['diagnostics', 'authentication-token-presence'],
+    queryKey: diagnosticsQueryKeys.authenticationTokenPresence,
     queryFn: getAuthenticationTokenPresence,
+  });
+  const draftStorageQuery = useQuery({
+    queryKey: diagnosticsQueryKeys.draftStorageAvailability,
+    queryFn: () => noteDraftStorage.probeAvailability(),
+    refetchOnWindowFocus: false,
+    retry: false,
+    staleTime: Infinity,
   });
   const notAvailable = t('diagnostics.values.notAvailable');
   const formatBoolean = (booleanValue: boolean | undefined) =>
@@ -58,6 +95,32 @@ export default function DeveloperDiagnosticsScreen() {
       : booleanValue
         ? t('diagnostics.values.yes')
         : t('diagnostics.values.no');
+  const formatAvailability = (isAvailable: boolean | undefined) =>
+    isAvailable === undefined
+      ? notAvailable
+      : isAvailable
+        ? t('diagnostics.values.available')
+        : t('diagnostics.values.unavailable');
+
+  const isHealthError = healthQuery.isError;
+  const isHealthPending = healthQuery.isPending;
+  const isHealthFetching = healthQuery.isFetching;
+  const healthData = healthQuery.data;
+  const healthErrorUpdatedAt = healthQuery.errorUpdatedAt;
+  const healthDataUpdatedAt = healthQuery.dataUpdatedAt;
+
+  let healthResult = t('diagnostics.values.healthCheckFailed');
+  if (isHealthError) {
+    healthResult = t('diagnostics.values.healthCheckFailed');
+  } else if (healthData) {
+    healthResult = formatHealthResult(healthData, t);
+  } else if (isHealthPending || isHealthFetching) {
+    healthResult = t('diagnostics.values.checking');
+  }
+
+  const healthLastCheckedAt = isHealthError ? healthErrorUpdatedAt : healthDataUpdatedAt;
+  const isRefreshingDiagnostics =
+    isHealthFetching || draftStorageQuery.isFetching || tokenPresenceQuery.isFetching;
 
   if (!runtimeConfig.showDeveloperDiagnostics) {
     return <Redirect href="/settings" />;
@@ -106,6 +169,11 @@ export default function DeveloperDiagnosticsScreen() {
             label={t('diagnostics.labels.apiBaseUrl')}
             value={runtimeConfig.apiBaseUrl}
           />
+          <DiagnosticRow label={t('diagnostics.labels.healthResult')} value={healthResult} />
+          <DiagnosticRow
+            label={t('diagnostics.labels.lastChecked')}
+            value={formatEpochTimestamp(healthLastCheckedAt, notAvailable)}
+          />
           <DiagnosticRow
             label={t('diagnostics.labels.lastSuccessfulRequest')}
             value={formatTimestamp(apiDiagnostics.lastSuccessfulRequestAt, notAvailable)}
@@ -123,6 +191,16 @@ export default function DeveloperDiagnosticsScreen() {
             value={apiDiagnostics.lastRequestId ?? notAvailable}
           />
         </Card>
+        <Button
+          isLoading={isRefreshingDiagnostics}
+          label={t('diagnostics.actions.refresh')}
+          onPress={() => {
+            void healthQuery.refetch();
+            void draftStorageQuery.refetch();
+            void tokenPresenceQuery.refetch();
+          }}
+          variant="secondary"
+        />
       </View>
 
       <View style={styles.section}>
@@ -154,17 +232,23 @@ export default function DeveloperDiagnosticsScreen() {
             label={t('diagnostics.labels.detectedLanguage')}
             value={getDetectedSystemLanguage()}
           />
+        </Card>
+      </View>
+
+      <View style={styles.section}>
+        <SectionHeader title={t('diagnostics.sections.storage')} />
+        <Card>
           <DiagnosticRow
             label={t('diagnostics.labels.authStorage')}
             value={authStorageImplementation}
           />
           <DiagnosticRow
             label={t('diagnostics.labels.preferenceStorage')}
-            value={
-              getPreferenceStorageAvailability()
-                ? t('diagnostics.values.available')
-                : t('diagnostics.values.unavailable')
-            }
+            value={formatAvailability(getPreferenceStorageAvailability())}
+          />
+          <DiagnosticRow
+            label={t('diagnostics.labels.draftStorage')}
+            value={formatAvailability(draftStorageQuery.data)}
           />
         </Card>
       </View>
