@@ -1410,7 +1410,7 @@ No language sub-route.
 
 - Nestra;
 - current product version;
-- creator credit: Created by Michał Rożek / Stworzona przez Michała Rożka;
+- creator credit: Author: Michał Rożek / Autor: Michał Rożek;
 - View changelog.
 
 Shopping, Reminders, and Relax show only localized “Coming in a future version” placeholders with no fake controls.
