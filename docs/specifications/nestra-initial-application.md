@@ -132,6 +132,7 @@ a second UI component or styling framework in `0.1.0`.
 - Zod;
 - nestjs-zod;
 - @nestjs/swagger;
+- Google's maintained Node authentication library for OpenID Connect token validation;
 - JWT access tokens;
 - opaque rotating refresh tokens;
 - Argon2id.
@@ -489,6 +490,15 @@ JWT_ACCESS_SECRET=replace_with_a_long_random_secret
 JWT_ACCESS_EXPIRES_IN=15m
 REFRESH_SESSION_EXPIRES_IN=30d
 CORS_ALLOWED_ORIGINS=http://localhost:8081,http://127.0.0.1:8081
+GOOGLE_OAUTH_ENABLED=false
+GOOGLE_OAUTH_CLIENT_ID=
+GOOGLE_OAUTH_CLIENT_SECRET=
+GOOGLE_OAUTH_CALLBACK_URI=http://localhost:3000/api/v1/auth/google/callback
+GOOGLE_OAUTH_TRANSACTION_ENCRYPTION_KEY=
+GOOGLE_OAUTH_WEB_RETURN_URI=http://localhost:8081/auth/google/callback
+GOOGLE_OAUTH_ANDROID_RETURN_URI=com.michalrozek.nestra:/oauth/google
+GOOGLE_OAUTH_IOS_RETURN_URI=com.michalrozek.nestra:/oauth/google
+GOOGLE_OAUTH_DESKTOP_RETURN_URI=com.michalrozek.nestra.desktop:/oauth/google
 ```
 
 Client:
@@ -498,9 +508,10 @@ EXPO_PUBLIC_API_BASE_URL=http://localhost:3000/api/v1
 EXPO_PUBLIC_APPLICATION_ENVIRONMENT=development
 EXPO_PUBLIC_SHOW_DEVELOPER_DIAGNOSTICS=true
 EXPO_PUBLIC_VERBOSE_LOGGING=true
+EXPO_PUBLIC_GOOGLE_AUTH_ENABLED=false
 ```
 
-Validate all values with Zod. Parse boolean strings explicitly. No refresh JWT secret exists because refresh tokens are opaque.
+Validate all values with Zod. Parse boolean strings explicitly. No refresh JWT secret exists because refresh tokens are opaque. Google OAuth configuration fails closed when enabled but incomplete. The transaction encryption key is exactly 32 random bytes encoded as base64 and is distinct from the JWT access and Google client secrets. Production callback and mobile/web return URIs use exact HTTPS values; only documented development and Windows protocol-handler values may use another scheme.
 
 The API listens on `0.0.0.0:3000`.
 
@@ -597,12 +608,15 @@ Tables:
 ```text
 users
 refresh_sessions
+external_auth_identities
+external_auth_transactions
 notes
 ```
 
 Use a local TypeORM naming strategy or explicit mappings. Do not add an unmaintained naming-strategy package merely to avoid small local code.
 
-Deleting a user cascades to refresh sessions and notes even though account deletion is not yet exposed.
+Deleting a user cascades to refresh sessions, external identities, bound external-auth transactions,
+and notes even though account deletion is not yet exposed.
 
 Docker Compose must provide a named volume, health check, documented port, and development-only credentials.
 
@@ -621,6 +635,11 @@ packages/contracts/src/
 │   ├── register.schema.ts
 │   ├── refresh-session.schema.ts
 │   ├── authentication-session-response.schema.ts
+│   ├── google-auth-start.schema.ts
+│   ├── google-auth-exchange.schema.ts
+│   ├── google-link-start.schema.ts
+│   ├── google-auth-platform.schema.ts
+│   ├── external-identity.schema.ts
 │   └── public-user.schema.ts
 ├── notes/
 │   ├── note.schema.ts
@@ -691,6 +710,19 @@ AUTH_ACCESS_TOKEN_INVALID
 AUTH_REFRESH_TOKEN_INVALID
 AUTH_SESSION_EXPIRED
 AUTH_EMAIL_ALREADY_REGISTERED
+AUTH_GOOGLE_UNAVAILABLE
+AUTH_GOOGLE_CANCELLED
+AUTH_GOOGLE_PROVIDER_ERROR
+AUTH_GOOGLE_RESPONSE_INVALID
+AUTH_GOOGLE_HANDOFF_INVALID
+AUTH_GOOGLE_HANDOFF_EXPIRED
+AUTH_GOOGLE_HANDOFF_ALREADY_USED
+AUTH_GOOGLE_EMAIL_UNVERIFIED
+AUTH_GOOGLE_EMAIL_MISMATCH
+AUTH_ACCOUNT_LINK_REQUIRED
+AUTH_REAUTHENTICATION_FAILED
+AUTH_EXTERNAL_IDENTITY_ALREADY_LINKED
+AUTH_EXTERNAL_IDENTITY_CONFLICT
 NOTE_NOT_FOUND
 NOTE_NOT_TRASHED
 INTERNAL_SERVER_ERROR
@@ -902,6 +934,225 @@ GET /api/v1/auth/me
 
 Protected by access-token guard; returns `PublicUser`.
 
+### Google authentication
+
+[ADR 010](../decisions/010-google-authentication-architecture.md) is the authoritative threat model
+and protocol decision. The implementation must preserve the following specification.
+
+#### Authority and provider request
+
+Google proves external identity only. The NestJS API remains the Nestra session authority and is
+the single confidential Google OpenID Connect client for Web, Android, iOS, and Windows Tauri.
+Clients never contain the Google secret, exchange Google codes, validate Google tokens, or maintain
+a second session model.
+
+Use the Google authorization-code flow with:
+
+- `response_type=code` and `response_mode=form_post`;
+- transaction-specific state, PKCE S256, and OIDC nonce;
+- exact scopes `openid email profile`;
+- `prompt=select_account` without forcing consent again on every sign-in;
+- online access only, with no Google refresh token or Google API authorization;
+- Google account selection in the system browser, never an embedded WebView;
+- an exact API callback registered in Google Cloud.
+
+The callback verifies state, response issuer, and PKCE before trusting the result. The API exchanges
+the code with its client secret and verifies the ID token signature, issuer, exact audience,
+authorized party where applicable, expiry, issued-at time, nonce, subject, email, and
+`email_verified=true`. Use Google's maintained Node authentication library and rotating keys, not
+the debugging `tokeninfo` endpoint in production.
+
+Only `(provider, sub)` identifies a returning external account. Google access tokens, refresh
+tokens, ID tokens, authorization codes, full provider responses, and unused profile claims are
+never persisted, returned to a client, placed in a URL, or logged. Discard provider tokens after
+request-local ID-token validation. Google email is an attribute and never account-linking proof.
+
+#### Endpoints
+
+```text
+POST /api/v1/auth/google/sign-in/start
+POST /api/v1/auth/google/link/start
+POST /api/v1/auth/google/callback
+POST /api/v1/auth/google/sign-in/exchange
+POST /api/v1/auth/google/link/exchange
+```
+
+The callback accepts only Google's form-encoded POST response. Invalid callback state never causes
+a redirect. The start and exchange endpoints use strict shared Zod contracts:
+
+```ts
+type GoogleAuthPlatform = "web" | "android" | "ios" | "desktop";
+
+type GoogleAuthStartRequest = {
+  platform: GoogleAuthPlatform;
+  handoffChallenge: string;
+};
+
+type GoogleLinkStartRequest = GoogleAuthStartRequest & {
+  currentPassword: string;
+};
+
+type GoogleAuthStartResponse = {
+  transactionId: string;
+  authorizationUrl: string;
+  transactionExpiresAt: string;
+};
+
+type GoogleAuthExchangeRequest = {
+  handoffCode: string;
+  handoffVerifier: string;
+};
+
+type ExternalIdentityResponse = {
+  provider: "google";
+  email: string;
+  linkedAt: string;
+};
+```
+
+`google/sign-in/exchange` returns the existing `AuthenticationSessionResponse` without adding
+provider fields. It creates the same refresh session and access-token claims as password login.
+`google/link/start` and `google/link/exchange` require a valid access token. Link start also verifies
+the current password in constant time; link exchange requires that the access-token subject equals
+the transaction's bound user. `google/link/exchange` returns `ExternalIdentityResponse` and does not
+replace the current Nestra session.
+
+#### One-time platform handoff
+
+Before start, the client generates at least 32 cryptographically secure random bytes as a base64url
+handoff verifier and stores it through a typed pending-auth storage adapter. It sends only:
+
+```text
+BASE64URL(SHA256(ASCII(handoffVerifier)))
+```
+
+After a valid provider callback, the API creates:
+
+```text
+<externalAuthTransactionId>.<at-least-32-random-bytes-base64url>
+```
+
+Only the SHA-256 hash of that complete handoff code is stored. The API responds with `303 See Other`
+to the exact server-configured platform return URI and includes only the opaque handoff. The client
+must match the transaction ID to its pending operation, remove the return URL from browser history
+where applicable, and exchange the code plus verifier over HTTPS.
+
+The exchange locks the transaction row and validates code hash, verifier challenge, intent,
+platform, user binding, status, and expiry before atomically consuming it. A code without the
+verifier is insufficient to create a session or link an account. The provider phase expires after
+10 minutes; the handoff phase expires two minutes after the valid callback. State, provider callback,
+handoff, and exchange are single-use. Replay and concurrent requests fail safely.
+
+Cancellation with valid state is returned through the same verifier-bound handoff as
+`AUTH_GOOGLE_CANCELLED`. Other valid provider errors use `AUTH_GOOGLE_PROVIDER_ERROR`. Browser
+dismissal before a callback is local cancellation. Invalid state or malformed callbacks render a
+static safe page with no redirect or submitted values. Callback and return responses use
+`Cache-Control: no-store` and `Referrer-Policy: no-referrer`; the safe page has no third-party
+resources and uses a restrictive Content Security Policy.
+
+#### Redirect allow-list and platform adapters
+
+The client submits a closed `platform` value, never a URL, origin, callback, or `next` parameter.
+The API maps each platform to exactly one canonical return URI from validated deployment
+configuration and stores it with the transaction. No wildcard, prefix, user-controlled host/path,
+fragment, credentials, or unexpected query parameters are permitted.
+
+- Web uses an exact same-origin HTTPS callback and Expo WebBrowser's web auth-session behavior.
+  Pending verifier state uses `sessionStorage`, not the token `localStorage`, and the callback route
+  replaces history immediately.
+- Android and iOS use Expo WebBrowser and Expo Linking. Production uses verified Android App Links
+  and iOS Universal Links on a stable Nestra-controlled HTTPS domain. Development builds may use a
+  reverse-domain private scheme. Expo Go is not a supported OAuth verification target. Pending
+  verifier state uses SecureStore and works for warm and cold starts.
+- Windows Tauri uses the official opener, deep-link, and single-instance plugins. The
+  single-instance plugin is registered first. The installed app has one statically configured
+  reverse-domain protocol handler; initial command-line and warm-instance URLs are accepted only
+  when they match the exact expected shape. Pending verifier state uses Windows Credential Manager
+  behind a narrow dedicated interface, never WebView `localStorage`.
+
+Keep these behaviors outside presentation screens behind typed `ExternalAuthBrowser`,
+`ExternalAuthCallbackSource`, and `PendingExternalAuthStorage` interfaces. The existing
+`AuthTokenStorage` remains unchanged and receives only Nestra sessions after exchange.
+
+#### External identity and account states
+
+```text
+external_auth_identities
+├── id: UUID
+├── userId: UUID
+├── provider: "google"
+├── providerSubject: string (maximum 255)
+├── providerEmail: normalized string (maximum 254)
+├── createdAt: timestamptz
+└── updatedAt: timestamptz
+```
+
+Enforce unique `(provider, provider_subject)` globally and unique `(user_id, provider)`, plus a
+foreign key to `users` with cascade deletion and an index on `user_id`. `provider_email` is not
+unique and is never used to select the authenticated user.
+
+`users.password_hash` becomes nullable. Valid states are password-only, hybrid (password and
+Google), and external-only (Google and no password). A user with no authentication method is
+invalid. External-only user creation and identity insertion occur atomically. Unlinking Google,
+removing a last auth method, setting a password on an external-only account, and account email
+changes are outside this epic. Password login keeps constant-work invalid-credential behavior when
+the password hash is null.
+
+Provisioning and linking rules:
+
+1. An existing exact `(google, sub)` identity signs in its linked user without consulting email.
+2. An unlinked subject and unused normalized email creates the user, identity, refresh session, and
+   response in one transaction.
+3. An unlinked subject whose email already belongs to a Nestra user returns
+   `AUTH_ACCOUNT_LINK_REQUIRED`; it never signs in or merges by email.
+4. Explicit linking requires the authenticated user, current-password proof, Google proof, the
+   client handoff verifier, and equal normalized Google and Nestra emails.
+5. A subject linked to another user, a second Google identity on the same user, or a concurrent
+   uniqueness conflict fails without identifying the other account.
+6. Database uniqueness, transaction/user row locks, conditional state transitions, and exact
+   subject re-read make provisioning and linking race-safe.
+
+Supporting a different Google email during linking requires a future dedicated account-management
+and ownership-confirmation experience. Matching email alone remains insufficient in every case.
+
+#### Short-lived transaction persistence
+
+`external_auth_transactions` persists active protocol state across API restarts and hosted cold
+starts. It contains transaction ID, provider, intent, platform, nullable bound user ID, canonical
+return URI, state hash, encrypted request secrets, handoff challenge and optional code hash,
+encrypted validated minimal claims, status, safe outcome code, provider and handoff expiries,
+consumed timestamp, and normal timestamps.
+
+Store the provider PKCE verifier and nonce in an AES-256-GCM encrypted request payload with a random
+96-bit IV and authenticated transaction context. After callback, erase it and store only encrypted
+validated `sub`, normalized email, and verified-email state for exchange. Use a dedicated managed
+32-byte key. Null encrypted material atomically on consumption. Index state hash, handoff hash, and
+expiry columns. A small idempotent API maintenance service scrubs expired active rows and deletes
+terminal rows after 24 hours; every operation still enforces expiry synchronously.
+
+#### Logging and metrics
+
+Safe auth events may contain operation, provider, intent, platform, transaction ID, request ID,
+safe error code, outcome, duration in milliseconds, and user ID only after the user is authenticated
+or resolved. Never log or expose authorization or callback URLs, callback bodies, deep links, query
+strings, state, nonce, either PKCE value, handoff values, secrets, provider tokens/codes/responses,
+decoded claim objects, email, Google subject, profile attributes, Nestra tokens, authorization
+headers, or complete requests/responses.
+
+Exclude the callback route from raw URL access logs at the API and hosting proxy layers. Required
+low-cardinality metrics count starts, callbacks, cancellation, provider failure, successful and
+rejected exchanges by safe reason, provisioning, linking, replay, and expiry, with duration
+histograms for provider and exchange phases. Never use email, subject, user ID, transaction ID, or
+request ID as metric labels.
+
+#### Security invariants
+
+The threat model must remain protected against forged callbacks, login CSRF and account confusion,
+email-based takeover, provider or Nestra token leakage, open redirects, deep-link interception,
+state/callback/handoff replay, and concurrent provisioning/linking. Verified mobile HTTPS links and
+the handoff verifier reduce inter-app interception. A fully compromised device, compromised Google
+account, or deliberate social-engineering approval is outside the protocol trust boundary.
+
 ---
 
 ## 18. Client auth storage and Axios
@@ -926,6 +1177,12 @@ export interface AuthTokenStorage {
 README must warn that web localStorage is a prototype compromise and a public production web
 release must evaluate `httpOnly`, `Secure`, `SameSite` cookies. The Tauri runtime must never select
 the web localStorage implementation for authentication secrets.
+
+Google authentication adds a separate typed `PendingExternalAuthStorage` for the transaction ID,
+handoff verifier, platform, and expiry. Native uses SecureStore, browser Web uses `sessionStorage`,
+and Tauri uses Windows Credential Manager. Pending values are cleared on success, handled
+cancellation, terminal error, mismatch, or expiry. They never enter application logs or the normal
+`AuthTokenStorage`; successful exchange continues through the existing session persistence path.
 
 Use one configured Axios instance with typed request functions and interceptors.
 
@@ -979,7 +1236,8 @@ app/
 ├── (auth)/
 │   ├── _layout.tsx
 │   ├── login.tsx
-│   └── register.tsx
+│   ├── register.tsx
+│   └── google-callback.tsx
 └── (app)/
     ├── _layout.tsx
     ├── notes/

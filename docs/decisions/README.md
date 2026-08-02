@@ -12,6 +12,7 @@ Use a zero-padded sequence and a concise kebab-case title, for example:
 002-client-ui-and-theming-strategy.md
 003-authentication-token-strategy.md
 007-release-automation.md
+010-google-authentication-architecture.md
 ```
 
 An ADR is immutable after acceptance except for corrections and status changes. A later decision
