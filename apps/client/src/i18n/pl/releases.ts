@@ -66,6 +66,8 @@ export const plReleases = {
           'Wylogowanie teraz w pełni kończy sesję nawet wtedy, gdy odświeżanie tokenu było już w toku.',
         newNoteDraftMigration:
           'Tworzenie notatki zachowuje teraz najnowsze zmiany i nie zostawia lokalnego szkicu, który mógłby otworzyć się w nowej notatce.',
+        updatePromptCoordination:
+          'Monity aktualizacji na desktopie czekają, aż zamkniesz Co nowego, a sprawdzanie aktualizacji w O aplikacji działa także zaraz po zakończeniu sprawdzania w tle.',
       },
     },
     v020: {

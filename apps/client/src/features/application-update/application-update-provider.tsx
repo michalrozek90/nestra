@@ -82,7 +82,12 @@ export function ApplicationUpdateProvider({ children }: PropsWithChildren) {
       const existingOperation = operationPromiseRef.current;
       if (existingOperation) {
         await existingOperation;
-        return;
+        // Automatic checks are one-shot; after waiting, trust the completed operation.
+        // Manual checks must still run so a silent automatic failure (idle) or a just-finished
+        // install does not swallow an explicit About-screen request.
+        if (checkOrigin === 'automatic' || operationPromiseRef.current) {
+          return;
+        }
       }
 
       const operation = (async () => {
@@ -148,7 +153,9 @@ export function ApplicationUpdateProvider({ children }: PropsWithChildren) {
     const existingOperation = operationPromiseRef.current;
     if (existingOperation) {
       await existingOperation;
-      return;
+      if (operationPromiseRef.current) {
+        return;
+      }
     }
 
     const update = updateRef.current;

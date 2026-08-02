@@ -7,6 +7,10 @@ import { Button } from '@/components/button';
 import { useApplicationUpdate } from './application-update-provider';
 import type { ApplicationUpdateState } from './application-update.types';
 
+type ApplicationUpdateHostProps = {
+  readonly isSuppressed?: boolean;
+};
+
 function getDescription(state: ApplicationUpdateState, t: TFunction<'releases'>): string {
   switch (state.status) {
     case 'available':
@@ -35,11 +39,12 @@ function getDescription(state: ApplicationUpdateState, t: TFunction<'releases'>)
   }
 }
 
-export function ApplicationUpdateHost() {
+export function ApplicationUpdateHost({ isSuppressed = false }: ApplicationUpdateHostProps) {
   const { t } = useTranslation('releases');
   const { state, isPromptVisible, dismissPrompt, dismissError, installAvailableUpdate } =
     useApplicationUpdate();
   const isVisible =
+    !isSuppressed &&
     isPromptVisible &&
     (state.status === 'available' ||
       state.status === 'downloading' ||

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, useWindowDimensions, type ColorValue } from 'react-native';
 import { Text } from 'react-native-paper';
 
-import { WhatsNewHost } from '@/features/releases/components/whats-new-host';
+import { ProductSurfaceOverlays } from '@/features/releases/components/product-surface-overlays';
 import { getResponsiveLayout } from '@/theme/breakpoints';
 import { sizes } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
@@ -128,7 +128,7 @@ export default function ApplicationLayout() {
           }}
         />
       </Tabs>
-      <WhatsNewHost />
+      <ProductSurfaceOverlays />
     </>
   );
 }

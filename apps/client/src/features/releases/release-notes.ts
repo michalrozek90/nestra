@@ -35,6 +35,9 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
         {
           descriptionTranslationKey: 'versions.v030.changes.newNoteDraftMigration',
         },
+        {
+          descriptionTranslationKey: 'versions.v030.changes.updatePromptCoordination',
+        },
       ],
     },
   },
