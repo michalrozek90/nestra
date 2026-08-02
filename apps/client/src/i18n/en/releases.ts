@@ -61,6 +61,8 @@ export const enReleases = {
           'Temporary service outages now show a clear connection message instead of an unexpected error.',
         sessionRequestIsolation:
           'Requests from a previous sign-in can no longer continue after you switch sessions.',
+        signOutRefreshRace:
+          'Signing out now fully ends your session even if a token refresh was already in progress.',
       },
     },
     v020: {

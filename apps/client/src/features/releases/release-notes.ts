@@ -29,6 +29,9 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
         {
           descriptionTranslationKey: 'versions.v030.changes.sessionRequestIsolation',
         },
+        {
+          descriptionTranslationKey: 'versions.v030.changes.signOutRefreshRace',
+        },
       ],
     },
   },

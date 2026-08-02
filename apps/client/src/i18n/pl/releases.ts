@@ -62,6 +62,8 @@ export const plReleases = {
           'Tymczasowa niedostępność usługi wyświetla teraz czytelny komunikat o połączeniu zamiast nieoczekiwanego błędu.',
         sessionRequestIsolation:
           'Żądania z poprzedniego logowania nie są już kontynuowane po zmianie sesji.',
+        signOutRefreshRace:
+          'Wylogowanie teraz w pełni kończy sesję nawet wtedy, gdy odświeżanie tokenu było już w toku.',
       },
     },
     v020: {
