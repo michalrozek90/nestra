@@ -34,12 +34,14 @@ export const plSettings = {
     title: 'Diagnostyka deweloperska',
     actions: {
       back: 'Wstecz',
+      refresh: 'Odśwież',
     },
     sections: {
       application: 'Aplikacja',
       api: 'API',
       authentication: 'Uwierzytelnianie',
       localization: 'Lokalizacja',
+      storage: 'Pamięć',
     },
     labels: {
       name: 'Nazwa',
@@ -47,6 +49,8 @@ export const plSettings = {
       environment: 'Środowisko',
       platform: 'Platforma',
       apiBaseUrl: 'Adres bazowy',
+      healthResult: 'Wynik health check',
+      lastChecked: 'Ostatnie sprawdzenie',
       lastSuccessfulRequest: 'Ostatnie udane żądanie',
       lastFailedRequest: 'Ostatnie nieudane żądanie',
       lastErrorCode: 'Ostatni kod błędu',
@@ -54,15 +58,29 @@ export const plSettings = {
       selectedLanguage: 'Wybrany język',
       detectedLanguage: 'Wykryty język systemu',
       preferenceStorage: 'Pamięć ustawień',
+      draftStorage: 'Pamięć szkiców',
       authenticated: 'Uwierzytelniono',
       accessTokenPresent: 'Token dostępu obecny',
       refreshTokenPresent: 'Token odświeżania obecny',
       authStorage: 'Pamięć uwierzytelniania',
     },
+    health: {
+      result: '{{status}} (baza {{database}})',
+      status: {
+        ok: 'OK',
+        degraded: 'Obniżona jakość',
+      },
+      database: {
+        reachable: 'dostępna',
+        unreachable: 'niedostępna',
+      },
+    },
     values: {
       available: 'Dostępna',
       unavailable: 'Niedostępna',
       notAvailable: 'Brak danych',
+      checking: 'Sprawdzanie…',
+      healthCheckFailed: 'Health check nie powiódł się',
       yes: 'Tak',
       no: 'Nie',
     },

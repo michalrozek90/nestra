@@ -57,6 +57,8 @@ export const enReleases = {
       changes: {
         completeReleaseHistory:
           'What’s new now shows every version you missed, with new features and fixes clearly grouped.',
+        developerDiagnosticsHealth:
+          'Developer diagnostics now checks API health on open and refresh, and reports whether draft storage is available.',
         serviceOutageErrors:
           'Temporary service outages now show a clear connection message instead of an unexpected error.',
         sessionRequestIsolation:

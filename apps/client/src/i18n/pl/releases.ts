@@ -58,6 +58,8 @@ export const plReleases = {
       changes: {
         completeReleaseHistory:
           'Sekcja Co nowego pokazuje teraz każdą pominiętą wersję, z wyraźnie pogrupowanymi nowościami i naprawami.',
+        developerDiagnosticsHealth:
+          'Diagnostyka deweloperska sprawdza teraz kondycję API przy otwarciu i odświeżeniu oraz pokazuje, czy pamięć szkiców jest dostępna.',
         serviceOutageErrors:
           'Tymczasowa niedostępność usługi wyświetla teraz czytelny komunikat o połączeniu zamiast nieoczekiwanego błędu.',
         sessionRequestIsolation:

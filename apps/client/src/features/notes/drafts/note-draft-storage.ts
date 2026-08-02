@@ -26,6 +26,7 @@ export interface NoteDraftStorage {
   remove(userId: string, identity: NoteDraftIdentity): Promise<void>;
   move(userId: string, from: NoteDraftIdentity, to: NoteDraftIdentity): Promise<void>;
   listExistingNoteIds(userId: string): Promise<readonly string[]>;
+  probeAvailability(): Promise<boolean>;
 }
 
 class InvalidStoredNoteDraftError extends Error {
@@ -108,6 +109,18 @@ class AsyncStorageNoteDraftStorage implements NoteDraftStorage {
       const parsedNoteId = noteIdSchema.safeParse(storageKey.slice(draftKeyPrefix.length));
       return parsedNoteId.success ? [parsedNoteId.data] : [];
     });
+  }
+
+  public async probeAvailability(): Promise<boolean> {
+    const probeKey = 'nestra.notes.drafts.__availability_probe__';
+
+    try {
+      await AsyncStorage.setItem(probeKey, 'ok');
+      await AsyncStorage.removeItem(probeKey);
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
 
