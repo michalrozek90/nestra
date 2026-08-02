@@ -86,9 +86,10 @@ ID that does not match its pending flow, removes the handoff value from browser 
 applicable, and submits the code together with the verifier over HTTPS.
 
 The exchange locks the transaction row, verifies the code hash and verifier challenge in constant
-time, validates intent, platform, user binding, state, and expiry, and atomically consumes the row
-before provisioning, linking, or issuing a session. A concurrent or repeated exchange cannot
-create a second result.
+time, and validates intent, platform, user binding, state, and expiry. Consuming the handoff,
+provisioning or linking, and creating a refresh session where applicable are one database
+transaction. A persistence failure rolls back consumption so the client can retry before expiry; a
+concurrent or repeated successful exchange cannot create a second result.
 
 ### Endpoints and contracts
 
@@ -194,7 +195,8 @@ If `(google, sub)` already exists, its user is signed in without consulting the 
 does not exist and no Nestra user has the normalized email, the API creates an external-only user,
 its Google identity, and its refresh session in one database transaction. If the email already
 belongs to a Nestra user, the exchange returns `AUTH_ACCOUNT_LINK_REQUIRED`; it never silently
-merges or signs into that account.
+merges or signs into that account. A returning identity may update its `provider_email` snapshot to
+the latest normalized verified claim, but it never changes the user's canonical Nestra email.
 
 #### Explicit linking
 
@@ -229,6 +231,13 @@ page with no third-party resources or submitted values. Callback and redirect re
 `Cache-Control: no-store` and `Referrer-Policy: no-referrer`; the static error page uses a restrictive
 Content Security Policy.
 
+The API does not hold a database transaction open during Google's network token exchange. It first
+claims a pending provider transaction with a short processing lease. After exchange, it uses a
+conditional transition to publish the verifier-bound outcome. A process failure or expired lease
+never permits two outcomes: the user restarts the flow, and any later callback is either rejected or
+can claim the lease only if Google still accepts the single-use provider code. Provider codes are
+not persisted to make callback recovery transparent.
+
 ### Redirect ownership and platform adapters
 
 The client never submits an arbitrary callback, `next`, or redirect URL. `platform` is a closed
@@ -261,7 +270,9 @@ interface PendingExternalAuthStorage {
 
 - Web uses Expo WebBrowser's web auth-session behavior and an exact same-origin HTTPS return page.
   The pending verifier is kept in `sessionStorage`, not the long-lived token `localStorage` area.
-  The callback route immediately replaces browser history before exchange.
+  The callback route immediately replaces browser history before exchange. The web host must redact
+  that route's query string from access logs and apply a restrictive production Content Security
+  Policy.
 - Android and iOS use Expo WebBrowser and Expo Linking. Production uses verified Android App Links
   and iOS Universal Links on a stable Nestra-controlled HTTPS domain. Development builds may use a
   reverse-domain private scheme such as `com.michalrozek.nestra:/oauth/google`; Expo Go is not a
@@ -331,6 +342,7 @@ external_auth_transactions
 ├── handoff_code_hash: char(64) nullable unique
 ├── validated_claims_ciphertext: text nullable
 ├── status: varchar
+├── processing_lease_expires_at: timestamptz nullable
 ├── outcome_error_code: varchar nullable
 ├── provider_expires_at: timestamptz
 ├── handoff_expires_at: timestamptz nullable
@@ -348,9 +360,11 @@ eventual deletion: every read checks status and expiry. A small idempotent API m
 scrubs expired active rows and deletes terminal rows after 24 hours; expiry columns are indexed.
 
 Provider authorization has a maximum age of 10 minutes. A handoff has two minutes from a successful
-callback. State, provider code, handoff code, and exchange are each single-use. Starting a new client
-flow replaces that client's pending verifier but does not make an older server transaction valid;
-it expires normally. Callback and exchange state transitions use conditional updates or row locks.
+callback. A short `processing_lease_expires_at` protects the callback's provider-network phase
+without keeping a database transaction open. State, provider code, handoff code, and exchange are
+each single-use. Starting a new client flow replaces that client's pending verifier but does not
+make an older server transaction valid; it expires normally. Callback and exchange state
+transitions use conditional updates or row locks.
 
 ### Configuration and secret ownership
 
@@ -373,6 +387,11 @@ The encryption key is exactly 32 random bytes encoded as base64. Callback and al
 URIs use HTTPS except the statically registered Windows protocol handler and explicitly documented
 development private schemes or loopback addresses. Canonical URI validation rejects fragments,
 credentials, unexpected query parameters, and non-exact origins or paths.
+
+Changing the transaction encryption key or Google client credentials intentionally invalidates
+in-flight flows. Operators rotate them by first allowing the 10-minute provider window to drain or
+accepting a safe retry; old and new long-lived key support is unnecessary because no authentication
+transaction may outlive that window.
 
 The client has only `EXPO_PUBLIC_GOOGLE_AUTH_ENABLED`, used to hide the action when the matching API
 deployment is not ready. It receives no Google client secret, transaction encryption key, or
@@ -403,9 +422,9 @@ failure, exchange success, exchange rejection by safe reason, provisioning, link
 expiry, plus duration histograms for provider and exchange phases. Provider subject, email, user
 ID, transaction ID, and request ID are never metric labels.
 
-The callback route must be excluded from raw URL access logs at the NestJS and hosting proxy layers.
-Form bodies are never logged. Client logging records only operation, platform, safe outcome, and
-duration.
+The Google API callback and the Web handoff return route must be excluded from raw URL/query access
+logs at the NestJS, static-host, and hosting-proxy layers. Form bodies are never logged. Client
+logging records only operation, platform, safe outcome, and duration.
 
 ### Threat model
 
@@ -421,7 +440,7 @@ duration.
 | Replay of state, callback, handoff, or exchange      | Conditional status transitions, row lock, hash comparisons, provider 10-minute and handoff 2-minute TTLs, atomic consumption, replay metrics                                         | An attacker can cause harmless failed requests or denial of service                                         |
 | Concurrent provisioning or linking                   | Database uniqueness, user/transaction row locks, atomic user + identity + session transaction, conflict re-read only by exact provider subject                                       | Contention can return a recoverable conflict but cannot merge users                                         |
 | Transaction-database disclosure                      | Hash state and handoff, encrypt PKCE/nonce and validated claims with separate managed AES-GCM key, short TTL, scrub and cleanup                                                      | Simultaneous database and encryption-key compromise exposes active transactions                             |
-| XSS in browser client                                | Existing CSP, same-origin auth return, immediate history replacement, short handoff TTL and verifier binding                                                                         | Existing web `localStorage` session-token compromise remains as documented in ADR 003 and the specification |
+| XSS in browser client                                | Same-origin auth return, restrictive production-web CSP, immediate history replacement, short handoff TTL and verifier binding                                                       | Existing web `localStorage` session-token compromise remains as documented in ADR 003 and the specification |
 | Provider cancellation, outage, or malformed response | Typed recoverable outcomes after valid state, generic safe page otherwise, no partial user/link changes                                                                              | The user must retry after provider or network recovery                                                      |
 
 The trust boundary assumes TLS validation, uncompromised Google infrastructure, cryptographically

@@ -1038,10 +1038,12 @@ must match the transaction ID to its pending operation, remove the return URL fr
 where applicable, and exchange the code plus verifier over HTTPS.
 
 The exchange locks the transaction row and validates code hash, verifier challenge, intent,
-platform, user binding, status, and expiry before atomically consuming it. A code without the
-verifier is insufficient to create a session or link an account. The provider phase expires after
-10 minutes; the handoff phase expires two minutes after the valid callback. State, provider callback,
-handoff, and exchange are single-use. Replay and concurrent requests fail safely.
+platform, user binding, status, and expiry. Handoff consumption, provisioning or linking, and
+refresh-session creation where applicable are one database transaction. A persistence failure
+rolls back consumption so the client can retry before expiry. A code without the verifier is
+insufficient to create a session or link an account. The provider phase expires after 10 minutes;
+the handoff phase expires two minutes after the valid callback. State, provider callback, handoff,
+and exchange are single-use. Replay and concurrent requests fail safely.
 
 Cancellation with valid state is returned through the same verifier-bound handoff as
 `AUTH_GOOGLE_CANCELLED`. Other valid provider errors use `AUTH_GOOGLE_PROVIDER_ERROR`. Browser
@@ -1059,7 +1061,8 @@ fragment, credentials, or unexpected query parameters are permitted.
 
 - Web uses an exact same-origin HTTPS callback and Expo WebBrowser's web auth-session behavior.
   Pending verifier state uses `sessionStorage`, not the token `localStorage`, and the callback route
-  replaces history immediately.
+  replaces history immediately. The Web host redacts the return route query from access logs and
+  applies a restrictive production Content Security Policy.
 - Android and iOS use Expo WebBrowser and Expo Linking. Production uses verified Android App Links
   and iOS Universal Links on a stable Nestra-controlled HTTPS domain. Development builds may use a
   reverse-domain private scheme. Expo Go is not a supported OAuth verification target. Pending
@@ -1101,6 +1104,8 @@ the password hash is null.
 Provisioning and linking rules:
 
 1. An existing exact `(google, sub)` identity signs in its linked user without consulting email.
+   Its `provider_email` snapshot may be updated from the latest normalized verified claim, but the
+   user's canonical Nestra email is not changed.
 2. An unlinked subject and unused normalized email creates the user, identity, refresh session, and
    response in one transaction.
 3. An unlinked subject whose email already belongs to a Nestra user returns
@@ -1120,8 +1125,8 @@ and ownership-confirmation experience. Matching email alone remains insufficient
 `external_auth_transactions` persists active protocol state across API restarts and hosted cold
 starts. It contains transaction ID, provider, intent, platform, nullable bound user ID, canonical
 return URI, state hash, encrypted request secrets, handoff challenge and optional code hash,
-encrypted validated minimal claims, status, safe outcome code, provider and handoff expiries,
-consumed timestamp, and normal timestamps.
+encrypted validated minimal claims, status, nullable provider-processing lease expiry, safe outcome
+code, provider and handoff expiries, consumed timestamp, and normal timestamps.
 
 Store the provider PKCE verifier and nonce in an AES-256-GCM encrypted request payload with a random
 96-bit IV and authenticated transaction context. After callback, erase it and store only encrypted
@@ -1139,11 +1144,11 @@ strings, state, nonce, either PKCE value, handoff values, secrets, provider toke
 decoded claim objects, email, Google subject, profile attributes, Nestra tokens, authorization
 headers, or complete requests/responses.
 
-Exclude the callback route from raw URL access logs at the API and hosting proxy layers. Required
-low-cardinality metrics count starts, callbacks, cancellation, provider failure, successful and
-rejected exchanges by safe reason, provisioning, linking, replay, and expiry, with duration
-histograms for provider and exchange phases. Never use email, subject, user ID, transaction ID, or
-request ID as metric labels.
+Exclude the Google API callback and Web handoff return route from raw URL/query access logs at the
+API, static host, and hosting proxy layers. Required low-cardinality metrics count starts,
+callbacks, cancellation, provider failure, successful and rejected exchanges by safe reason,
+provisioning, linking, replay, and expiry, with duration histograms for provider and exchange
+phases. Never use email, subject, user ID, transaction ID, or request ID as metric labels.
 
 #### Security invariants
 
