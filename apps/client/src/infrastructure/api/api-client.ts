@@ -7,7 +7,10 @@ import {
   recordSuccessfulApiRequest,
 } from '@/infrastructure/diagnostics/api-diagnostics';
 import { logger } from '@/infrastructure/logging/logger';
-import { persistAuthenticationSessionTokens } from '@/infrastructure/auth/auth-session-storage';
+import {
+  clearAuthenticationSessionTokens,
+  persistAuthenticationSessionTokens,
+} from '@/infrastructure/auth/auth-session-storage';
 import { authTokenStorage } from '@/infrastructure/auth/auth-token-storage';
 
 type AuthenticatedRequestConfig = InternalAxiosRequestConfig & {
@@ -93,7 +96,7 @@ async function getRotatedAccessToken(): Promise<string> {
 
 async function invalidateAuthentication(): Promise<void> {
   try {
-    await authTokenStorage.clear();
+    await clearAuthenticationSessionTokens();
   } catch (error: unknown) {
     logger.error('Authentication tokens could not be cleared', error);
   }

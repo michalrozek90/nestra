@@ -7,7 +7,11 @@ import { registerAuthenticationFailureHandler } from '@/infrastructure/api/api-c
 import { logger } from '@/infrastructure/logging/logger';
 import { logout, refreshSession } from './auth-api';
 import { isRecoverableConnectionError } from './auth-error';
-import { persistAuthenticationSessionTokens } from './auth-session-storage';
+import {
+  clearAuthenticationSessionTokens,
+  invalidateAuthenticationPersistence,
+  persistAuthenticationSessionTokens,
+} from './auth-session-storage';
 import { authTokenStorage } from './auth-token-storage';
 
 export type AuthenticationStatus = 'unknown' | 'authenticated' | 'unauthenticated';
@@ -27,7 +31,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 async function clearStoredTokensSafely(): Promise<void> {
   try {
-    await authTokenStorage.clear();
+    await clearAuthenticationSessionTokens();
   } catch (error: unknown) {
     logger.error('Authentication tokens could not be cleared', error);
   }
@@ -118,6 +122,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
 
     setIsSigningOut(true);
+    // Fence in-flight refresh persistence before the logout network round-trip.
+    invalidateAuthenticationPersistence();
     try {
       let refreshToken: string | null = null;
       try {
