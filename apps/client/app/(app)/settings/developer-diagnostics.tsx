@@ -101,16 +101,26 @@ export default function DeveloperDiagnosticsScreen() {
       : isAvailable
         ? t('diagnostics.values.available')
         : t('diagnostics.values.unavailable');
-  const healthResult = healthQuery.isPending
-    ? t('diagnostics.values.checking')
-    : healthQuery.data
-      ? formatHealthResult(healthQuery.data, t)
-      : t('diagnostics.values.healthCheckFailed');
-  const healthLastCheckedAt = healthQuery.isError
-    ? healthQuery.errorUpdatedAt
-    : healthQuery.dataUpdatedAt;
+
+  const isHealthError = healthQuery.isError;
+  const isHealthPending = healthQuery.isPending;
+  const isHealthFetching = healthQuery.isFetching;
+  const healthData = healthQuery.data;
+  const healthErrorUpdatedAt = healthQuery.errorUpdatedAt;
+  const healthDataUpdatedAt = healthQuery.dataUpdatedAt;
+
+  let healthResult = t('diagnostics.values.healthCheckFailed');
+  if (isHealthError) {
+    healthResult = t('diagnostics.values.healthCheckFailed');
+  } else if (healthData) {
+    healthResult = formatHealthResult(healthData, t);
+  } else if (isHealthPending || isHealthFetching) {
+    healthResult = t('diagnostics.values.checking');
+  }
+
+  const healthLastCheckedAt = isHealthError ? healthErrorUpdatedAt : healthDataUpdatedAt;
   const isRefreshingDiagnostics =
-    healthQuery.isFetching || draftStorageQuery.isFetching || tokenPresenceQuery.isFetching;
+    isHealthFetching || draftStorageQuery.isFetching || tokenPresenceQuery.isFetching;
 
   if (!runtimeConfig.showDeveloperDiagnostics) {
     return <Redirect href="/settings" />;

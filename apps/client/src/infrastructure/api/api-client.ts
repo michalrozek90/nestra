@@ -16,7 +16,10 @@ import { authTokenStorage } from '@/infrastructure/auth/auth-token-storage';
 type AuthenticatedRequestConfig = InternalAxiosRequestConfig & {
   _authRetryAttempted?: boolean;
   _authSessionId?: string;
+  _skipDiagnostics?: boolean;
 };
+
+export type ApiRequestConfig = AuthenticatedRequestConfig;
 
 type AuthenticationFailureHandler = () => void;
 
@@ -133,11 +136,18 @@ apiClient.interceptors.request.use(async (config) => {
 
 apiClient.interceptors.response.use(
   (response) => {
-    recordSuccessfulApiRequest(response);
+    if ((response.config as AuthenticatedRequestConfig)._skipDiagnostics !== true) {
+      recordSuccessfulApiRequest(response);
+    }
     return response;
   },
   async (error: unknown) => {
-    recordFailedApiRequest(error);
+    if (
+      !axios.isAxiosError(error) ||
+      (error.config as AuthenticatedRequestConfig | undefined)?._skipDiagnostics !== true
+    ) {
+      recordFailedApiRequest(error);
+    }
     if (!axios.isAxiosError(error) || !error.response || error.response.status >= 500) {
       logger.warn('API request did not complete successfully');
     }
