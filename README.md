@@ -79,14 +79,14 @@ pnpm dev
 
 Useful variants:
 
-| Command | Purpose |
-| --- | --- |
-| `pnpm dev:web` | Expo web on port `8081` |
-| `pnpm dev:api` | NestJS API on `0.0.0.0:3000` |
-| `pnpm dev:android` / `pnpm dev:ios` | Native clients |
-| `pnpm dev:desktop` | Tauri desktop against Expo web |
-| `pnpm db:logs` / `pnpm db:stop` | Inspect or stop Postgres |
-| `pnpm db:seed` | Development seed (refuses `NODE_ENV=production`) |
+| Command                             | Purpose                                          |
+| ----------------------------------- | ------------------------------------------------ |
+| `pnpm dev:web`                      | Expo web on port `8081`                          |
+| `pnpm dev:api`                      | NestJS API on `0.0.0.0:3000`                     |
+| `pnpm dev:android` / `pnpm dev:ios` | Native clients                                   |
+| `pnpm dev:desktop`                  | Tauri desktop against Expo web                   |
+| `pnpm db:logs` / `pnpm db:stop`     | Inspect or stop Postgres                         |
+| `pnpm db:seed`                      | Development seed (refuses `NODE_ENV=production`) |
 
 Health: `http://localhost:3000/api/v1/health`. Swagger (development only):
 `http://localhost:3000/docs`.
