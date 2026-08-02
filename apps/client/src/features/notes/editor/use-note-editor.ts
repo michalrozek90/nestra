@@ -83,7 +83,6 @@ export function useNoteEditor({
 
   const writeCurrentDraft = useCallback(async (): Promise<boolean> => {
     const currentValue = valueRef.current;
-    const currentIdentity = identityRef.current;
     const draft: NoteDraft = {
       document: currentValue.document,
       updatedAt: new Date().toISOString(),
@@ -93,7 +92,7 @@ export function useNoteEditor({
     try {
       const writeOperation = draftQueueRef.current
         .catch(() => undefined)
-        .then(() => noteDraftStorage.write(userId, currentIdentity, draft));
+        .then(() => noteDraftStorage.write(userId, identityRef.current, draft));
       draftQueueRef.current = writeOperation.catch(() => undefined);
       await writeOperation;
       return true;
@@ -186,19 +185,27 @@ export function useNoteEditor({
           });
         }
 
+        const previousIdentity = identityRef.current;
+        const nextIdentity: NoteDraftIdentity = {
+          kind: 'existing',
+          noteId: createdNote.id,
+        };
+        identityRef.current = nextIdentity;
+
         try {
-          await writeCurrentDraft();
-          const previousIdentity = identityRef.current;
-          const nextIdentity: NoteDraftIdentity = {
-            kind: 'existing',
-            noteId: createdNote.id,
-          };
-          identityRef.current = nextIdentity;
-          const moveOperation = draftQueueRef.current
-            .catch(() => undefined)
-            .then(() => noteDraftStorage.move(userId, previousIdentity, nextIdentity));
-          draftQueueRef.current = moveOperation.catch(() => undefined);
-          await moveOperation;
+          // Drain queued writes, persist under the existing-note key, then drop the new-note key.
+          // Avoid storage.move(): a concurrent draft write can recreate `new` or be overwritten by move.
+          await draftQueueRef.current.catch(() => undefined);
+          if (!(await writeCurrentDraft())) {
+            throw new Error('Note draft could not be written after note creation.');
+          }
+          try {
+            await noteDraftStorage.remove(userId, previousIdentity);
+          } catch (error: unknown) {
+            logger.error('New note draft key could not be removed after migration', error, {
+              noteId: createdNote.id,
+            });
+          }
 
           if (revision === editRevisionRef.current) {
             hasUnsavedChangesRef.current = false;
@@ -206,12 +213,32 @@ export function useNoteEditor({
             if (isMountedRef.current) {
               setSaveStatus('saved');
             }
+          } else {
+            const latestNormalizedValue = normalizeNoteEditorValue(valueRef.current);
+            if (latestNormalizedValue) {
+              const latestRevision = editRevisionRef.current;
+              saveQueueRef.current = saveQueueRef.current
+                .catch(() => undefined)
+                .then(() => saveExistingNote(latestRevision, latestNormalizedValue));
+              await saveQueueRef.current;
+            }
           }
         } catch (error: unknown) {
           logger.error('New note draft could not be migrated', error, {
             noteId: createdNote.id,
           });
           await writeCurrentDraft();
+          try {
+            await noteDraftStorage.remove(userId, previousIdentity);
+          } catch (removeError: unknown) {
+            logger.error(
+              'New note draft key could not be removed after migration failure',
+              removeError,
+              {
+                noteId: createdNote.id,
+              },
+            );
+          }
           if (isMountedRef.current) {
             setSaveStatus('saved-locally');
           }
@@ -226,7 +253,7 @@ export function useNoteEditor({
 
       return creationPromiseRef.current;
     },
-    [queryClient, userId, writeCurrentDraft],
+    [queryClient, saveExistingNote, userId, writeCurrentDraft],
   );
 
   const flushServerSave = useCallback(async (): Promise<void> => {
@@ -381,6 +408,10 @@ export function useNoteEditor({
             setSaveStatus('saved-locally');
             scheduleSaves();
           }
+        } else if (draft !== null) {
+          void noteDraftStorage.remove(userId, identity).catch((error: unknown) => {
+            logger.error('Superseded note draft could not be removed', error);
+          });
         }
       })
       .catch((error: unknown) => {
