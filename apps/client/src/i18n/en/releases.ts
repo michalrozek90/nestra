@@ -65,6 +65,8 @@ export const enReleases = {
           'Signing out now fully ends your session even if a token refresh was already in progress.',
         newNoteDraftMigration:
           'Creating a note now keeps your latest edits and no longer leaves a leftover draft that can reopen in a new note.',
+        updatePromptCoordination:
+          'Desktop update prompts wait until What’s New is finished, and checking for updates from About still works if a background check just finished.',
       },
     },
     v020: {

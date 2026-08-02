@@ -6,7 +6,6 @@ import { Text } from 'react-native-paper';
 
 import { Button } from '@/components/button';
 import { Loader } from '@/components/loader';
-import { ApplicationUpdateHost } from '@/features/application-update/application-update-host';
 import { ApplicationUpdateProvider } from '@/features/application-update/application-update-provider';
 import { initializeLocalization } from '@/i18n/i18n';
 import { getBootstrapMessages } from '@/i18n/system-language';
@@ -109,7 +108,6 @@ function ClientBootstrap() {
     <AuthProvider>
       <ApplicationUpdateProvider>
         <AuthenticatedRootNavigator />
-        <ApplicationUpdateHost />
       </ApplicationUpdateProvider>
     </AuthProvider>
   );
