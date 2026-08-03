@@ -35,6 +35,8 @@ export function getNoteErrorTranslationKey(error: unknown): NoteErrorTranslation
         return 'errors.serviceUnavailable';
       case 'AUTH_ACCESS_TOKEN_INVALID':
       case 'AUTH_EMAIL_ALREADY_REGISTERED':
+      case 'AUTH_EXTERNAL_IDENTITY_ALREADY_LINKED':
+      case 'AUTH_EXTERNAL_IDENTITY_CONFLICT':
       case 'AUTH_INVALID_CREDENTIALS':
       case 'AUTH_REFRESH_TOKEN_INVALID':
       case 'AUTH_SESSION_EXPIRED':

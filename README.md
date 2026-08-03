@@ -117,10 +117,12 @@ pnpm lint:fix
 pnpm typecheck
 pnpm build
 pnpm verify
+pnpm test:api
 ```
 
 `pnpm verify` runs `format:check`, `lint`, product-version sync, `typecheck`, and `build`. It is
-the baseline GitHub Actions quality gate.
+the baseline GitHub Actions quality gate. `pnpm test:api` runs API persistence and related Node
+tests against local Postgres (`pnpm db:start`); CI also runs that job with a Postgres service.
 
 ## Deployment, CI, and releases
 
@@ -130,10 +132,10 @@ the baseline GitHub Actions quality gate.
   [`docs/deployment/release.md`](docs/deployment/release.md)
 - Code signing: [`docs/security/code-signing-policy.md`](docs/security/code-signing-policy.md)
 
-CI on pull requests and `main` runs the quality gate (`.github/workflows/ci.yml`). Separate
-workflows handle Windows packaging and release-asset attachment. The root `package.json` version
-is the product version shared by Expo, Tauri, the installer, and Release Please
-(`pnpm check:product-version`).
+CI on pull requests and `main` runs the quality gate and the API persistence job
+(`.github/workflows/ci.yml`). Separate workflows handle Windows packaging and release-asset
+attachment. The root `package.json` version is the product version shared by Expo, Tauri, the
+installer, and Release Please (`pnpm check:product-version`).
 
 ## Documentation
 

@@ -4,6 +4,7 @@ node_modules/
 
 # Build and framework output
 dist/
+dist-test/
 build/
 coverage/
 .expo/
