@@ -10,6 +10,14 @@ export type AuthErrorTranslationKey =
   | 'errors.sessionStorageUnavailable'
   | 'errors.validationFailed'
   | 'errors.serviceUnavailable'
+  | 'errors.google.provider'
+  | 'errors.google.invalidCallback'
+  | 'errors.google.expiredHandoff'
+  | 'errors.google.usedHandoff'
+  | 'errors.google.emailUnverified'
+  | 'errors.google.emailMismatch'
+  | 'errors.google.identityConflict'
+  | 'errors.google.unavailable'
   | 'errors.unexpected';
 
 function mapApiErrorCode(errorCode: ApiErrorCode): AuthErrorTranslationKey {
@@ -26,25 +34,42 @@ function mapApiErrorCode(errorCode: ApiErrorCode): AuthErrorTranslationKey {
     case 'VALIDATION_FAILED':
       return 'errors.validationFailed';
     case 'SERVICE_UNAVAILABLE':
-    case 'AUTH_GOOGLE_UNAVAILABLE':
       return 'errors.serviceUnavailable';
+    case 'AUTH_GOOGLE_UNAVAILABLE':
+      return 'errors.google.unavailable';
+    case 'AUTH_GOOGLE_PROVIDER_ERROR':
+      return 'errors.google.provider';
+    case 'AUTH_GOOGLE_RESPONSE_INVALID':
+    case 'AUTH_GOOGLE_HANDOFF_INVALID':
+      return 'errors.google.invalidCallback';
+    case 'AUTH_GOOGLE_HANDOFF_EXPIRED':
+      return 'errors.google.expiredHandoff';
+    case 'AUTH_GOOGLE_HANDOFF_ALREADY_USED':
+      return 'errors.google.usedHandoff';
+    case 'AUTH_GOOGLE_EMAIL_UNVERIFIED':
+      return 'errors.google.emailUnverified';
+    case 'AUTH_GOOGLE_EMAIL_MISMATCH':
+      return 'errors.google.emailMismatch';
+    case 'AUTH_EXTERNAL_IDENTITY_ALREADY_LINKED':
+    case 'AUTH_EXTERNAL_IDENTITY_CONFLICT':
+      return 'errors.google.identityConflict';
     case 'INTERNAL_SERVER_ERROR':
     case 'NOTE_NOT_FOUND':
     case 'NOTE_NOT_TRASHED':
     case 'ROUTE_NOT_FOUND':
-    case 'AUTH_EXTERNAL_IDENTITY_ALREADY_LINKED':
-    case 'AUTH_EXTERNAL_IDENTITY_CONFLICT':
     case 'AUTH_GOOGLE_CANCELLED':
-    case 'AUTH_GOOGLE_PROVIDER_ERROR':
-    case 'AUTH_GOOGLE_RESPONSE_INVALID':
-    case 'AUTH_GOOGLE_HANDOFF_INVALID':
-    case 'AUTH_GOOGLE_HANDOFF_EXPIRED':
-    case 'AUTH_GOOGLE_HANDOFF_ALREADY_USED':
-    case 'AUTH_GOOGLE_EMAIL_UNVERIFIED':
-    case 'AUTH_GOOGLE_EMAIL_MISMATCH':
     case 'AUTH_ACCOUNT_LINK_REQUIRED':
       return 'errors.unexpected';
   }
+}
+
+export function getAuthApiErrorCode(error: unknown): ApiErrorCode | null {
+  if (!isAxiosError(error)) {
+    return null;
+  }
+
+  const parsedError = apiErrorResponseSchema.safeParse(error.response?.data);
+  return parsedError.success ? parsedError.data.errorCode : null;
 }
 
 export function getAuthErrorTranslationKey(error: unknown): AuthErrorTranslationKey {

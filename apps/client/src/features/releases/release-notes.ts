@@ -19,6 +19,9 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
     changes: {
       new: [
         {
+          descriptionTranslationKey: 'versions.v030.changes.googleAuthentication',
+        },
+        {
           descriptionTranslationKey: 'versions.v030.changes.completeReleaseHistory',
         },
         {

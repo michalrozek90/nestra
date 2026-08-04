@@ -7,6 +7,7 @@ import { Text } from 'react-native-paper';
 import { Button } from '@/components/button';
 import { Loader } from '@/components/loader';
 import { ApplicationUpdateProvider } from '@/features/application-update/application-update-provider';
+import { GoogleAuthProvider } from '@/features/authentication/google-auth/google-auth-provider';
 import { initializeLocalization } from '@/i18n/i18n';
 import { getBootstrapMessages } from '@/i18n/system-language';
 import { logger } from '@/infrastructure/logging/logger';
@@ -106,9 +107,11 @@ function ClientBootstrap() {
 
   return (
     <AuthProvider>
-      <ApplicationUpdateProvider>
-        <AuthenticatedRootNavigator />
-      </ApplicationUpdateProvider>
+      <GoogleAuthProvider>
+        <ApplicationUpdateProvider>
+          <AuthenticatedRootNavigator />
+        </ApplicationUpdateProvider>
+      </GoogleAuthProvider>
     </AuthProvider>
   );
 }

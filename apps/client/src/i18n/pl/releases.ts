@@ -57,6 +57,8 @@ export const plReleases = {
   versions: {
     v030: {
       changes: {
+        googleAuthentication:
+          'Możesz teraz logować się lub utworzyć konto Nestra przez Google, nadal zachowując dostęp za pomocą hasła.',
         completeReleaseHistory:
           'Sekcja Co nowego pokazuje teraz każdą pominiętą wersję, z wyraźnie pogrupowanymi nowościami i naprawami.',
         creatorCredit: 'Ekran O aplikacji pokazuje teraz autora: Michał Rożek.',

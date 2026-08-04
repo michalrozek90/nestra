@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { Button } from '@/components/button';
 import { Header } from '@/components/header';
 import { Screen } from '@/components/screen';
+import { GoogleAuthSection } from '@/features/authentication/google-auth/google-auth-section';
 import { registerAccount } from '@/infrastructure/auth/auth-api';
 import { getAuthErrorTranslationKey } from '@/infrastructure/auth/auth-error';
 import { useAuth } from '@/infrastructure/auth/auth-provider';
@@ -167,6 +168,7 @@ export default function RegisterScreen() {
           onPress={() => router.push('/login')}
           variant="secondary"
         />
+        <GoogleAuthSection mode="sign-up" />
       </View>
     </Screen>
   );

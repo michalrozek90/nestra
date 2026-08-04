@@ -11,7 +11,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: 'nestra',
   version: rootPackage.version,
   runtimeVersion: rootPackage.version,
-  scheme: 'nestra',
+  scheme: ['nestra', 'com.michalrozek.nestra'],
   orientation: 'default',
   backgroundColor: APP_BOOTSTRAP_BACKGROUND_COLOR,
   userInterfaceStyle: 'automatic',
@@ -21,6 +21,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-secure-store',
     'expo-status-bar',
     'expo-system-ui',
+    'expo-web-browser',
     ['expo-localization', { supportedLocales: ['en', 'pl'] }],
   ],
   experiments: {

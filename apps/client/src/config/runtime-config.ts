@@ -11,6 +11,7 @@ export type RuntimeConfig = {
   readonly apiBaseUrl: string;
   readonly showDeveloperDiagnostics: boolean;
   readonly isVerboseLoggingEnabled: boolean;
+  readonly isGoogleAuthEnabled: boolean;
 };
 
 const booleanStringSchema = z.enum(['true', 'false']).transform((text) => text === 'true');
@@ -26,6 +27,8 @@ const runtimeConfigSchema = z.strictObject({
   apiBaseUrl: apiBaseUrlSchema,
   showDeveloperDiagnostics: booleanStringSchema,
   isVerboseLoggingEnabled: booleanStringSchema,
+  // The provider action fails closed for existing deployments until explicitly enabled.
+  isGoogleAuthEnabled: booleanStringSchema.default(false),
 });
 
 function getApplicationVersion(): unknown {
@@ -45,6 +48,7 @@ function loadRuntimeConfig(): RuntimeConfig {
     apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
     showDeveloperDiagnostics: process.env.EXPO_PUBLIC_SHOW_DEVELOPER_DIAGNOSTICS,
     isVerboseLoggingEnabled: process.env.EXPO_PUBLIC_VERBOSE_LOGGING,
+    isGoogleAuthEnabled: process.env.EXPO_PUBLIC_GOOGLE_AUTH_ENABLED,
   });
 
   if (!parsedConfig.success) {
