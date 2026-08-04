@@ -11,6 +11,7 @@ import { Text, TextInput } from 'react-native-paper';
 import { Button } from '@/components/button';
 import { Header } from '@/components/header';
 import { Screen } from '@/components/screen';
+import { GoogleAuthSection } from '@/features/authentication/google-auth/google-auth-section';
 import { login } from '@/infrastructure/auth/auth-api';
 import { getAuthErrorTranslationKey } from '@/infrastructure/auth/auth-error';
 import { useAuth } from '@/infrastructure/auth/auth-provider';
@@ -131,6 +132,7 @@ export default function LoginScreen() {
           onPress={() => router.push('/register')}
           variant="secondary"
         />
+        <GoogleAuthSection mode="sign-in" />
       </View>
     </Screen>
   );

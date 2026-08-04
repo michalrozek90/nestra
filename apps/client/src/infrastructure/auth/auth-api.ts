@@ -1,11 +1,21 @@
 import {
   authenticationSessionResponseSchema,
+  externalIdentityResponseSchema,
+  googleAuthExchangeRequestSchema,
+  googleAuthStartRequestSchema,
+  googleAuthStartResponseSchema,
+  googleLinkStartRequestSchema,
   loginRequestSchema,
   logoutRequestSchema,
   publicUserSchema,
   refreshRequestSchema,
   registerRequestSchema,
   type AuthenticationSessionResponse,
+  type ExternalIdentityResponse,
+  type GoogleAuthExchangeRequest,
+  type GoogleAuthStartRequest,
+  type GoogleAuthStartResponse,
+  type GoogleLinkStartRequest,
   type LoginRequest,
   type LogoutRequest,
   type PublicUser,
@@ -58,4 +68,48 @@ export async function logout(request: LogoutRequest): Promise<void> {
 export async function getCurrentUser(): Promise<PublicUser> {
   const response = await apiClient.get<unknown>('/auth/me', authRequestConfig);
   return publicUserSchema.parse(response.data);
+}
+
+export async function startGoogleSignIn(
+  request: GoogleAuthStartRequest,
+): Promise<GoogleAuthStartResponse> {
+  const response = await apiClient.post<unknown>(
+    '/auth/google/sign-in/start',
+    googleAuthStartRequestSchema.parse(request),
+    authRequestConfig,
+  );
+  return googleAuthStartResponseSchema.parse(response.data);
+}
+
+export async function exchangeGoogleSignIn(
+  request: GoogleAuthExchangeRequest,
+): Promise<AuthenticationSessionResponse> {
+  const response = await apiClient.post<unknown>(
+    '/auth/google/sign-in/exchange',
+    googleAuthExchangeRequestSchema.parse(request),
+    authRequestConfig,
+  );
+  return authenticationSessionResponseSchema.parse(response.data);
+}
+
+export async function startGoogleLink(
+  request: GoogleLinkStartRequest,
+): Promise<GoogleAuthStartResponse> {
+  const response = await apiClient.post<unknown>(
+    '/auth/google/link/start',
+    googleLinkStartRequestSchema.parse(request),
+    authRequestConfig,
+  );
+  return googleAuthStartResponseSchema.parse(response.data);
+}
+
+export async function exchangeGoogleLink(
+  request: GoogleAuthExchangeRequest,
+): Promise<ExternalIdentityResponse> {
+  const response = await apiClient.post<unknown>(
+    '/auth/google/link/exchange',
+    googleAuthExchangeRequestSchema.parse(request),
+    authRequestConfig,
+  );
+  return externalIdentityResponseSchema.parse(response.data);
 }

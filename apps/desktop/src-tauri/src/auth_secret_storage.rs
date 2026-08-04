@@ -3,9 +3,12 @@ use keyring::{Entry, Error as KeyringError};
 const AUTH_SECRET_SERVICE: &str = "com.michalrozek.nestra.auth";
 const ACCESS_TOKEN_ACCOUNT: &str = "accessToken";
 const REFRESH_TOKEN_ACCOUNT: &str = "refreshToken";
+const PENDING_EXTERNAL_AUTH_ACCOUNT: &str = "pendingExternalAuth";
 
 fn is_allowed_account(account: &str) -> bool {
-    account == ACCESS_TOKEN_ACCOUNT || account == REFRESH_TOKEN_ACCOUNT
+    account == ACCESS_TOKEN_ACCOUNT
+        || account == REFRESH_TOKEN_ACCOUNT
+        || account == PENDING_EXTERNAL_AUTH_ACCOUNT
 }
 
 fn create_entry(account: &str) -> Result<Entry, String> {
@@ -58,13 +61,15 @@ pub fn delete_auth_secret(account: String) -> Result<(), String> {
 pub fn clear_auth_secrets() -> Result<(), String> {
     delete_auth_secret(ACCESS_TOKEN_ACCOUNT.to_owned())?;
     delete_auth_secret(REFRESH_TOKEN_ACCOUNT.to_owned())?;
+    delete_auth_secret(PENDING_EXTERNAL_AUTH_ACCOUNT.to_owned())?;
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
-        is_allowed_account, ACCESS_TOKEN_ACCOUNT, AUTH_SECRET_SERVICE, REFRESH_TOKEN_ACCOUNT,
+        is_allowed_account, ACCESS_TOKEN_ACCOUNT, AUTH_SECRET_SERVICE,
+        PENDING_EXTERNAL_AUTH_ACCOUNT, REFRESH_TOKEN_ACCOUNT,
     };
 
     #[test]
@@ -74,6 +79,7 @@ mod tests {
         assert_eq!(REFRESH_TOKEN_ACCOUNT, "refreshToken");
         assert!(is_allowed_account(ACCESS_TOKEN_ACCOUNT));
         assert!(is_allowed_account(REFRESH_TOKEN_ACCOUNT));
+        assert!(is_allowed_account(PENDING_EXTERNAL_AUTH_ACCOUNT));
         assert!(!is_allowed_account("other"));
     }
 }

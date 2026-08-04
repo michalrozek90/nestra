@@ -48,6 +48,11 @@
     }
   },
   "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["com.michalrozek.nestra.desktop"]
+      }
+    },
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDRDREVDRDdGQjRFRTU0RTAKUldUZ1ZPNjBmODNlVEt0TW9mNzlybGpsNWQ4aUdNQnVmbjFjUVhZeGpTeFZpc2ZOemNDT3hQNEEK",
       "endpoints": ["https://github.com/michalrozek90/nestra/releases/latest/download/latest.json"],

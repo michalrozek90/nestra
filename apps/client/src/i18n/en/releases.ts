@@ -56,6 +56,8 @@ export const enReleases = {
   versions: {
     v030: {
       changes: {
+        googleAuthentication:
+          'You can now sign in or create your Nestra account with Google, while keeping password access available.',
         completeReleaseHistory:
           'What’s new now shows every version you missed, with new features and fixes clearly grouped.',
         creatorCredit: 'The About screen now shows the author: Michał Rożek.',

@@ -32,8 +32,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test:api": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/api test",
+    "test:client": "pnpm --filter @nestra/client test",
     "typecheck": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/contracts typecheck && pnpm --filter @nestra/api typecheck && pnpm --filter @nestra/client typecheck",
-    "verify": "pnpm format:check && pnpm lint && pnpm check:product-version && pnpm typecheck && pnpm build"
+    "verify": "pnpm format:check && pnpm lint && pnpm check:product-version && pnpm typecheck && pnpm test:client && pnpm build"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

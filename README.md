@@ -69,6 +69,10 @@ Replace the API JWT placeholder with a private value of at least 32 characters. 
 example when the client needs runtime configuration. Local `.env` / `.env.local` files are Git
 ignored.
 
+Google authentication is disabled by default. Configure the matching `GOOGLE_OAUTH_*` API values,
+then set `EXPO_PUBLIC_GOOGLE_AUTH_ENABLED=true` only for clients targeting that configured API.
+Google authentication uses the system browser; Expo Go is not a supported verification target.
+
 Start PostgreSQL, apply migrations, then run the stack:
 
 ```bash
@@ -118,11 +122,13 @@ pnpm typecheck
 pnpm build
 pnpm verify
 pnpm test:api
+pnpm test:client
 ```
 
-`pnpm verify` runs `format:check`, `lint`, product-version sync, `typecheck`, and `build`. It is
-the baseline GitHub Actions quality gate. `pnpm test:api` runs API persistence and related Node
-tests against local Postgres (`pnpm db:start`); CI also runs that job with a Postgres service.
+`pnpm verify` runs `format:check`, `lint`, product-version sync, `typecheck`, client unit tests, and
+`build`. It is the baseline GitHub Actions quality gate. `pnpm test:api` runs API persistence and
+related Node tests against local Postgres (`pnpm db:start`); CI also runs that job with a Postgres
+service.
 
 ## Deployment, CI, and releases
 

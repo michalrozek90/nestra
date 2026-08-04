@@ -11,6 +11,7 @@
     "dev:android": "pnpm run generate:icon-fonts && expo start --android",
     "dev:ios": "pnpm run generate:icon-fonts && node ./scripts/start-ios.mjs",
     "dev:web": "pnpm run generate:icon-fonts && expo start --web --port 8081",
+    "test": "vitest run",
     "typecheck": "pnpm run generate:icon-fonts && tsc --noEmit"
   },
   "dependencies": {
@@ -20,11 +21,15 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@tanstack/react-query": "^5.101.2",
     "@tauri-apps/api": "2.11.0",
+    "@tauri-apps/plugin-deep-link": "2.4.9",
+    "@tauri-apps/plugin-opener": "2.5.4",
     "@tauri-apps/plugin-process": "^2.3.1",
     "@tauri-apps/plugin-updater": "^2.10.1",
     "axios": "^1.18.1",
     "expo": "57.0.7",
+    "expo-auth-session": "~57.0.6",
     "expo-constants": "~57.0.6",
+    "expo-crypto": "~57.0.1",
     "expo-font": "~57.0.1",
     "expo-linking": "~57.0.3",
     "expo-localization": "~57.0.1",
@@ -32,6 +37,7 @@
     "expo-secure-store": "~57.0.1",
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.1",
+    "expo-web-browser": "~57.0.2",
     "i18next": "^26.3.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -48,6 +54,7 @@
   "devDependencies": {
     "@nestra/tsconfig": "workspace:*",
     "@types/react": "19.2.17",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "vitest": "^4.1.10"
   }
 }
