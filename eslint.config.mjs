@@ -7,6 +7,7 @@ export default typescriptEslint.config(
     ignores: [
       '**/node_modules/**',
       '**/dist/**',
+      '**/dist-test/**',
       '**/build/**',
       '**/coverage/**',
       '**/.expo/**',

@@ -28,6 +28,20 @@ export {
 } from './auth/refresh-session.schema';
 export { registerRequestSchema, type RegisterRequest } from './auth/register.schema';
 export { publicUserSchema, type PublicUser } from './auth/public-user.schema';
+export {
+  externalIdentityResponseSchema,
+  googleAuthExchangeRequestSchema,
+  googleAuthPlatformSchema,
+  googleAuthStartRequestSchema,
+  googleAuthStartResponseSchema,
+  googleLinkStartRequestSchema,
+  type ExternalIdentityResponse,
+  type GoogleAuthExchangeRequest,
+  type GoogleAuthPlatform,
+  type GoogleAuthStartRequest,
+  type GoogleAuthStartResponse,
+  type GoogleLinkStartRequest,
+} from './auth/google-auth.schema';
 export { createNoteSchema, type CreateNote } from './notes/create-note.schema';
 export {
   emptyTrashResponseSchema,
