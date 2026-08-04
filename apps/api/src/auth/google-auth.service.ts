@@ -435,25 +435,22 @@ export class GoogleAuthService {
     claims: GoogleValidatedClaims,
     entityManager: EntityManager,
   ): Promise<AuthenticationSessionResponse> {
-    const identityRepository = entityManager.getRepository(ExternalAuthIdentityEntity);
-    const existingIdentity = await identityRepository.findOne({
-      where: { provider: 'google', providerSubject: claims.subject },
-      relations: { user: true },
-    });
+    const existingIdentity = await this.identityService.findByProviderSubject(
+      'google',
+      claims.subject,
+      entityManager,
+    );
     if (existingIdentity !== null) {
-      await identityRepository.update(existingIdentity.id, { providerEmail: claims.email });
-      return this.authService.createSessionForUser(existingIdentity.user, entityManager);
+      return this.signInExistingGoogleIdentity(existingIdentity, claims.email, entityManager);
     }
 
     const userRepository = entityManager.getRepository(UserEntity);
     if ((await userRepository.findOne({ where: { email: claims.email } })) !== null) {
-      throw this.exception(
-        'AUTH_ACCOUNT_LINK_REQUIRED',
-        'Link Google from the existing account.',
-        HttpStatus.CONFLICT,
-      );
+      throw this.accountLinkRequiredException();
     }
 
+    // Savepoint keeps the outer handoff transaction usable after a unique-violation race.
+    await entityManager.query('SAVEPOINT nestra_google_provision');
     try {
       const user = await userRepository.save(
         userRepository.create({ email: claims.email, passwordHash: null }),
@@ -467,27 +464,43 @@ export class GoogleAuthService {
         },
         entityManager,
       );
+      await entityManager.query('RELEASE SAVEPOINT nestra_google_provision');
       return this.authService.createSessionForUser(user, entityManager);
     } catch (error: unknown) {
-      const racedIdentity = await identityRepository.findOne({
-        where: { provider: 'google', providerSubject: claims.subject },
-        relations: { user: true },
-      });
+      await entityManager.query('ROLLBACK TO SAVEPOINT nestra_google_provision');
+
+      const racedIdentity = await this.identityService.findByProviderSubject(
+        'google',
+        claims.subject,
+        entityManager,
+      );
       if (racedIdentity !== null) {
-        await identityRepository.update(racedIdentity.id, { providerEmail: claims.email });
-        return this.authService.createSessionForUser(racedIdentity.user, entityManager);
+        return this.signInExistingGoogleIdentity(racedIdentity, claims.email, entityManager);
       }
 
       if (this.isUniqueEmailViolation(error)) {
-        throw this.exception(
-          'AUTH_ACCOUNT_LINK_REQUIRED',
-          'Link Google from the existing account.',
-          HttpStatus.CONFLICT,
-        );
+        throw this.accountLinkRequiredException();
       }
 
       throw error;
     }
+  }
+
+  private async signInExistingGoogleIdentity(
+    identity: ExternalAuthIdentityEntity,
+    providerEmail: string,
+    entityManager: EntityManager,
+  ): Promise<AuthenticationSessionResponse> {
+    await this.identityService.updateProviderEmail(identity, providerEmail, entityManager);
+    return this.authService.createSessionForUser(identity.user, entityManager);
+  }
+
+  private accountLinkRequiredException(): ApiException {
+    return this.exception(
+      'AUTH_ACCOUNT_LINK_REQUIRED',
+      'Link Google from the existing account.',
+      HttpStatus.CONFLICT,
+    );
   }
 
   private isUniqueEmailViolation(error: unknown): boolean {
@@ -496,12 +509,20 @@ export class GoogleAuthService {
     }
 
     const driverError = error.driverError;
-    return (
-      typeof driverError === 'object' &&
-      driverError !== null &&
-      'code' in driverError &&
-      driverError.code === '23505'
-    );
+    if (
+      typeof driverError !== 'object' ||
+      driverError === null ||
+      !('code' in driverError) ||
+      driverError.code !== '23505'
+    ) {
+      return false;
+    }
+
+    if (!('constraint' in driverError) || typeof driverError.constraint !== 'string') {
+      return true;
+    }
+
+    return driverError.constraint === 'users_email_unique';
   }
 
   private async resolveLink(
@@ -517,7 +538,10 @@ export class GoogleAuthService {
       );
     }
 
-    const user = await entityManager.getRepository(UserEntity).findOne({ where: { id: userId } });
+    const user = await entityManager.getRepository(UserEntity).findOne({
+      where: { id: userId },
+      lock: { mode: 'pessimistic_write' },
+    });
     if (user === null || user.email !== claims.email) {
       throw this.exception(
         'AUTH_GOOGLE_EMAIL_MISMATCH',
