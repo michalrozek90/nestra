@@ -30,6 +30,8 @@ function mapApiErrorCode(errorCode: ApiErrorCode): AuthErrorTranslationKey {
     case 'NOTE_NOT_FOUND':
     case 'NOTE_NOT_TRASHED':
     case 'ROUTE_NOT_FOUND':
+    case 'AUTH_EXTERNAL_IDENTITY_ALREADY_LINKED':
+    case 'AUTH_EXTERNAL_IDENTITY_CONFLICT':
       return 'errors.unexpected';
   }
 }

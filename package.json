@@ -31,6 +31,7 @@
     "format:check": "prettier . --check",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "test:api": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/api test",
     "typecheck": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/contracts typecheck && pnpm --filter @nestra/api typecheck && pnpm --filter @nestra/client typecheck",
     "verify": "pnpm format:check && pnpm lint && pnpm check:product-version && pnpm typecheck && pnpm build"
   },

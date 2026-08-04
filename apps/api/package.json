@@ -14,6 +14,7 @@
     "db:seed": "pnpm build && node dist/database/seed.js",
     "dev": "nest start --watch",
     "start": "node dist/main.js",
+    "test": "tsc -p tsconfig.test.json && node --test dist-test/auth/*.test.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -39,6 +40,7 @@
     "@nestra/tsconfig": "workspace:*",
     "@types/express": "5.0.6",
     "@types/node": "24.13.3",
+    "@types/pg": "8.20.3",
     "typescript": "6.0.3"
   }
 }

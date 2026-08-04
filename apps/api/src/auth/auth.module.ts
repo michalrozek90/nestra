@@ -8,15 +8,17 @@ import { DatabaseModule } from '../database/database.module';
 import { AccessTokenService } from './access-token.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { ExternalAuthIdentityEntity } from './entities/external-auth-identity.entity';
 import { RefreshSessionEntity } from './entities/refresh-session.entity';
 import { UserEntity } from './entities/user.entity';
+import { ExternalAuthIdentityService } from './external-auth-identity.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { PasswordService } from './password.service';
 
 @Module({
   imports: [
     DatabaseModule,
-    TypeOrmModule.forFeature([UserEntity, RefreshSessionEntity]),
+    TypeOrmModule.forFeature([UserEntity, RefreshSessionEntity, ExternalAuthIdentityEntity]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService<ApiEnvironment, true>) => ({
@@ -25,7 +27,13 @@ import { PasswordService } from './password.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, PasswordService, AccessTokenService, JwtAuthGuard],
-  exports: [AccessTokenService, JwtAuthGuard],
+  providers: [
+    AuthService,
+    PasswordService,
+    AccessTokenService,
+    JwtAuthGuard,
+    ExternalAuthIdentityService,
+  ],
+  exports: [AccessTokenService, JwtAuthGuard, ExternalAuthIdentityService],
 })
 export class AuthModule {}
