@@ -26,6 +26,10 @@ import { useAuth } from '@/infrastructure/auth/auth-provider';
 import { logger } from '@/infrastructure/logging/logger';
 import { externalAuthBrowser } from './external-auth-browser';
 import { externalAuthCallbackSource } from './external-auth-callback-source';
+import {
+  isGoogleAuthCallbackUrl,
+  removeGoogleCallbackFromBrowserHistory,
+} from './google-auth-callback';
 import { createGoogleHandoffProof } from './google-auth-crypto';
 import { GoogleAuthFlowController } from './google-auth-flow';
 import { getGoogleAuthPlatform, getGoogleAuthReturnUri } from './google-auth-platform';
@@ -108,6 +112,12 @@ export function GoogleAuthProvider({ children }: PropsWithChildren) {
         return;
       }
 
+      if (!isGoogleAuthCallbackUrl(callbackUrl, returnUri)) {
+        return;
+      }
+
+      removeGoogleCallbackFromBrowserHistory(returnUri);
+
       if (authenticationStatus === 'unknown') {
         queuedCallbackUrlRef.current = callbackUrl;
         return;
@@ -115,7 +125,7 @@ export function GoogleAuthProvider({ children }: PropsWithChildren) {
 
       void controller.resumeCallback(callbackUrl);
     },
-    [authenticationStatus, controller],
+    [authenticationStatus, controller, returnUri],
   );
 
   useEffect(() => {

@@ -62,22 +62,22 @@ export class GoogleAuthFlowController {
   public readonly getSnapshot = (): GoogleAuthState => this.state;
 
   public startSignIn(): Promise<void> {
-    if (this.state.status === 'pending') {
+    if (this.activeOperation || this.state.status === 'pending') {
       return this.activeOperation ?? Promise.resolve();
     }
 
-    return this.runExclusive(async () => {
+    return this.runPreparedBrowserOperation('sign-in', async () => {
       this.setState({ status: 'pending', intent: 'sign-in' });
       await this.startAuthorization('sign-in');
     });
   }
 
   public confirmLink(request: LoginRequest): Promise<void> {
-    if (this.state.status === 'pending') {
+    if (this.activeOperation || this.state.status === 'pending') {
       return this.activeOperation ?? Promise.resolve();
     }
 
-    return this.runExclusive(async () => {
+    return this.runPreparedBrowserOperation('link', async () => {
       this.setState({ status: 'pending', intent: 'link' });
       try {
         const passwordSession = await this.dependencies.login(request);
@@ -141,6 +141,28 @@ export class GoogleAuthFlowController {
     });
     this.activeOperation = activeOperation;
     return activeOperation;
+  }
+
+  private runPreparedBrowserOperation(
+    intent: PendingExternalAuth['intent'],
+    operation: () => Promise<void>,
+  ): Promise<void> {
+    try {
+      // Web must reserve its popup synchronously while the user gesture is still active.
+      this.dependencies.browser.prepareAuthorization();
+    } catch (error: unknown) {
+      return this.runExclusive(async () => {
+        await this.handleFlowError(intent, error);
+      });
+    }
+
+    return this.runExclusive(async () => {
+      try {
+        await operation();
+      } finally {
+        this.dependencies.browser.dismissPreparedAuthorization();
+      }
+    });
   }
 
   private async startAuthorization(

@@ -67,7 +67,9 @@ function createController(
 ) {
   const pendingStorage = new MemoryPendingStorage();
   const browser = {
+    prepareAuthorization: vi.fn(),
     openAuthorization: vi.fn(async () => browserResult),
+    dismissPreparedAuthorization: vi.fn(),
   };
   const startSignIn = vi.fn(async () => createStartResponse());
   const exchangeSignIn = vi.fn(async () => SESSION);
@@ -152,6 +154,11 @@ describe('GoogleAuthFlowController', () => {
     expect(createProof).toHaveBeenCalledOnce();
     expect(testFlow.startSignIn).toHaveBeenCalledOnce();
     expect(testFlow.browser.openAuthorization).toHaveBeenCalledOnce();
+    expect(testFlow.browser.prepareAuthorization).toHaveBeenCalledOnce();
+    expect(testFlow.browser.dismissPreparedAuthorization).toHaveBeenCalledOnce();
+    expect(testFlow.browser.prepareAuthorization.mock.invocationCallOrder[0]).toBeLessThan(
+      createProof.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+    );
   });
 
   it('treats browser cancellation as a stable non-error state', async () => {
@@ -162,6 +169,22 @@ describe('GoogleAuthFlowController', () => {
     expect(testFlow.exchangeSignIn).not.toHaveBeenCalled();
     expect(testFlow.controller.getSnapshot()).toEqual({ status: 'idle' });
     expect(testFlow.pendingStorage.pendingAuth).toBeNull();
+  });
+
+  it('reports a browser popup failure without starting a provider transaction', async () => {
+    const testFlow = createController();
+    testFlow.browser.prepareAuthorization.mockImplementationOnce(() => {
+      throw { key: 'errors.google.provider' } satisfies TestError;
+    });
+
+    await testFlow.controller.startSignIn();
+
+    expect(testFlow.startSignIn).not.toHaveBeenCalled();
+    expect(testFlow.controller.getSnapshot()).toEqual({
+      status: 'feedback',
+      messageKey: 'errors.google.provider',
+      tone: 'error',
+    });
   });
 
   it('requests ownership confirmation and links Google after password authentication', async () => {

@@ -32,12 +32,17 @@ export function GoogleLinkConfirmationDialog({
   const {
     control,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<LoginRequest>({
     defaultValues: { email: '', password: '' },
     resolver: zodResolver(linkConfirmationSchema),
   });
   const submit = handleSubmit(onConfirm);
+  const cancel = () => {
+    reset();
+    onCancel();
+  };
 
   return (
     <ActionDialog
@@ -102,11 +107,11 @@ export function GoogleLinkConfirmationDialog({
         </View>
       }
       dismissable={!isSubmitting}
-      onDismiss={onCancel}
+      onDismiss={cancel}
       title={t('google.link.title')}
       visible={isVisible}
     >
-      <Button disabled={isSubmitting} onPress={onCancel}>
+      <Button disabled={isSubmitting} onPress={cancel}>
         {t('google.link.cancel')}
       </Button>
       <Button disabled={isSubmitting} loading={isSubmitting} onPress={() => void submit()}>

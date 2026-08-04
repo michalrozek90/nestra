@@ -16,10 +16,12 @@ export type ExternalAuthBrowserResult =
   | { readonly type: 'opened' };
 
 export interface ExternalAuthBrowser {
+  prepareAuthorization(): void;
   openAuthorization(
     authorizationUrl: string,
     returnUri: string,
   ): Promise<ExternalAuthBrowserResult>;
+  dismissPreparedAuthorization(): void;
 }
 
 export interface ExternalAuthCallbackSource {
