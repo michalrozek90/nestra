@@ -50,7 +50,7 @@ export class AuthService {
         });
         const savedUser = await transactionalUserRepository.save(user);
 
-        return this.createAuthenticationSession(savedUser, entityManager);
+        return this.createSessionForUser(savedUser, entityManager);
       });
     } catch (error: unknown) {
       if (this.isUniqueEmailViolation(error)) {
@@ -86,7 +86,7 @@ export class AuthService {
     }
 
     return this.dataSource.transaction((entityManager) =>
-      this.createAuthenticationSession(user, entityManager),
+      this.createSessionForUser(user, entityManager),
     );
   }
 
@@ -218,7 +218,7 @@ export class AuthService {
     return this.toPublicUser(user);
   }
 
-  private async createAuthenticationSession(
+  async createSessionForUser(
     user: UserEntity,
     entityManager: EntityManager,
   ): Promise<AuthenticationSessionResponse> {

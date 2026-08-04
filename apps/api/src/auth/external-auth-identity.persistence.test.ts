@@ -71,11 +71,28 @@ async function createTestDataSource(databaseName: string): Promise<DataSource> {
   return dataSource;
 }
 
+async function isPostgresAvailable(adminDatabaseUrl: string): Promise<boolean> {
+  const client = new Client({ connectionString: adminDatabaseUrl });
+  try {
+    await client.connect();
+    await client.query('SELECT 1');
+    return true;
+  } catch {
+    return false;
+  } finally {
+    await client.end().catch(() => undefined);
+  }
+}
+
 describe('external auth identity migration retention', () => {
-  let dataSource: DataSource;
-  let passwordService: PasswordService;
+  let dataSource: DataSource | undefined;
+  let passwordService: PasswordService | undefined;
 
   before(async () => {
+    if (!(await isPostgresAvailable(resolveAdminDatabaseUrl()))) {
+      return;
+    }
+
     dataSource = await createTestDataSource(MIGRATION_TEST_DATABASE_NAME);
     passwordService = new PasswordService();
   });
@@ -86,12 +103,19 @@ describe('external auth identity migration retention', () => {
     }
   });
 
-  it('keeps existing password users intact after the migration', async () => {
-    const finalMigration = dataSource.migrations.at(-1);
-    assert.ok(finalMigration !== undefined);
-    assert.equal(finalMigration.name, 'AddExternalAuthIdentities1785326400000');
+  it('keeps existing password users intact after the migration', async (testContext) => {
+    if (dataSource === undefined || passwordService === undefined) {
+      testContext.skip('Postgres is unavailable for persistence tests');
+      return;
+    }
+
+    const identityMigration = dataSource.migrations.find(
+      (migration) => migration.name === 'AddExternalAuthIdentities1785326400000',
+    );
+    assert.ok(identityMigration !== undefined);
 
     await dataSource.runMigrations();
+    await dataSource.undoLastMigration();
     await dataSource.undoLastMigration();
 
     const passwordHash = await passwordService.hashPassword('password-1');
@@ -178,11 +202,15 @@ describe('external auth identity migration retention', () => {
 });
 
 describe('external auth identity persistence', () => {
-  let dataSource: DataSource;
-  let externalAuthIdentityService: ExternalAuthIdentityService;
-  let passwordService: PasswordService;
+  let dataSource: DataSource | undefined;
+  let externalAuthIdentityService: ExternalAuthIdentityService | undefined;
+  let passwordService: PasswordService | undefined;
 
   before(async () => {
+    if (!(await isPostgresAvailable(resolveAdminDatabaseUrl()))) {
+      return;
+    }
+
     dataSource = await createTestDataSource(CONSTRAINT_TEST_DATABASE_NAME);
     await dataSource.runMigrations();
 
@@ -198,8 +226,30 @@ describe('external auth identity persistence', () => {
     }
   });
 
-  async function createExternalOnlyUser(email: string): Promise<UserEntity> {
-    const userRepository = dataSource.getRepository(UserEntity);
+  function requirePersistence(testContext: { skip: (message?: string) => void }): {
+    dataSource: DataSource;
+    externalAuthIdentityService: ExternalAuthIdentityService;
+    passwordService: PasswordService;
+  } | null {
+    if (
+      dataSource === undefined ||
+      externalAuthIdentityService === undefined ||
+      passwordService === undefined
+    ) {
+      testContext.skip('Postgres is unavailable for persistence tests');
+      return null;
+    }
+
+    return { dataSource, externalAuthIdentityService, passwordService };
+  }
+
+  async function createExternalOnlyUser(
+    persistence: {
+      dataSource: DataSource;
+    },
+    email: string,
+  ): Promise<UserEntity> {
+    const userRepository = persistence.dataSource.getRepository(UserEntity);
     return userRepository.save(
       userRepository.create({
         email,
@@ -208,19 +258,27 @@ describe('external auth identity persistence', () => {
     );
   }
 
-  it('allows google-created accounts without password hashes', async () => {
-    const user = await createExternalOnlyUser(`external-only-${randomUUID()}@example.com`);
-    const identity = await externalAuthIdentityService.createIdentity({
+  it('allows google-created accounts without password hashes', async (testContext) => {
+    const persistence = requirePersistence(testContext);
+    if (persistence === null) {
+      return;
+    }
+
+    const user = await createExternalOnlyUser(
+      persistence,
+      `external-only-${randomUUID()}@example.com`,
+    );
+    const identity = await persistence.externalAuthIdentityService.createIdentity({
       userId: user.id,
       provider: EXTERNAL_AUTH_PROVIDER_GOOGLE,
       providerSubject: `subject-${randomUUID()}`,
       providerEmail: user.email,
     });
 
-    const persistedUser = await dataSource
+    const persistedUser = await persistence.dataSource
       .getRepository(UserEntity)
       .findOneByOrFail({ id: user.id });
-    const isPasswordValid = await passwordService.verifyPassword(
+    const isPasswordValid = await persistence.passwordService.verifyPassword(
       'any-password',
       persistedUser.passwordHash,
     );
@@ -230,12 +288,23 @@ describe('external auth identity persistence', () => {
     assert.equal(identity.provider, EXTERNAL_AUTH_PROVIDER_GOOGLE);
   });
 
-  it('enforces a globally unique provider subject', async () => {
-    const firstUser = await createExternalOnlyUser(`subject-a-${randomUUID()}@example.com`);
-    const secondUser = await createExternalOnlyUser(`subject-b-${randomUUID()}@example.com`);
+  it('enforces a globally unique provider subject', async (testContext) => {
+    const persistence = requirePersistence(testContext);
+    if (persistence === null) {
+      return;
+    }
+
+    const firstUser = await createExternalOnlyUser(
+      persistence,
+      `subject-a-${randomUUID()}@example.com`,
+    );
+    const secondUser = await createExternalOnlyUser(
+      persistence,
+      `subject-b-${randomUUID()}@example.com`,
+    );
     const providerSubject = `shared-subject-${randomUUID()}`;
 
-    await externalAuthIdentityService.createIdentity({
+    await persistence.externalAuthIdentityService.createIdentity({
       userId: firstUser.id,
       provider: EXTERNAL_AUTH_PROVIDER_GOOGLE,
       providerSubject,
@@ -244,7 +313,7 @@ describe('external auth identity persistence', () => {
 
     await assert.rejects(
       () =>
-        externalAuthIdentityService.createIdentity({
+        persistence.externalAuthIdentityService.createIdentity({
           userId: secondUser.id,
           provider: EXTERNAL_AUTH_PROVIDER_GOOGLE,
           providerSubject,
@@ -258,10 +327,18 @@ describe('external auth identity persistence', () => {
     );
   });
 
-  it('enforces one identity per provider for a user', async () => {
-    const user = await createExternalOnlyUser(`one-provider-${randomUUID()}@example.com`);
+  it('enforces one identity per provider for a user', async (testContext) => {
+    const persistence = requirePersistence(testContext);
+    if (persistence === null) {
+      return;
+    }
 
-    await externalAuthIdentityService.createIdentity({
+    const user = await createExternalOnlyUser(
+      persistence,
+      `one-provider-${randomUUID()}@example.com`,
+    );
+
+    await persistence.externalAuthIdentityService.createIdentity({
       userId: user.id,
       provider: EXTERNAL_AUTH_PROVIDER_GOOGLE,
       providerSubject: `subject-one-${randomUUID()}`,
@@ -270,7 +347,7 @@ describe('external auth identity persistence', () => {
 
     await assert.rejects(
       () =>
-        externalAuthIdentityService.createIdentity({
+        persistence.externalAuthIdentityService.createIdentity({
           userId: user.id,
           provider: EXTERNAL_AUTH_PROVIDER_GOOGLE,
           providerSubject: `subject-two-${randomUUID()}`,
@@ -284,37 +361,53 @@ describe('external auth identity persistence', () => {
     );
   });
 
-  it('cascades identity deletion when the user is deleted', async () => {
-    const user = await createExternalOnlyUser(`cascade-${randomUUID()}@example.com`);
-    const identity = await externalAuthIdentityService.createIdentity({
+  it('cascades identity deletion when the user is deleted', async (testContext) => {
+    const persistence = requirePersistence(testContext);
+    if (persistence === null) {
+      return;
+    }
+
+    const user = await createExternalOnlyUser(persistence, `cascade-${randomUUID()}@example.com`);
+    const identity = await persistence.externalAuthIdentityService.createIdentity({
       userId: user.id,
       provider: EXTERNAL_AUTH_PROVIDER_GOOGLE,
       providerSubject: `cascade-subject-${randomUUID()}`,
       providerEmail: user.email,
     });
 
-    await dataSource.getRepository(UserEntity).delete({ id: user.id });
+    await persistence.dataSource.getRepository(UserEntity).delete({ id: user.id });
 
-    const remainingIdentity = await dataSource
+    const remainingIdentity = await persistence.dataSource
       .getRepository(ExternalAuthIdentityEntity)
       .findOneBy({ id: identity.id });
 
     assert.equal(remainingIdentity, null);
   });
 
-  it('fails concurrent duplicate inserts deterministically', async () => {
-    const firstUser = await createExternalOnlyUser(`race-a-${randomUUID()}@example.com`);
-    const secondUser = await createExternalOnlyUser(`race-b-${randomUUID()}@example.com`);
+  it('fails concurrent duplicate inserts deterministically', async (testContext) => {
+    const persistence = requirePersistence(testContext);
+    if (persistence === null) {
+      return;
+    }
+
+    const firstUser = await createExternalOnlyUser(
+      persistence,
+      `race-a-${randomUUID()}@example.com`,
+    );
+    const secondUser = await createExternalOnlyUser(
+      persistence,
+      `race-b-${randomUUID()}@example.com`,
+    );
     const providerSubject = `race-subject-${randomUUID()}`;
 
     const outcomes = await Promise.allSettled([
-      externalAuthIdentityService.createIdentity({
+      persistence.externalAuthIdentityService.createIdentity({
         userId: firstUser.id,
         provider: EXTERNAL_AUTH_PROVIDER_GOOGLE,
         providerSubject,
         providerEmail: firstUser.email,
       }),
-      externalAuthIdentityService.createIdentity({
+      persistence.externalAuthIdentityService.createIdentity({
         userId: secondUser.id,
         provider: EXTERNAL_AUTH_PROVIDER_GOOGLE,
         providerSubject,
@@ -333,15 +426,22 @@ describe('external auth identity persistence', () => {
     assert.ok(rejection.reason instanceof ApiException);
     assert.equal(rejection.reason.errorCode, 'AUTH_EXTERNAL_IDENTITY_CONFLICT');
 
-    const storedIdentities = await dataSource.getRepository(ExternalAuthIdentityEntity).findBy({
-      provider: EXTERNAL_AUTH_PROVIDER_GOOGLE,
-      providerSubject,
-    });
+    const storedIdentities = await persistence.dataSource
+      .getRepository(ExternalAuthIdentityEntity)
+      .findBy({
+        provider: EXTERNAL_AUTH_PROVIDER_GOOGLE,
+        providerSubject,
+      });
     assert.equal(storedIdentities.length, 1);
   });
 
-  it('does not store provider tokens or complete provider payloads', async () => {
-    const columns = await dataSource.query<{ column_name: string }[]>(
+  it('does not store provider tokens or complete provider payloads', async (testContext) => {
+    const persistence = requirePersistence(testContext);
+    if (persistence === null) {
+      return;
+    }
+
+    const columns = await persistence.dataSource.query<{ column_name: string }[]>(
       `
         SELECT column_name
         FROM information_schema.columns
@@ -364,11 +464,16 @@ describe('external auth identity persistence', () => {
     );
   });
 
-  it('rejects foreign keys that would orphan an identity', async () => {
+  it('rejects foreign keys that would orphan an identity', async (testContext) => {
+    const persistence = requirePersistence(testContext);
+    if (persistence === null) {
+      return;
+    }
+
     await assert.rejects(
       () =>
-        dataSource.getRepository(ExternalAuthIdentityEntity).save(
-          dataSource.getRepository(ExternalAuthIdentityEntity).create({
+        persistence.dataSource.getRepository(ExternalAuthIdentityEntity).save(
+          persistence.dataSource.getRepository(ExternalAuthIdentityEntity).create({
             userId: randomUUID(),
             provider: EXTERNAL_AUTH_PROVIDER_GOOGLE,
             providerSubject: `missing-user-${randomUUID()}`,
@@ -389,14 +494,19 @@ describe('external auth identity persistence', () => {
     );
   });
 
-  it('registers the expected TypeORM entities for auth persistence', () => {
-    const entityTableNames = dataSource.entityMetadatas
+  it('registers the expected TypeORM entities for auth persistence', (testContext) => {
+    const persistence = requirePersistence(testContext);
+    if (persistence === null) {
+      return;
+    }
+
+    const entityTableNames = persistence.dataSource.entityMetadatas
       .map((metadata) => metadata.tableName)
       .sort();
 
     assert.ok(entityTableNames.includes('users'));
     assert.ok(entityTableNames.includes('refresh_sessions'));
     assert.ok(entityTableNames.includes('external_auth_identities'));
-    assert.ok(dataSource.hasMetadata(RefreshSessionEntity));
+    assert.ok(persistence.dataSource.hasMetadata(RefreshSessionEntity));
   });
 });

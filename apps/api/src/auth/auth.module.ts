@@ -9,16 +9,25 @@ import { AccessTokenService } from './access-token.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { ExternalAuthIdentityEntity } from './entities/external-auth-identity.entity';
+import { ExternalAuthTransactionEntity } from './entities/external-auth-transaction.entity';
 import { RefreshSessionEntity } from './entities/refresh-session.entity';
 import { UserEntity } from './entities/user.entity';
 import { ExternalAuthIdentityService } from './external-auth-identity.service';
+import { ExternalAuthTransactionMaintenanceService } from './external-auth-transaction.maintenance';
+import { GoogleAuthService } from './google-auth.service';
+import { GOOGLE_OAUTH_CLIENT, GoogleOAuthClientService } from './google-oauth.client';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { PasswordService } from './password.service';
 
 @Module({
   imports: [
     DatabaseModule,
-    TypeOrmModule.forFeature([UserEntity, RefreshSessionEntity, ExternalAuthIdentityEntity]),
+    TypeOrmModule.forFeature([
+      UserEntity,
+      RefreshSessionEntity,
+      ExternalAuthIdentityEntity,
+      ExternalAuthTransactionEntity,
+    ]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService<ApiEnvironment, true>) => ({
@@ -33,6 +42,10 @@ import { PasswordService } from './password.service';
     AccessTokenService,
     JwtAuthGuard,
     ExternalAuthIdentityService,
+    ExternalAuthTransactionMaintenanceService,
+    GoogleAuthService,
+    GoogleOAuthClientService,
+    { provide: GOOGLE_OAUTH_CLIENT, useExisting: GoogleOAuthClientService },
   ],
   exports: [AccessTokenService, JwtAuthGuard, ExternalAuthIdentityService],
 })

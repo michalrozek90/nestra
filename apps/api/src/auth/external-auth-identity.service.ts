@@ -46,6 +46,28 @@ export class ExternalAuthIdentityService {
     }
   }
 
+  async findByProviderSubject(
+    provider: ExternalAuthProvider,
+    providerSubject: string,
+    entityManager?: EntityManager,
+  ): Promise<ExternalAuthIdentityEntity | null> {
+    const repository =
+      entityManager?.getRepository(ExternalAuthIdentityEntity) ??
+      this.externalAuthIdentityRepository;
+    return repository.findOne({ where: { provider, providerSubject }, relations: { user: true } });
+  }
+
+  async updateProviderEmail(
+    identity: ExternalAuthIdentityEntity,
+    providerEmail: string,
+    entityManager?: EntityManager,
+  ): Promise<void> {
+    const repository =
+      entityManager?.getRepository(ExternalAuthIdentityEntity) ??
+      this.externalAuthIdentityRepository;
+    await repository.update(identity.id, { providerEmail: normalizeEmail(providerEmail) });
+  }
+
   private toDomainException(error: unknown): never {
     const uniqueViolationCode = mapExternalAuthIdentityUniqueViolation(error);
 

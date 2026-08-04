@@ -40,6 +40,17 @@ export function getNoteErrorTranslationKey(error: unknown): NoteErrorTranslation
       case 'AUTH_INVALID_CREDENTIALS':
       case 'AUTH_REFRESH_TOKEN_INVALID':
       case 'AUTH_SESSION_EXPIRED':
+      case 'AUTH_GOOGLE_UNAVAILABLE':
+      case 'AUTH_GOOGLE_CANCELLED':
+      case 'AUTH_GOOGLE_PROVIDER_ERROR':
+      case 'AUTH_GOOGLE_RESPONSE_INVALID':
+      case 'AUTH_GOOGLE_HANDOFF_INVALID':
+      case 'AUTH_GOOGLE_HANDOFF_EXPIRED':
+      case 'AUTH_GOOGLE_HANDOFF_ALREADY_USED':
+      case 'AUTH_GOOGLE_EMAIL_UNVERIFIED':
+      case 'AUTH_GOOGLE_EMAIL_MISMATCH':
+      case 'AUTH_ACCOUNT_LINK_REQUIRED':
+      case 'AUTH_REAUTHENTICATION_FAILED':
       case 'INTERNAL_SERVER_ERROR':
       case 'ROUTE_NOT_FOUND':
         return 'errors.unexpected';
