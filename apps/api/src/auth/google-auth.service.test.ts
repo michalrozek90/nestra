@@ -323,6 +323,9 @@ function createService(
     passwordService as never,
     authService as never,
     identityService as never,
+    {
+      scrubExpiredTransactions: async () => undefined,
+    } as never,
     dataSource as never,
   );
 }

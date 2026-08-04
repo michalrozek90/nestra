@@ -103,6 +103,10 @@ export class GoogleOAuthClientService implements GoogleOAuthClient {
       throw new GoogleOAuthVerificationError('invalid_claims');
     }
 
+    if (typeof claims.azp === 'string' && claims.azp !== googleOAuth.clientId) {
+      throw new GoogleOAuthVerificationError('invalid_claims');
+    }
+
     if (claims.email_verified !== true) {
       throw new GoogleOAuthVerificationError('unverified_email');
     }

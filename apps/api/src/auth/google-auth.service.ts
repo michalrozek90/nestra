@@ -10,7 +10,13 @@ import {
   type GoogleAuthPlatform,
   type GoogleAuthStartResponse,
 } from '@nestra/contracts';
-import { DataSource, type EntityManager, type FindOptionsWhere, Repository } from 'typeorm';
+import {
+  DataSource,
+  type EntityManager,
+  type FindOptionsWhere,
+  QueryFailedError,
+  Repository,
+} from 'typeorm';
 
 import { ApiException } from '../common/api.exception';
 import type { ApiEnvironment } from '../config/api-environment';
@@ -32,6 +38,7 @@ import {
   type GoogleRequestSecrets,
   type GoogleValidatedClaims,
 } from './external-auth-transaction.crypto';
+import { ExternalAuthTransactionMaintenanceService } from './external-auth-transaction.maintenance';
 import { ExternalAuthIdentityEntity } from './entities/external-auth-identity.entity';
 import { ExternalAuthTransactionEntity } from './entities/external-auth-transaction.entity';
 import { UserEntity } from './entities/user.entity';
@@ -63,6 +70,7 @@ export class GoogleAuthService {
     private readonly passwordService: PasswordService,
     private readonly authService: AuthService,
     private readonly identityService: ExternalAuthIdentityService,
+    private readonly transactionMaintenanceService: ExternalAuthTransactionMaintenanceService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -211,6 +219,7 @@ export class GoogleAuthService {
     userId: string | null,
   ): Promise<GoogleAuthStartResponse> {
     const config = this.getGoogleConfig();
+    await this.transactionMaintenanceService.scrubExpiredTransactions();
     const returnUri = config.returnUris[platform];
     const state = createExternalAuthRandomValue();
     const pkceVerifier = createExternalAuthRandomValue();
@@ -445,19 +454,54 @@ export class GoogleAuthService {
       );
     }
 
-    const user = await userRepository.save(
-      userRepository.create({ email: claims.email, passwordHash: null }),
+    try {
+      const user = await userRepository.save(
+        userRepository.create({ email: claims.email, passwordHash: null }),
+      );
+      await this.identityService.createIdentity(
+        {
+          userId: user.id,
+          provider: 'google',
+          providerSubject: claims.subject,
+          providerEmail: claims.email,
+        },
+        entityManager,
+      );
+      return this.authService.createSessionForUser(user, entityManager);
+    } catch (error: unknown) {
+      const racedIdentity = await identityRepository.findOne({
+        where: { provider: 'google', providerSubject: claims.subject },
+        relations: { user: true },
+      });
+      if (racedIdentity !== null) {
+        await identityRepository.update(racedIdentity.id, { providerEmail: claims.email });
+        return this.authService.createSessionForUser(racedIdentity.user, entityManager);
+      }
+
+      if (this.isUniqueEmailViolation(error)) {
+        throw this.exception(
+          'AUTH_ACCOUNT_LINK_REQUIRED',
+          'Link Google from the existing account.',
+          HttpStatus.CONFLICT,
+        );
+      }
+
+      throw error;
+    }
+  }
+
+  private isUniqueEmailViolation(error: unknown): boolean {
+    if (!(error instanceof QueryFailedError)) {
+      return false;
+    }
+
+    const driverError = error.driverError;
+    return (
+      typeof driverError === 'object' &&
+      driverError !== null &&
+      'code' in driverError &&
+      driverError.code === '23505'
     );
-    await this.identityService.createIdentity(
-      {
-        userId: user.id,
-        provider: 'google',
-        providerSubject: claims.subject,
-        providerEmail: claims.email,
-      },
-      entityManager,
-    );
-    return this.authService.createSessionForUser(user, entityManager);
   }
 
   private async resolveLink(

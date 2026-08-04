@@ -13,6 +13,7 @@ import { ExternalAuthTransactionEntity } from './entities/external-auth-transact
 import { RefreshSessionEntity } from './entities/refresh-session.entity';
 import { UserEntity } from './entities/user.entity';
 import { ExternalAuthIdentityService } from './external-auth-identity.service';
+import { ExternalAuthTransactionMaintenanceService } from './external-auth-transaction.maintenance';
 import { GoogleAuthService } from './google-auth.service';
 import { GOOGLE_OAUTH_CLIENT, GoogleOAuthClientService } from './google-oauth.client';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -41,6 +42,7 @@ import { PasswordService } from './password.service';
     AccessTokenService,
     JwtAuthGuard,
     ExternalAuthIdentityService,
+    ExternalAuthTransactionMaintenanceService,
     GoogleAuthService,
     GoogleOAuthClientService,
     { provide: GOOGLE_OAUTH_CLIENT, useExisting: GoogleOAuthClientService },
