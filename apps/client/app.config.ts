@@ -9,11 +9,39 @@ function isIpAddressHost(hostname: string): boolean {
   return /^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname) || hostname.includes(':');
 }
 
-function getGoogleAuthMobileUniversalLink(): URL | null {
-  if (
-    process.env.EXPO_PUBLIC_GOOGLE_AUTH_ENABLED !== 'true' ||
-    process.env.EXPO_PUBLIC_APPLICATION_ENVIRONMENT === 'development'
-  ) {
+export function isSafeGoogleAuthMobileReturnUri(
+  returnUri: string,
+  applicationEnvironment: string | undefined,
+): boolean {
+  try {
+    const parsedReturnUri = new URL(returnUri);
+    const isDevelopmentScheme =
+      applicationEnvironment === 'development' &&
+      parsedReturnUri.protocol === 'com.michalrozek.nestra:' &&
+      parsedReturnUri.host.length === 0;
+    const isProductionHttps =
+      applicationEnvironment !== 'development' &&
+      parsedReturnUri.protocol === 'https:' &&
+      parsedReturnUri.port.length === 0 &&
+      !isIpAddressHost(parsedReturnUri.hostname) &&
+      !['localhost', '127.0.0.1', '[::1]'].includes(parsedReturnUri.hostname);
+
+    return (
+      returnUri.trim() === returnUri &&
+      parsedReturnUri.pathname === '/oauth/google' &&
+      parsedReturnUri.search.length === 0 &&
+      parsedReturnUri.hash.length === 0 &&
+      parsedReturnUri.username.length === 0 &&
+      parsedReturnUri.password.length === 0 &&
+      (isDevelopmentScheme || isProductionHttps)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function getGoogleAuthMobileReturnUri(): URL | null {
+  if (process.env.EXPO_PUBLIC_GOOGLE_AUTH_ENABLED !== 'true') {
     return null;
   }
 
@@ -22,29 +50,21 @@ function getGoogleAuthMobileUniversalLink(): URL | null {
     return null;
   }
 
-  const parsedReturnUri = new URL(returnUri);
   if (
-    parsedReturnUri.protocol !== 'https:' ||
-    parsedReturnUri.hostname.length === 0 ||
-    parsedReturnUri.port.length > 0 ||
-    isIpAddressHost(parsedReturnUri.hostname) ||
-    ['localhost', '127.0.0.1', '[::1]'].includes(parsedReturnUri.hostname) ||
-    parsedReturnUri.pathname !== '/oauth/google' ||
-    parsedReturnUri.search.length > 0 ||
-    parsedReturnUri.hash.length > 0 ||
-    parsedReturnUri.username.length > 0 ||
-    parsedReturnUri.password.length > 0
+    !isSafeGoogleAuthMobileReturnUri(returnUri, process.env.EXPO_PUBLIC_APPLICATION_ENVIRONMENT)
   ) {
     throw new Error(
       'EXPO_PUBLIC_GOOGLE_AUTH_MOBILE_RETURN_URI must be an exact HTTPS /oauth/google URI.',
     );
   }
 
-  return parsedReturnUri;
+  return new URL(returnUri);
 }
 
 export default ({ config }: ConfigContext): ExpoConfig => {
-  const googleAuthMobileUniversalLink = getGoogleAuthMobileUniversalLink();
+  const googleAuthMobileReturnUri = getGoogleAuthMobileReturnUri();
+  const googleAuthMobileUniversalLink =
+    googleAuthMobileReturnUri?.protocol === 'https:' ? googleAuthMobileReturnUri : null;
 
   return {
     ...config,
@@ -108,6 +128,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     extra: {
       applicationVersion: rootPackage.version,
+      ...(googleAuthMobileReturnUri === null
+        ? {}
+        : { googleAuthMobileReturnUri: googleAuthMobileReturnUri.toString() }),
     },
   };
 };
