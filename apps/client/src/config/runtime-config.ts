@@ -12,6 +12,7 @@ export type RuntimeConfig = {
   readonly showDeveloperDiagnostics: boolean;
   readonly isVerboseLoggingEnabled: boolean;
   readonly isGoogleAuthEnabled: boolean;
+  readonly googleAuthMobileReturnUri: string | null;
 };
 
 const booleanStringSchema = z.enum(['true', 'false']).transform((text) => text === 'true');
@@ -21,15 +22,69 @@ const apiBaseUrlSchema = z
   .refine((url) => url.startsWith('http://') || url.startsWith('https://'))
   .transform((url) => url.replace(/\/+$/, ''));
 
-const runtimeConfigSchema = z.strictObject({
-  applicationVersion: z.string().min(1),
-  environment: z.enum(APPLICATION_ENVIRONMENTS),
-  apiBaseUrl: apiBaseUrlSchema,
-  showDeveloperDiagnostics: booleanStringSchema,
-  isVerboseLoggingEnabled: booleanStringSchema,
-  // The provider action fails closed for existing deployments until explicitly enabled.
-  isGoogleAuthEnabled: booleanStringSchema.default(false),
-});
+function isIpAddressHost(hostname: string): boolean {
+  return /^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname) || hostname.includes(':');
+}
+
+function isSafeGoogleAuthMobileReturnUri(
+  returnUri: string,
+  environment: ApplicationEnvironment,
+): boolean {
+  try {
+    const parsedReturnUri = new URL(returnUri);
+    const isDevelopmentScheme =
+      environment === 'development' &&
+      parsedReturnUri.protocol === 'com.michalrozek.nestra:' &&
+      parsedReturnUri.host.length === 0;
+    const isProductionHttps =
+      environment !== 'development' &&
+      parsedReturnUri.protocol === 'https:' &&
+      parsedReturnUri.port.length === 0 &&
+      !isIpAddressHost(parsedReturnUri.hostname) &&
+      !['localhost', '127.0.0.1', '[::1]'].includes(parsedReturnUri.hostname);
+
+    return (
+      returnUri.trim() === returnUri &&
+      parsedReturnUri.pathname === '/oauth/google' &&
+      parsedReturnUri.search.length === 0 &&
+      parsedReturnUri.hash.length === 0 &&
+      parsedReturnUri.username.length === 0 &&
+      parsedReturnUri.password.length === 0 &&
+      (isDevelopmentScheme || isProductionHttps)
+    );
+  } catch {
+    return false;
+  }
+}
+
+const runtimeConfigSchema = z
+  .strictObject({
+    applicationVersion: z.string().min(1),
+    environment: z.enum(APPLICATION_ENVIRONMENTS),
+    apiBaseUrl: apiBaseUrlSchema,
+    showDeveloperDiagnostics: booleanStringSchema,
+    isVerboseLoggingEnabled: booleanStringSchema,
+    // The provider action fails closed for existing deployments until explicitly enabled.
+    isGoogleAuthEnabled: booleanStringSchema.default(false),
+    googleAuthMobileReturnUri: z.string().min(1).optional(),
+  })
+  .superRefine((configuration, context) => {
+    const mobileReturnUri = configuration.googleAuthMobileReturnUri;
+    if (
+      mobileReturnUri !== undefined &&
+      !isSafeGoogleAuthMobileReturnUri(mobileReturnUri, configuration.environment)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['googleAuthMobileReturnUri'],
+        message: 'Must be the exact environment-safe mobile Google return URI.',
+      });
+    }
+  })
+  .transform((configuration) => ({
+    ...configuration,
+    googleAuthMobileReturnUri: configuration.googleAuthMobileReturnUri ?? null,
+  }));
 
 function getApplicationVersion(): unknown {
   const expoExtra: unknown = Constants.expoConfig?.extra;
@@ -49,6 +104,7 @@ function loadRuntimeConfig(): RuntimeConfig {
     showDeveloperDiagnostics: process.env.EXPO_PUBLIC_SHOW_DEVELOPER_DIAGNOSTICS,
     isVerboseLoggingEnabled: process.env.EXPO_PUBLIC_VERBOSE_LOGGING,
     isGoogleAuthEnabled: process.env.EXPO_PUBLIC_GOOGLE_AUTH_ENABLED,
+    googleAuthMobileReturnUri: process.env.EXPO_PUBLIC_GOOGLE_AUTH_MOBILE_RETURN_URI,
   });
 
   if (!parsedConfig.success) {

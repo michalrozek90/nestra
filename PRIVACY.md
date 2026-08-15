@@ -1,6 +1,6 @@
 # Nestra privacy notice
 
-Last updated: August 1, 2026
+Last updated: August 15, 2026
 
 ## Scope
 
@@ -21,10 +21,16 @@ The official hosted service processes only the information needed to provide its
 features:
 
 - Account information: the email address submitted during registration and a one-way password
-  hash. The service does not store the plaintext password.
+  hash. When a user chooses Google authentication, the service stores Google's immutable account
+  identifier, the verified Google email snapshot, the link to the Nestra account, and audit
+  timestamps. The service does not store the plaintext password.
 - User content: notes and the metadata needed to organize and synchronize them.
 - Authentication information: short-lived access tokens, hashed refresh-token material, session
-  identifiers, and expiry or revocation metadata. Access tokens are not stored in the database.
+  identifiers, and expiry or revocation metadata. During a Google authentication attempt, the
+  service temporarily stores encrypted protocol values and minimal verified identity claims, then
+  erases them on consumption or expiry. Google authorization codes, access tokens, refresh tokens,
+  ID tokens, complete provider responses, profile names, and profile pictures are not persisted.
+  Nestra access tokens are not stored in the database.
 - Operational information: request identifiers, response status, operation names, and durations
   needed to diagnose service failures. Application logging is designed not to include passwords,
   tokens, credentials, note content, or drafts.
@@ -43,6 +49,7 @@ also remain on the device until they are cleared by the user or application.
 Information is processed to:
 
 - create and authenticate accounts;
+- prove account ownership through Google when the user chooses Google sign-in or explicit linking;
 - store, retrieve, and synchronize the user's notes;
 - maintain authenticated sessions;
 - diagnose availability and security failures; and
@@ -58,7 +65,11 @@ The official hosted demonstration instance currently uses:
 
 - [Render](https://render.com/) to run the API in its Frankfurt region;
 - [Neon](https://neon.com/) to host PostgreSQL in a compatible European region; and
-- [GitHub](https://github.com/) to host source code, releases, and desktop update metadata.
+- [GitHub](https://github.com/) to host source code, releases, and desktop update metadata; and
+- [Google](https://policies.google.com/privacy) to provide optional account authentication. Nestra
+  requests only OpenID Connect identity, email, and basic profile scopes, uses the verified account
+  identifier and email for authentication, and does not request access to Google Drive, Calendar,
+  contacts, or other Google product data.
 
 Requests to these services are subject to the providers' respective privacy and security terms.
 Nestra does not sell personal information.

@@ -509,9 +509,10 @@ EXPO_PUBLIC_APPLICATION_ENVIRONMENT=development
 EXPO_PUBLIC_SHOW_DEVELOPER_DIAGNOSTICS=true
 EXPO_PUBLIC_VERBOSE_LOGGING=true
 EXPO_PUBLIC_GOOGLE_AUTH_ENABLED=false
+EXPO_PUBLIC_GOOGLE_AUTH_MOBILE_RETURN_URI=com.michalrozek.nestra:/oauth/google
 ```
 
-Validate all values with Zod. Parse boolean strings explicitly. No refresh JWT secret exists because refresh tokens are opaque. Google OAuth configuration fails closed when enabled but incomplete. The transaction encryption key is exactly 32 random bytes encoded as base64 and is distinct from the JWT access and Google client secrets. Production callback and mobile/web return URIs use exact HTTPS values; only documented development and Windows protocol-handler values may use another scheme.
+Validate all values with Zod. Parse boolean strings explicitly. No refresh JWT secret exists because refresh tokens are opaque. Google OAuth configuration fails closed when enabled but incomplete. The transaction encryption key is exactly 32 random bytes encoded as base64 and is distinct from the JWT access and Google client secrets. Production callback and mobile/web return URIs use exact HTTPS values; only documented development and Windows protocol-handler values may use another scheme. The public mobile return variable configures the matching private development callback or production App/Universal Link; it never contains credentials.
 
 The API listens on `0.0.0.0:3000`.
 

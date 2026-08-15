@@ -393,8 +393,10 @@ in-flight flows. Operators rotate them by first allowing the 10-minute provider 
 accepting a safe retry; old and new long-lived key support is unnecessary because no authentication
 transaction may outlive that window.
 
-The client has only `EXPO_PUBLIC_GOOGLE_AUTH_ENABLED`, used to hide the action when the matching API
-deployment is not ready. It receives no Google client secret, transaction encryption key, or
+The client uses `EXPO_PUBLIC_GOOGLE_AUTH_ENABLED` to hide the action when the matching API
+deployment is not ready and `EXPO_PUBLIC_GOOGLE_AUTH_MOBILE_RETURN_URI` for the exact private
+development callback or production HTTPS App/Universal Link. These are public feature and routing
+values. The client receives no Google client ID, client secret, transaction encryption key, or
 provider token. Google credentials and the encryption key live in local ignored API environment
 files or managed deployment secrets. The Google Cloud configuration and production return-domain
 associations are operator-owned deployment configuration, not committed secrets.
