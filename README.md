@@ -72,6 +72,9 @@ ignored.
 Google authentication is disabled by default. Configure the matching `GOOGLE_OAUTH_*` API values,
 then set `EXPO_PUBLIC_GOOGLE_AUTH_ENABLED=true` only for clients targeting that configured API.
 Google authentication uses the system browser; Expo Go is not a supported verification target.
+The installed Windows application returns through its dedicated protocol handler and keeps both
+the pending handoff verifier and final Nestra session in Windows Credential Manager. Development
+and packaged Windows verification steps are in [`docs/deployment/desktop.md`](docs/deployment/desktop.md).
 
 Start PostgreSQL, apply migrations, then run the stack:
 

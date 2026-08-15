@@ -1,11 +1,12 @@
 import { isTauriRuntime } from '@/infrastructure/auth/is-tauri-runtime';
+import { readSingleDesktopCallbackUrl } from './external-auth-callback-list';
 import type { ExternalAuthCallbackSource } from './google-auth.types';
 
 class WebExternalAuthCallbackSource implements ExternalAuthCallbackSource {
   public async getInitialCallbackUrl(): Promise<string | null> {
     if (isTauriRuntime()) {
       const { getCurrent } = await import('@tauri-apps/plugin-deep-link');
-      return (await getCurrent())?.[0] ?? null;
+      return readSingleDesktopCallbackUrl(await getCurrent());
     }
 
     return globalThis.location?.href ?? null;
@@ -18,7 +19,7 @@ class WebExternalAuthCallbackSource implements ExternalAuthCallbackSource {
 
     const { onOpenUrl } = await import('@tauri-apps/plugin-deep-link');
     return onOpenUrl((callbackUrls) => {
-      const callbackUrl = callbackUrls[0];
+      const callbackUrl = readSingleDesktopCallbackUrl(callbackUrls);
       if (callbackUrl) {
         listener(callbackUrl);
       }

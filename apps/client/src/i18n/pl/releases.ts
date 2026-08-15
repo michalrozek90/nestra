@@ -58,7 +58,7 @@ export const plReleases = {
     v030: {
       changes: {
         googleAuthentication:
-          'Możesz teraz logować się lub utworzyć konto Nestra przez Google, nadal zachowując dostęp za pomocą hasła.',
+          'Możesz teraz logować się lub utworzyć konto Nestra przez Google na każdej obsługiwanej platformie, w tym w aplikacji Windows, nadal zachowując dostęp za pomocą hasła.',
         completeReleaseHistory:
           'Sekcja Co nowego pokazuje teraz każdą pominiętą wersję, z wyraźnie pogrupowanymi nowościami i naprawami.',
         creatorCredit: 'Ekran O aplikacji pokazuje teraz autora: Michał Rożek.',

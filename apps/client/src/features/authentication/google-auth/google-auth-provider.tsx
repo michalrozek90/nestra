@@ -100,6 +100,8 @@ export function GoogleAuthProvider({ children }: PropsWithChildren) {
       }),
     [completeAuthentication, navigateToNotes, platform, returnUri],
   );
+  const callbackRuntimeRef = useRef({ authenticationStatus, controller });
+  callbackRuntimeRef.current = { authenticationStatus, controller };
   const state = useSyncExternalStore(
     controller.subscribe,
     controller.getSnapshot,
@@ -117,44 +119,47 @@ export function GoogleAuthProvider({ children }: PropsWithChildren) {
       }
 
       removeGoogleCallbackFromBrowserHistory(returnUri);
+      const callbackRuntime = callbackRuntimeRef.current;
 
-      if (authenticationStatus === 'unknown') {
+      if (callbackRuntime.authenticationStatus === 'unknown') {
         queuedCallbackUrlRef.current = callbackUrl;
         return;
       }
 
-      void controller.resumeCallback(callbackUrl);
+      void callbackRuntime.controller.resumeCallback(callbackUrl);
     },
-    [authenticationStatus, controller, returnUri],
+    [returnUri],
   );
 
   useEffect(() => {
     let isMounted = true;
     let unsubscribe: () => void = () => undefined;
 
-    void externalAuthCallbackSource
-      .getInitialCallbackUrl()
-      .then((callbackUrl) => {
+    const startCallbackSource = async (): Promise<void> => {
+      try {
+        const resolvedUnsubscribe =
+          await externalAuthCallbackSource.subscribe(queueOrProcessCallback);
+        if (!isMounted) {
+          resolvedUnsubscribe();
+          return;
+        }
+
+        unsubscribe = resolvedUnsubscribe;
+      } catch (error: unknown) {
+        logger.error('External authentication callback subscription failed', error);
+      }
+
+      try {
+        const callbackUrl = await externalAuthCallbackSource.getInitialCallbackUrl();
         if (isMounted && callbackUrl) {
           queueOrProcessCallback(callbackUrl);
         }
-      })
-      .catch((error: unknown) => {
+      } catch (error: unknown) {
         logger.error('External authentication callback initialization failed', error);
-      });
+      }
+    };
 
-    void externalAuthCallbackSource
-      .subscribe(queueOrProcessCallback)
-      .then((resolvedUnsubscribe) => {
-        if (isMounted) {
-          unsubscribe = resolvedUnsubscribe;
-        } else {
-          resolvedUnsubscribe();
-        }
-      })
-      .catch((error: unknown) => {
-        logger.error('External authentication callback subscription failed', error);
-      });
+    void startCallbackSource();
 
     return () => {
       isMounted = false;
