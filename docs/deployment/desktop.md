@@ -131,6 +131,35 @@ runtime must never persist auth tokens there.
 Sign-out clears the OS-backed credentials. Developer diagnostics report the active storage
 implementation as `OSCredentialStore` inside Tauri and `localStorage` in a normal browser.
 
+## Google authentication handoff
+
+Windows Google authentication opens `https://accounts.google.com/o/oauth2/v2/auth` in the system
+browser through the scoped Tauri opener permission. Google returns to the hosted API, which sends
+only the short-lived verifier-bound handoff to this statically configured desktop URI:
+
+```text
+com.michalrozek.nestra.desktop:/oauth/google
+```
+
+The installed application owns that protocol registration. The single-instance plugin is the
+first Tauri plugin registered, so a warm callback reaches the existing process; the window is
+shown, restored when minimized, and focused without logging its arguments. Cold-start and warm
+events are accepted only when Tauri supplies exactly one URL and the client verifies the scheme,
+empty host, `/oauth/google` path, single `handoff` query parameter, pending transaction ID, and
+pending expiry before exchange. The handoff still cannot create a session without the verifier
+stored in Windows Credential Manager.
+
+`pnpm dev:desktop` registers the configured scheme at runtime on Windows so the development binary
+can receive callbacks without being installed. That registration is compiled only into debug
+builds. Release builds rely exclusively on installer-owned static registration, so development
+convenience cannot broaden production behavior. A development run can temporarily become the
+machine's active handler; reinstall the packaged application after development testing when the
+installed handler must be restored.
+
+Before testing a live flow, configure the API's exact desktop return URI and enable Google auth in
+the matching client environment. Never paste a real callback URL, handoff, token, or provider
+response into logs, issues, screenshots, or test records.
+
 ## Capabilities and outbound network policy
 
 The default capability grants only:
@@ -139,6 +168,8 @@ The default capability grants only:
 - `allow-auth-secret-storage` (read/write/clear auth secrets in the OS credential store)
 - `updater:allow-check`, `updater:allow-download`, and `updater:allow-install`
 - `process:allow-restart`
+- `deep-link:default` for initial and warm protocol events
+- `opener:allow-open-url` scoped to `https://accounts.google.com/o/oauth2/v2/auth`
 
 No filesystem, shell, notification, or generic HTTP plugin permissions are enabled.
 
@@ -243,20 +274,30 @@ Prerequisites:
 - Hosted `CORS_ALLOWED_ORIGINS` includes `http://tauri.localhost`.
 - Installer was built with `.env.desktop` pointing at that hosted API.
 
-| Step            | Expectation                                                                                                                                                            |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Install      | Run the NSIS setup without elevation. Installation completes for the current user.                                                                                     |
-| 2. Launch       | Start Nestra from the Start Menu or desktop shortcut. No Expo/Metro development server is required.                                                                    |
-| 3. Cold start   | The first API call after hosted idle may take several seconds; the UI should recover once the API wakes.                                                               |
-| 4. Authenticate | Register or sign in against the hosted API while the developer coding machine can be offline.                                                                          |
-| 5. Notes        | Create, open, edit, and save at least one owned note.                                                                                                                  |
-| 6. Restart      | Quit the application fully and reopen it. The authenticated session is restored from OS credential storage without storing tokens in browser `localStorage`.           |
-| 7. Sign-out     | Sign out removes desktop credentials; a subsequent launch requires authentication again.                                                                               |
-| 8. Update       | From an older updater-capable published version, detect the latest stable release, choose Later once, then download/install and confirm the new version after restart. |
-| 9. Draft safety | Repeat with an edited note and a temporarily unavailable API; the local draft survives the update. A simulated local-storage failure must stop installation.           |
-| 10. Uninstall   | Remove Nestra through Windows Apps & features (or the NSIS uninstaller). The application no longer launches from the previous shortcuts.                               |
+| Step            | Expectation                                                                                                                                                                                                                                                |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Install      | Run the NSIS setup without elevation. Installation completes for the current user.                                                                                                                                                                         |
+| 2. Launch       | Start Nestra from the Start Menu or desktop shortcut. No Expo/Metro development server is required.                                                                                                                                                        |
+| 3. Cold start   | The first API call after hosted idle may take several seconds; the UI should recover once the API wakes.                                                                                                                                                   |
+| 4. Authenticate | Register or sign in against the hosted API while the developer coding machine can be offline. Complete Google sign-in once with Nestra closed and once while it is running and minimized; only one Nestra process remains and the existing window returns. |
+| 5. Notes        | Create, open, edit, and save at least one owned note.                                                                                                                                                                                                      |
+| 6. Restart      | Quit the application fully and reopen it. The authenticated session is restored from OS credential storage without storing tokens in browser `localStorage`.                                                                                               |
+| 7. Sign-out     | Sign out removes desktop credentials; a subsequent launch requires authentication again. Repeat after Google sign-in to confirm it uses the same Nestra session lifecycle.                                                                                 |
+| 8. Update       | From an older updater-capable published version, detect the latest stable release, choose Later once, then download/install and confirm the new version after restart.                                                                                     |
+| 9. Draft safety | Repeat with an edited note and a temporarily unavailable API; the local draft survives the update. A simulated local-storage failure must stop installation.                                                                                               |
+| 10. Uninstall   | Remove Nestra through Windows Apps & features (or the NSIS uninstaller). The application no longer launches from the previous shortcuts.                                                                                                                   |
 
 Do not paste tokens, note content, or provider secrets into issues, PR comments, or logs while recording smoke-test results.
+
+For the Google-specific pass, also verify:
+
+- cancelling account selection or closing the browser creates no Nestra session;
+- replaying an already consumed callback cannot create or replace a session;
+- unsolicited callbacks, an incorrect path, extra query parameters, and malformed or expired
+  handoffs cannot authenticate;
+- a successful Google session survives a full application restart through Windows Credential
+  Manager and logout clears it;
+- neither the Rust process output nor client diagnostics contain callback URLs or handoff values.
 
 ## Future platform boundaries (not implemented)
 

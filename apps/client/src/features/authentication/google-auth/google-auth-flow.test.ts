@@ -280,4 +280,89 @@ describe('GoogleAuthFlowController', () => {
       tone: 'error',
     });
   });
+
+  it('rejects an unsolicited callback when no pending flow exists', async () => {
+    const testFlow = createController();
+
+    await testFlow.controller.resumeCallback(CALLBACK_URL);
+
+    expect(testFlow.exchangeSignIn).not.toHaveBeenCalled();
+    expect(testFlow.completeAuthentication).not.toHaveBeenCalled();
+    expect(testFlow.controller.getSnapshot()).toEqual({
+      status: 'feedback',
+      messageKey: 'errors.google.invalidCallback',
+      tone: 'error',
+    });
+  });
+
+  it('ignores callback URLs outside the exact configured desktop return location', async () => {
+    const testFlow = createController();
+    testFlow.pendingStorage.pendingAuth = {
+      intent: 'sign-in',
+      platform: 'desktop',
+      transactionId: TRANSACTION_ID,
+      transactionExpiresAt: FUTURE_TIMESTAMP,
+      handoffVerifier: HANDOFF_VERIFIER,
+    };
+
+    await testFlow.controller.resumeCallback(
+      `com.michalrozek.nestra.desktop:/oauth/other?handoff=${TRANSACTION_ID}.secret`,
+    );
+
+    expect(testFlow.exchangeSignIn).not.toHaveBeenCalled();
+    expect(testFlow.pendingStorage.pendingAuth).not.toBeNull();
+    expect(testFlow.controller.getSnapshot()).toEqual({ status: 'idle' });
+  });
+
+  it('serializes duplicate callback delivery into one handoff exchange', async () => {
+    let releaseExchange: (() => void) | undefined;
+    const exchangeGate = new Promise<void>((resolve) => {
+      releaseExchange = resolve;
+    });
+    const testFlow = createController();
+    testFlow.pendingStorage.pendingAuth = {
+      intent: 'sign-in',
+      platform: 'desktop',
+      transactionId: TRANSACTION_ID,
+      transactionExpiresAt: FUTURE_TIMESTAMP,
+      handoffVerifier: HANDOFF_VERIFIER,
+    };
+    testFlow.exchangeSignIn.mockImplementationOnce(async () => {
+      await exchangeGate;
+      return SESSION;
+    });
+
+    const firstDelivery = testFlow.controller.resumeCallback(CALLBACK_URL);
+    const duplicateDelivery = testFlow.controller.resumeCallback(CALLBACK_URL);
+    releaseExchange?.();
+    await Promise.all([firstDelivery, duplicateDelivery]);
+
+    expect(testFlow.exchangeSignIn).toHaveBeenCalledOnce();
+    expect(testFlow.completeAuthentication).toHaveBeenCalledOnce();
+  });
+
+  it('cannot authenticate when the API rejects a forged handoff', async () => {
+    const testFlow = createController();
+    testFlow.pendingStorage.pendingAuth = {
+      intent: 'sign-in',
+      platform: 'desktop',
+      transactionId: TRANSACTION_ID,
+      transactionExpiresAt: FUTURE_TIMESTAMP,
+      handoffVerifier: HANDOFF_VERIFIER,
+    };
+    testFlow.exchangeSignIn.mockRejectedValueOnce({
+      code: 'AUTH_GOOGLE_HANDOFF_INVALID',
+      key: 'errors.google.invalidCallback',
+    } satisfies TestError);
+
+    await testFlow.controller.resumeCallback(CALLBACK_URL);
+
+    expect(testFlow.completeAuthentication).not.toHaveBeenCalled();
+    expect(testFlow.pendingStorage.pendingAuth).toBeNull();
+    expect(testFlow.controller.getSnapshot()).toEqual({
+      status: 'feedback',
+      messageKey: 'errors.google.invalidCallback',
+      tone: 'error',
+    });
+  });
 });

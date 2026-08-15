@@ -13,7 +13,7 @@
     "deep-link:default",
     {
       "identifier": "opener:allow-open-url",
-      "allow": [{ "url": "https://accounts.google.com/**" }]
+      "allow": [{ "url": "https://accounts.google.com/o/oauth2/v2/auth?**" }]
     }
   ]
 }
