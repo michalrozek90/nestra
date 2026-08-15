@@ -71,6 +71,9 @@ ignored.
 
 Google authentication is disabled by default. Configure the matching `GOOGLE_OAUTH_*` API values,
 then set `EXPO_PUBLIC_GOOGLE_AUTH_ENABLED=true` only for clients targeting that configured API.
+Android and iOS non-development builds also require an exact HTTPS
+`EXPO_PUBLIC_GOOGLE_AUTH_MOBILE_RETURN_URI` so Android App Links and iOS Universal Links match the
+API return allow-list.
 Google authentication uses the system browser; Expo Go is not a supported verification target.
 The installed Windows application returns through its dedicated protocol handler and keeps both
 the pending handoff verifier and final Nestra session in Windows Credential Manager. Development
@@ -136,6 +139,8 @@ service.
 ## Deployment, CI, and releases
 
 - Hosted API (Render + Neon): [`docs/deployment/hosted-api.md`](docs/deployment/hosted-api.md)
+- Google OAuth environments and production readiness:
+  [`docs/deployment/google-oauth.md`](docs/deployment/google-oauth.md)
 - Desktop shell and packaging: [`docs/deployment/desktop.md`](docs/deployment/desktop.md)
 - Release Please, draft releases, and updater assets:
   [`docs/deployment/release.md`](docs/deployment/release.md)

@@ -12,6 +12,7 @@ export type RuntimeConfig = {
   readonly showDeveloperDiagnostics: boolean;
   readonly isVerboseLoggingEnabled: boolean;
   readonly isGoogleAuthEnabled: boolean;
+  readonly googleAuthMobileReturnUri: string | null;
 };
 
 const booleanStringSchema = z.enum(['true', 'false']).transform((text) => text === 'true');
@@ -29,26 +30,28 @@ const runtimeConfigSchema = z.strictObject({
   isVerboseLoggingEnabled: booleanStringSchema,
   // The provider action fails closed for existing deployments until explicitly enabled.
   isGoogleAuthEnabled: booleanStringSchema.default(false),
+  googleAuthMobileReturnUri: z.string().min(1).nullable().default(null),
 });
 
-function getApplicationVersion(): unknown {
+function getExpoConfigExtraValue(field: string): unknown {
   const expoExtra: unknown = Constants.expoConfig?.extra;
 
-  if (typeof expoExtra !== 'object' || expoExtra === null || !('applicationVersion' in expoExtra)) {
+  if (typeof expoExtra !== 'object' || expoExtra === null || !(field in expoExtra)) {
     return undefined;
   }
 
-  return expoExtra.applicationVersion;
+  return Reflect.get(expoExtra, field);
 }
 
 function loadRuntimeConfig(): RuntimeConfig {
   const parsedConfig = runtimeConfigSchema.safeParse({
-    applicationVersion: getApplicationVersion(),
+    applicationVersion: getExpoConfigExtraValue('applicationVersion'),
     environment: process.env.EXPO_PUBLIC_APPLICATION_ENVIRONMENT,
     apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
     showDeveloperDiagnostics: process.env.EXPO_PUBLIC_SHOW_DEVELOPER_DIAGNOSTICS,
     isVerboseLoggingEnabled: process.env.EXPO_PUBLIC_VERBOSE_LOGGING,
     isGoogleAuthEnabled: process.env.EXPO_PUBLIC_GOOGLE_AUTH_ENABLED,
+    googleAuthMobileReturnUri: getExpoConfigExtraValue('googleAuthMobileReturnUri'),
   });
 
   if (!parsedConfig.success) {

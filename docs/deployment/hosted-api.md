@@ -5,6 +5,10 @@ Architecture decisions live in
 [ADR 005](../decisions/005-desktop-and-hosted-service-architecture.md). Issue #47 splits work between
 repository changes (agent) and provider-console steps (operator).
 
+Google authentication adds an owned-domain production requirement and a separate managed secret
+set. Follow the dedicated [Google OAuth runbook](./google-oauth.md) before enabling it; the base
+hosted API remains valid with Google authentication disabled.
+
 ## Topology
 
 - NestJS container on a Render Free Web Service in Frankfurt
@@ -47,7 +51,7 @@ docker run --rm -p 3000:3000 \
   -e JWT_ACCESS_SECRET=<at-least-32-random-characters> \
   -e JWT_ACCESS_EXPIRES_IN=15m \
   -e REFRESH_SESSION_EXPIRES_IN=30d \
-  -e CORS_ALLOWED_ORIGINS=http://localhost:8081 \
+  -e CORS_ALLOWED_ORIGINS=http://tauri.localhost \
   nestra-api:local
 ```
 
@@ -70,6 +74,10 @@ issues, or share them in chat.
 | `REFRESH_SESSION_EXPIRES_IN` | no      | Example: `30d`                                                     |
 | `CORS_ALLOWED_ORIGINS`       | no      | Comma-separated canonical HTTP(S) origins for browser clients      |
 
+When Google authentication is enabled, also set the complete `GOOGLE_OAUTH_*` group from the
+[Google OAuth Render table](./google-oauth.md#configure-private-test-and-production-on-render).
+Never place test and production Google credentials in one Render environment group.
+
 Example Neon pooled URL shape (placeholders only):
 
 ```text
@@ -89,6 +97,11 @@ TypeORM `synchronize`.
 Each configured value must be an exact browser origin containing only the HTTP(S) scheme, host,
 and optional non-default port. Do not include credentials, a trailing slash, path, query, or
 fragment.
+
+Outside development, browser origins must use HTTPS. The exact packaged WebView origin
+`http://tauri.localhost` is the only HTTP exception because it is a local Tauri runtime origin, not
+an external network endpoint. Remove development localhost origins before deploying a production
+configuration.
 
 Configure an explicit allow-list so browser and Tauri WebView clients can call the API without
 changing server code for each origin. Include every origin you actually use:
@@ -192,13 +205,15 @@ upgrade.
 
 ## Troubleshooting
 
-| Symptom                                               | Likely cause                                    | Action                                                               |
-| ----------------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------- |
-| Container exits at boot mentioning environment fields | Missing or invalid env vars                     | Compare Render env to the table above; logs include field names only |
-| Health `503 degraded`                                 | Database unreachable, wrong URL, or Neon asleep | Verify pooled URL, TLS, and Neon project status                      |
-| CORS browser errors                                   | Origin not listed                               | Add the exact browser origin to `CORS_ALLOWED_ORIGINS`               |
-| Long first response                                   | Cold start after free-tier spin-down            | Expected on free tier; measure and document                          |
-| Migration CLI fails env validation                    | Local `.env` incomplete                         | Provide the full API env set, not only `DATABASE_URL`                |
+| Symptom                                               | Likely cause                                         | Action                                                                         |
+| ----------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Container exits at boot mentioning environment fields | Missing or invalid env vars                          | Compare Render env to the table above; logs include field names only           |
+| Health `503 degraded`                                 | Database unreachable, wrong URL, or Neon asleep      | Verify pooled URL, TLS, and Neon project status                                |
+| CORS browser errors                                   | Origin not listed                                    | Add the exact browser origin to `CORS_ALLOWED_ORIGINS`                         |
+| Long first response                                   | Cold start after free-tier spin-down                 | Expected on free tier; measure and document                                    |
+| Migration CLI fails env validation                    | Local `.env` incomplete                              | Provide the full API env set, not only `DATABASE_URL`                          |
+| API exits with a `GOOGLE_OAUTH_*` field               | Enabled Google configuration is incomplete or unsafe | Compare names and exact URIs with the Google OAuth runbook; never print values |
+| Google reports `redirect_uri_mismatch`                | Google client and API callback differ exactly        | Compare scheme, host, port, path, case, and trailing slash                     |
 
 ## Local development unchanged
 

@@ -1,7 +1,14 @@
+import { isIP } from 'node:net';
+
 import { z } from 'zod';
 
 const durationSchema = z.string().regex(/^[1-9]\d*[smhd]$/);
 const exampleJwtAccessSecret = 'replace_with_a_long_random_secret';
+const googleOAuthCallbackPath = '/api/v1/auth/google/callback';
+const googleOAuthWebReturnPath = '/auth/google/callback';
+const googleOAuthApplicationReturnPath = '/oauth/google';
+const googleOAuthMobileDevelopmentScheme = 'com.michalrozek.nestra:';
+const googleOAuthDesktopScheme = 'com.michalrozek.nestra.desktop:';
 
 function isCanonicalCorsAllowedOrigin(origin: string): boolean {
   try {
@@ -34,6 +41,12 @@ const googleOAuthEnabledSchema = z
   .enum(['true', 'false'])
   .optional()
   .transform((value) => value === 'true');
+const googleOAuthEnvironmentValueSchema = z
+  .string()
+  .min(1)
+  .refine((value) => value.trim() === value, {
+    message: 'Must not contain surrounding whitespace.',
+  });
 
 type GoogleOAuthEnvironment =
   | { readonly enabled: false }
@@ -51,23 +64,47 @@ type GoogleOAuthEnvironment =
       };
     };
 
-function isSafeGoogleOAuthUri(uri: string, allowPrivateScheme: boolean): boolean {
+type GoogleOAuthUriRequirements = {
+  readonly expectedPath: string;
+  readonly isDevelopment: boolean;
+  readonly allowedPrivateScheme?: string | undefined;
+  readonly allowHttps?: boolean;
+};
+
+function isSafeGoogleOAuthUri(uri: string, requirements: GoogleOAuthUriRequirements): boolean {
   try {
     const parsedUri = new URL(uri);
     const isLoopback = ['localhost', '127.0.0.1', '[::1]'].includes(parsedUri.hostname);
-    const isPrivateScheme =
-      allowPrivateScheme && parsedUri.protocol !== 'http:' && parsedUri.protocol !== 'https:';
+    const isIpAddress = isIP(parsedUri.hostname.replace(/^\[|\]$/g, '')) !== 0;
+    const isDevelopmentLoopback =
+      requirements.isDevelopment && parsedUri.protocol === 'http:' && isLoopback;
+    const isAllowedHttps =
+      requirements.allowHttps !== false &&
+      parsedUri.protocol === 'https:' &&
+      !isIpAddress &&
+      (requirements.isDevelopment || !isLoopback);
+    const isAllowedPrivateScheme =
+      requirements.allowedPrivateScheme !== undefined &&
+      parsedUri.protocol === requirements.allowedPrivateScheme &&
+      parsedUri.host.length === 0;
 
     return (
+      uri.trim() === uri &&
       parsedUri.hash.length === 0 &&
       parsedUri.username.length === 0 &&
       parsedUri.password.length === 0 &&
       parsedUri.search.length === 0 &&
-      (parsedUri.protocol === 'https:' || isLoopback || isPrivateScheme)
+      parsedUri.pathname === requirements.expectedPath &&
+      (isAllowedHttps || isDevelopmentLoopback || isAllowedPrivateScheme)
     );
   } catch {
     return false;
   }
+}
+
+function isCanonicalGoogleOAuthEncryptionKey(value: string): boolean {
+  const decodedKey = Buffer.from(value, 'base64');
+  return decodedKey.length === 32 && decodedKey.toString('base64') === value;
 }
 
 function requiredGoogleValue(value: string | undefined): string {
@@ -91,14 +128,14 @@ const rawApiEnvironmentSchema = z
       .transform((origins) => origins.split(',').map((origin) => origin.trim()))
       .pipe(z.array(corsAllowedOriginSchema).min(1)),
     GOOGLE_OAUTH_ENABLED: googleOAuthEnabledSchema,
-    GOOGLE_OAUTH_CLIENT_ID: z.string().min(1).optional(),
-    GOOGLE_OAUTH_CLIENT_SECRET: z.string().min(1).optional(),
-    GOOGLE_OAUTH_CALLBACK_URI: z.string().min(1).optional(),
-    GOOGLE_OAUTH_TRANSACTION_ENCRYPTION_KEY: z.string().min(1).optional(),
-    GOOGLE_OAUTH_WEB_RETURN_URI: z.string().min(1).optional(),
-    GOOGLE_OAUTH_ANDROID_RETURN_URI: z.string().min(1).optional(),
-    GOOGLE_OAUTH_IOS_RETURN_URI: z.string().min(1).optional(),
-    GOOGLE_OAUTH_DESKTOP_RETURN_URI: z.string().min(1).optional(),
+    GOOGLE_OAUTH_CLIENT_ID: googleOAuthEnvironmentValueSchema.optional(),
+    GOOGLE_OAUTH_CLIENT_SECRET: googleOAuthEnvironmentValueSchema.optional(),
+    GOOGLE_OAUTH_CALLBACK_URI: googleOAuthEnvironmentValueSchema.optional(),
+    GOOGLE_OAUTH_TRANSACTION_ENCRYPTION_KEY: googleOAuthEnvironmentValueSchema.optional(),
+    GOOGLE_OAUTH_WEB_RETURN_URI: googleOAuthEnvironmentValueSchema.optional(),
+    GOOGLE_OAUTH_ANDROID_RETURN_URI: googleOAuthEnvironmentValueSchema.optional(),
+    GOOGLE_OAUTH_IOS_RETURN_URI: googleOAuthEnvironmentValueSchema.optional(),
+    GOOGLE_OAUTH_DESKTOP_RETURN_URI: googleOAuthEnvironmentValueSchema.optional(),
   })
   .superRefine((environment, context) => {
     if (
@@ -120,6 +157,19 @@ const rawApiEnvironmentSchema = z
         code: 'custom',
         path: ['DATABASE_URL'],
         message: 'Remote DATABASE_URL values must require verified TLS outside development.',
+      });
+    }
+
+    if (
+      environment.NODE_ENV !== 'development' &&
+      environment.CORS_ALLOWED_ORIGINS.some(
+        (origin) => !origin.startsWith('https://') && origin !== 'http://tauri.localhost',
+      )
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['CORS_ALLOWED_ORIGINS'],
+        message: 'Browser origins must use HTTPS outside development, except packaged Tauri.',
       });
     }
 
@@ -146,41 +196,82 @@ const rawApiEnvironmentSchema = z
       }
 
       const key = environment.GOOGLE_OAUTH_TRANSACTION_ENCRYPTION_KEY;
-      if (key !== undefined && Buffer.from(key, 'base64').length !== 32) {
+      if (key !== undefined && !isCanonicalGoogleOAuthEncryptionKey(key)) {
         context.addIssue({
           code: 'custom',
           path: ['GOOGLE_OAUTH_TRANSACTION_ENCRYPTION_KEY'],
-          message: 'Must decode to exactly 32 bytes.',
+          message: 'Must be exactly 32 bytes encoded as canonical base64.',
         });
       }
 
       const callbackUri = environment.GOOGLE_OAUTH_CALLBACK_URI;
       if (
         callbackUri !== undefined &&
-        (!isSafeGoogleOAuthUri(callbackUri, false) ||
-          (environment.NODE_ENV !== 'development' && !callbackUri.startsWith('https://')))
+        !isSafeGoogleOAuthUri(callbackUri, {
+          expectedPath: googleOAuthCallbackPath,
+          isDevelopment: environment.NODE_ENV === 'development',
+        })
       ) {
         context.addIssue({
           code: 'custom',
           path: ['GOOGLE_OAUTH_CALLBACK_URI'],
           message:
-            'Must be a canonical HTTPS or loopback URI without credentials, fragments, or query parameters.',
+            'Must use the exact Google callback path and canonical HTTPS, or loopback HTTP in development.',
         });
       }
 
-      for (const field of [
-        'GOOGLE_OAUTH_WEB_RETURN_URI',
-        'GOOGLE_OAUTH_ANDROID_RETURN_URI',
-        'GOOGLE_OAUTH_IOS_RETURN_URI',
-        'GOOGLE_OAUTH_DESKTOP_RETURN_URI',
-      ] as const) {
+      const returnUriRequirements = [
+        [
+          'GOOGLE_OAUTH_WEB_RETURN_URI',
+          {
+            expectedPath: googleOAuthWebReturnPath,
+          },
+        ],
+        [
+          'GOOGLE_OAUTH_ANDROID_RETURN_URI',
+          {
+            expectedPath: googleOAuthApplicationReturnPath,
+            allowedPrivateScheme:
+              environment.NODE_ENV === 'development'
+                ? googleOAuthMobileDevelopmentScheme
+                : undefined,
+            allowHttps: environment.NODE_ENV !== 'development',
+          },
+        ],
+        [
+          'GOOGLE_OAUTH_IOS_RETURN_URI',
+          {
+            expectedPath: googleOAuthApplicationReturnPath,
+            allowedPrivateScheme:
+              environment.NODE_ENV === 'development'
+                ? googleOAuthMobileDevelopmentScheme
+                : undefined,
+            allowHttps: environment.NODE_ENV !== 'development',
+          },
+        ],
+        [
+          'GOOGLE_OAUTH_DESKTOP_RETURN_URI',
+          {
+            expectedPath: googleOAuthApplicationReturnPath,
+            allowedPrivateScheme: googleOAuthDesktopScheme,
+            allowHttps: false,
+          },
+        ],
+      ] as const;
+
+      for (const [field, requirements] of returnUriRequirements) {
         const uri = environment[field];
-        if (uri !== undefined && !isSafeGoogleOAuthUri(uri, true)) {
+        if (
+          uri !== undefined &&
+          !isSafeGoogleOAuthUri(uri, {
+            ...requirements,
+            isDevelopment: environment.NODE_ENV === 'development',
+          })
+        ) {
           context.addIssue({
             code: 'custom',
             path: [field],
-            message:
-              'Must be a canonical return URI without credentials, fragments, or query parameters.',
+            message: 'Must use the platform return path and an environment-safe canonical URI.',
           });
         }
       }

@@ -160,6 +160,10 @@ Before testing a live flow, configure the API's exact desktop return URI and ena
 the matching client environment. Never paste a real callback URL, handoff, token, or provider
 response into logs, issues, screenshots, or test records.
 
+Google Cloud project isolation, provider callbacks, Render secrets, production domains, mobile
+HTTPS associations, rotation, and incident revocation are covered by the
+[Google OAuth environment runbook](./google-oauth.md).
+
 ## Capabilities and outbound network policy
 
 The default capability grants only:
