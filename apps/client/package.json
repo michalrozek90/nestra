@@ -11,6 +11,7 @@
     "dev:android": "pnpm run generate:icon-fonts && expo start --android",
     "dev:ios": "pnpm run generate:icon-fonts && node ./scripts/start-ios.mjs",
     "dev:web": "pnpm run generate:icon-fonts && expo start --web --port 8081",
+    "eas-build-post-install": "pnpm --filter @nestra/contracts build && pnpm run generate:icon-fonts",
     "test": "vitest run",
     "typecheck": "pnpm run generate:icon-fonts && tsc --noEmit"
   },

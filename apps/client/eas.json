@@ -1,0 +1,18 @@
+{
+  "build": {
+    "android-device-test": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://nestra-api-nkr9.onrender.com/api/v1",
+        "EXPO_PUBLIC_APPLICATION_ENVIRONMENT": "preview",
+        "EXPO_PUBLIC_GOOGLE_AUTH_ENABLED": "true",
+        "EXPO_PUBLIC_GOOGLE_AUTH_MOBILE_RETURN_URI": "https://nestra-api-nkr9.onrender.com/oauth/google",
+        "EXPO_PUBLIC_SHOW_DEVELOPER_DIAGNOSTICS": "true",
+        "EXPO_PUBLIC_VERBOSE_LOGGING": "false"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    }
+  }
+}
