@@ -268,8 +268,9 @@ On the first build, accept generation of an EAS-managed Android keystore. When t
 1. Open the EAS build link or QR code on the physical Android phone.
 2. Download the APK and allow installation from that browser when Android asks.
 3. Install Nestra. An emulator and a local Android SDK are not required.
-4. Keep the build page as non-secret evidence of the exact artifact that was tested. Do not publish
-   its install URL in a public issue.
+4. Record the EAS build identifier as evidence of the exact artifact that was tested. Keep the
+   install URL private because anyone who obtains an unauthenticated internal-build link can
+   download the APK.
 
 ### Private-test App Link association
 

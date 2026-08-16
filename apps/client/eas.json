@@ -1,4 +1,7 @@
 {
+  "cli": {
+    "requireCommit": true
+  },
   "build": {
     "android-device-test": {
       "distribution": "internal",
