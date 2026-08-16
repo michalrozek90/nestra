@@ -128,6 +128,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     extra: {
       applicationVersion: rootPackage.version,
+      eas: {
+        projectId: '11d9961d-14f5-4b71-914f-a10aa4defc88',
+      },
       ...(googleAuthMobileReturnUri === null
         ? {}
         : { googleAuthMobileReturnUri: googleAuthMobileReturnUri.toString() }),
