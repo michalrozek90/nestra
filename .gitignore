@@ -18,6 +18,11 @@ web-build/
 !.env.example
 !.env.*.example
 
+# Native signing credentials
+apps/client/credentials.json
+apps/client/*.jks
+apps/client/*.keystore
+
 # Logs and diagnostics
 *.log
 pnpm-debug.log*

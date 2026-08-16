@@ -232,6 +232,101 @@ Record pass/fail and timestamp, never account email or credential-bearing URLs.
 Integrated security and release verification remains tracked separately; this checklist validates
 the deployed configuration, not every protocol behavior.
 
+## Physical Android private-test build
+
+Use the `android-device-test` EAS profile to create an installable APK for a real Android phone.
+This is a private verification artifact connected to the current hosted API, not a Google Play or
+public-production release. Expo Go is not a valid target for this test because it does not contain
+Nestra's Android package and App Link configuration.
+
+### One-time EAS setup
+
+Run every EAS command from `apps/client`, as required for an Expo app inside a monorepo:
+
+```powershell
+Set-Location apps/client
+pnpm dlx eas-cli@latest login
+pnpm dlx eas-cli@latest whoami
+pnpm dlx eas-cli@latest init
+```
+
+Select or create the `Nestra` EAS project when prompted. `eas init` links the local Expo app by
+adding its non-secret EAS project ID to the Expo configuration. Review and commit that generated
+configuration before treating later builds as reproducible. Do not create or download a local
+keystore. EAS can manage the Android signing credential when the first build asks.
+
+### Build and install the APK
+
+From `apps/client`, start the internal-distribution build:
+
+```powershell
+pnpm dlx eas-cli@latest build --platform android --profile android-device-test
+```
+
+On the first build, accept generation of an EAS-managed Android keystore. When the build succeeds:
+
+1. Open the EAS build link or QR code on the physical Android phone.
+2. Download the APK and allow installation from that browser when Android asks.
+3. Install Nestra. An emulator and a local Android SDK are not required.
+4. Record the EAS build identifier as evidence of the exact artifact that was tested. Keep the
+   install URL private because anyone who obtains an unauthenticated internal-build link can
+   download the APK.
+
+### Private-test App Link association
+
+The hosted API serves Android Digital Asset Links at
+`https://nestra-api-nkr9.onrender.com/.well-known/assetlinks.json`. The statement binds package
+`com.michalrozek.nestra` to the EAS-managed signing certificate used by `android-device-test`.
+Verify the response before installing the APK:
+
+```powershell
+Invoke-WebRequest https://nestra-api-nkr9.onrender.com/.well-known/assetlinks.json -UseBasicParsing
+```
+
+Install the APK only after that request returns `200` and the expected package plus certificate
+fingerprint. Android should then enable the supported return link automatically; requiring the
+tester to change **Open supported links** manually is a failed verification, not an acceptable
+release procedure. Uninstall and reinstall the APK after the association is first deployed so the
+clean-install path is tested.
+
+If Android still opens the HTTPS return in a browser, the server shows a static bilingual recovery
+page without reflecting OAuth parameters. Record the failure and inspect domain verification before
+continuing. Public production must replace the private Render host and test certificate with the
+owned production domain and the actual production signing certificate fingerprint.
+
+### Physical-device verification
+
+Wake the free Render service before starting so a cold backend does not obscure the result:
+
+```powershell
+Invoke-WebRequest https://nestra-api-nkr9.onrender.com/api/v1/health -UseBasicParsing
+```
+
+Then test the installed APK in this order. Record only pass/fail, the EAS build identifier, Android
+version, device model, and UTC timestamp. Never record an email address, authorization URL, code,
+token, callback query, or password.
+
+1. Confirm password sign-in still succeeds, then sign out.
+2. Start Google sign-in and cancel it; Nestra must return to a usable sign-in screen.
+3. Sign in with a Google account that has never used Nestra; the new account must open in Nestra.
+4. Sign out and use that Google account again; it must return without creating or linking another
+   account.
+5. Use a password account whose email matches Google. Complete explicit linking once, sign out,
+   and sign in with Google again; the second attempt must not request linking.
+6. Repeat one successful Google return while Nestra is already open (warm start).
+7. Start Google sign-in, close Nestra before choosing the account, then finish in the browser; the
+   installed app must open and complete the return (cold start).
+8. Close and reopen Nestra after sign-out; the Google button must not remain in a loading state and
+   no stale callback error may appear.
+9. Confirm the browser does not display or retain a reusable handoff and that repeating a completed
+   return does not create another session.
+10. Inspect only redacted Render application logs. They must not contain callback queries, provider
+    codes, tokens, claims, account email, or Google payloads.
+
+If any item fails, preserve the installed APK and record the step, visible non-sensitive error,
+warm/cold state, and timestamp. Do not continue to public-production readiness until the failure is
+resolved and the whole Android checklist is repeated.
+
 ## Rotation
 
 ### Google OAuth client credentials

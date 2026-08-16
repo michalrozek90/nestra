@@ -6,6 +6,7 @@ import { applicationVersion } from '@nestra/contracts';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
 
 import { AppModule } from './app.module';
+import { configureApiRouting } from './api-routing';
 import { ApiErrorResponseDto } from './common/api-error-response.dto';
 import type { ApiEnvironment } from './config/api-environment';
 import { AuthenticationSessionResponseDto } from './auth/dto/authentication-session-response.dto';
@@ -30,7 +31,7 @@ async function bootstrap(): Promise<void> {
   const nodeEnvironment = configService.get('nodeEnvironment', { infer: true });
   const corsAllowedOrigins = configService.get('corsAllowedOrigins', { infer: true });
 
-  application.setGlobalPrefix('api/v1');
+  configureApiRouting(application);
   application.enableCors({
     exposedHeaders: ['x-request-id'],
     origin: corsAllowedOrigins,

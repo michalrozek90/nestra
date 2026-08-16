@@ -72,6 +72,8 @@ export const plReleases = {
           'Wylogowanie teraz w pełni kończy sesję nawet wtedy, gdy odświeżanie tokenu było już w toku.',
         googleAccountLinking:
           'Połączenie konta Google kończy się teraz przed zalogowaniem do Nestry, a po wylogowaniu logowanie przez Google jest od razu ponownie dostępne.',
+        androidGoogleReturn:
+          'Logowanie przez Google wraca teraz bezpośrednio do Nestry na Androidzie, a w razie problemu wyświetla czytelną stronę pomocy.',
         newNoteDraftMigration:
           'Tworzenie notatki zachowuje teraz najnowsze zmiany i nie zostawia lokalnego szkicu, który mógłby otworzyć się w nowej notatce.',
         updatePromptCoordination:
