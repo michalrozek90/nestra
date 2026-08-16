@@ -45,6 +45,9 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
           descriptionTranslationKey: 'versions.v030.changes.googleAccountLinking',
         },
         {
+          descriptionTranslationKey: 'versions.v030.changes.androidGoogleReturn',
+        },
+        {
           descriptionTranslationKey: 'versions.v030.changes.newNoteDraftMigration',
         },
         {

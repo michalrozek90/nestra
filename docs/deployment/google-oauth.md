@@ -274,19 +274,25 @@ On the first build, accept generation of an EAS-managed Android keystore. When t
 
 ### Private-test App Link association
 
-The current Render hostname does not serve Android's `assetlinks.json`, so Android cannot verify
-the HTTPS return domain automatically. For this private test only, manually allow the installed
-Nestra build to open its supported link:
+The hosted API serves Android Digital Asset Links at
+`https://nestra-api-nkr9.onrender.com/.well-known/assetlinks.json`. The statement binds package
+`com.michalrozek.nestra` to the EAS-managed signing certificate used by `android-device-test`.
+Verify the response before installing the APK:
 
-1. Open Android **Settings**.
-2. Open **Apps** > **Nestra** > **Open by default** (wording varies by Android vendor).
-3. Enable **Open supported links**.
-4. Enable `nestra-api-nkr9.onrender.com` if Android shows a domain list.
+```powershell
+Invoke-WebRequest https://nestra-api-nkr9.onrender.com/.well-known/assetlinks.json -UseBasicParsing
+```
 
-If the domain is absent, do not replace the HTTPS return with an ad-hoc custom scheme. Record the
-failure and inspect the installed build's supported links before continuing. Public production
-still requires `https://<owned-domain>/.well-known/assetlinks.json` with the SHA-256 fingerprint of
-the actual production signing certificate; the manual setting is not production evidence.
+Install the APK only after that request returns `200` and the expected package plus certificate
+fingerprint. Android should then enable the supported return link automatically; requiring the
+tester to change **Open supported links** manually is a failed verification, not an acceptable
+release procedure. Uninstall and reinstall the APK after the association is first deployed so the
+clean-install path is tested.
+
+If Android still opens the HTTPS return in a browser, the server shows a static bilingual recovery
+page without reflecting OAuth parameters. Record the failure and inspect domain verification before
+continuing. Public production must replace the private Render host and test certificate with the
+owned production domain and the actual production signing certificate fingerprint.
 
 ### Physical-device verification
 

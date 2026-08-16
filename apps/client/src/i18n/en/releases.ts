@@ -71,6 +71,8 @@ export const enReleases = {
           'Signing out now fully ends your session even if a token refresh was already in progress.',
         googleAccountLinking:
           'Google account linking now finishes before Nestra signs you in, and signing out leaves Google sign-in ready to use again.',
+        androidGoogleReturn:
+          'Google sign-in now returns directly to Nestra on Android, with a clear recovery page if the app cannot open.',
         newNoteDraftMigration:
           'Creating a note now keeps your latest edits and no longer leaves a leftover draft that can reopen in a new note.',
         updatePromptCoordination:
