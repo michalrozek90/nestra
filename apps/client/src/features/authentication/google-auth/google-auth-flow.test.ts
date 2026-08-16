@@ -80,6 +80,9 @@ function createController(
     email: 'reader@example.com',
     linkedAt: '2030-01-01T00:00:00.000Z',
   }));
+  const stageAuthentication = vi.fn(async () => undefined);
+  const activateAuthentication = vi.fn();
+  const discardAuthentication = vi.fn(async () => undefined);
   const completeAuthentication = vi.fn(async () => undefined);
   const navigateToNotes = vi.fn();
   const controller = new GoogleAuthFlowController({
@@ -93,6 +96,9 @@ function createController(
     login,
     startLink,
     exchangeLink,
+    stageAuthentication,
+    activateAuthentication,
+    discardAuthentication,
     completeAuthentication,
     navigateToNotes,
     getApiErrorCode: (error) => (error as TestError).code ?? null,
@@ -102,14 +108,17 @@ function createController(
 
   return {
     browser,
+    activateAuthentication,
     completeAuthentication,
     controller,
     createHandoffProof,
     exchangeLink,
     exchangeSignIn,
+    discardAuthentication,
     login,
     navigateToNotes,
     pendingStorage,
+    stageAuthentication,
     startLink,
     startSignIn,
   };
@@ -200,13 +209,15 @@ describe('GoogleAuthFlowController', () => {
     });
 
     expect(testFlow.login).toHaveBeenCalledOnce();
-    expect(testFlow.completeAuthentication).toHaveBeenCalledWith(SESSION);
+    expect(testFlow.stageAuthentication).toHaveBeenCalledWith(SESSION);
+    expect(testFlow.completeAuthentication).not.toHaveBeenCalled();
     expect(testFlow.startLink).toHaveBeenCalledWith({
       platform: 'web',
       handoffChallenge: HANDOFF_CHALLENGE,
       currentPassword: 'password',
     });
     expect(testFlow.exchangeLink).toHaveBeenCalledOnce();
+    expect(testFlow.activateAuthentication).toHaveBeenCalledWith(SESSION.user);
     expect(testFlow.controller.getSnapshot()).toEqual({
       status: 'feedback',
       messageKey: 'google.feedback.linked',
@@ -225,12 +236,112 @@ describe('GoogleAuthFlowController', () => {
       password: 'password',
     });
 
-    expect(testFlow.completeAuthentication).toHaveBeenCalledWith(SESSION);
+    expect(testFlow.stageAuthentication).toHaveBeenCalledWith(SESSION);
+    expect(testFlow.completeAuthentication).not.toHaveBeenCalled();
+    expect(testFlow.activateAuthentication).toHaveBeenCalledWith(SESSION.user);
     expect(testFlow.exchangeLink).not.toHaveBeenCalled();
     expect(testFlow.controller.getSnapshot()).toEqual({
       status: 'feedback',
       messageKey: 'google.feedback.linkCancelled',
       tone: 'neutral',
+    });
+  });
+
+  it('does not publish the password session before the desktop link exchange succeeds', async () => {
+    const testFlow = createController();
+    testFlow.exchangeSignIn.mockRejectedValueOnce({ code: 'AUTH_ACCOUNT_LINK_REQUIRED' });
+    await testFlow.controller.startSignIn();
+    testFlow.browser.openAuthorization.mockResolvedValueOnce({ type: 'opened' });
+
+    await testFlow.controller.confirmLink({
+      email: 'reader@example.com',
+      password: 'password',
+    });
+
+    expect(testFlow.stageAuthentication).toHaveBeenCalledWith(SESSION);
+    expect(testFlow.activateAuthentication).not.toHaveBeenCalled();
+    expect(testFlow.navigateToNotes).not.toHaveBeenCalled();
+    expect(testFlow.controller.getSnapshot()).toEqual({ status: 'pending', intent: 'link' });
+
+    await testFlow.controller.resumeCallback(CALLBACK_URL);
+
+    expect(testFlow.exchangeLink).toHaveBeenCalledOnce();
+    expect(testFlow.activateAuthentication).toHaveBeenCalledWith(SESSION.user);
+    expect(testFlow.navigateToNotes).toHaveBeenCalledOnce();
+  });
+
+  it('clears a pending operation and returns to idle when authentication is reset', async () => {
+    const testFlow = createController({ type: 'opened' });
+    await testFlow.controller.startSignIn();
+
+    expect(testFlow.pendingStorage.pendingAuth).not.toBeNull();
+    expect(testFlow.controller.getSnapshot()).toEqual({ status: 'pending', intent: 'sign-in' });
+
+    await testFlow.controller.reset();
+
+    expect(testFlow.pendingStorage.pendingAuth).toBeNull();
+    expect(testFlow.controller.getSnapshot()).toEqual({ status: 'idle' });
+  });
+
+  it('ignores a link exchange that finishes after authentication is reset', async () => {
+    let releaseExchange: (() => void) | undefined;
+    let signalExchangeStarted: (() => void) | undefined;
+    const exchangeGate = new Promise<void>((resolve) => {
+      releaseExchange = resolve;
+    });
+    const exchangeStarted = new Promise<void>((resolve) => {
+      signalExchangeStarted = resolve;
+    });
+    const testFlow = createController();
+    testFlow.exchangeSignIn.mockRejectedValueOnce({ code: 'AUTH_ACCOUNT_LINK_REQUIRED' });
+    await testFlow.controller.startSignIn();
+    testFlow.browser.openAuthorization.mockResolvedValueOnce({ type: 'opened' });
+    await testFlow.controller.confirmLink({
+      email: 'reader@example.com',
+      password: 'password',
+    });
+    testFlow.exchangeLink.mockImplementationOnce(async () => {
+      signalExchangeStarted?.();
+      await exchangeGate;
+      return {
+        provider: 'google',
+        email: 'reader@example.com',
+        linkedAt: '2030-01-01T00:00:00.000Z',
+      };
+    });
+
+    const callbackOperation = testFlow.controller.resumeCallback(CALLBACK_URL);
+    await exchangeStarted;
+    const resetOperation = testFlow.controller.reset();
+    releaseExchange?.();
+    await Promise.all([callbackOperation, resetOperation]);
+
+    expect(testFlow.activateAuthentication).not.toHaveBeenCalled();
+    expect(testFlow.navigateToNotes).not.toHaveBeenCalled();
+    expect(testFlow.pendingStorage.pendingAuth).toBeNull();
+    expect(testFlow.controller.getSnapshot()).toEqual({ status: 'idle' });
+  });
+
+  it('discards the staged password session when link exchange fails', async () => {
+    const testFlow = createController();
+    testFlow.exchangeSignIn.mockRejectedValueOnce({ code: 'AUTH_ACCOUNT_LINK_REQUIRED' });
+    await testFlow.controller.startSignIn();
+    testFlow.browser.openAuthorization.mockResolvedValueOnce({ type: 'opened' });
+    await testFlow.controller.confirmLink({
+      email: 'reader@example.com',
+      password: 'password',
+    });
+    testFlow.exchangeLink.mockRejectedValueOnce({ key: 'errors.google.network' });
+
+    await testFlow.controller.resumeCallback(CALLBACK_URL);
+
+    expect(testFlow.discardAuthentication).toHaveBeenCalledOnce();
+    expect(testFlow.activateAuthentication).not.toHaveBeenCalled();
+    expect(testFlow.navigateToNotes).not.toHaveBeenCalled();
+    expect(testFlow.controller.getSnapshot()).toEqual({
+      status: 'feedback',
+      messageKey: 'errors.google.network',
+      tone: 'error',
     });
   });
 
@@ -281,18 +392,14 @@ describe('GoogleAuthFlowController', () => {
     });
   });
 
-  it('rejects an unsolicited callback when no pending flow exists', async () => {
+  it('ignores a stale callback when no pending flow exists', async () => {
     const testFlow = createController();
 
     await testFlow.controller.resumeCallback(CALLBACK_URL);
 
     expect(testFlow.exchangeSignIn).not.toHaveBeenCalled();
     expect(testFlow.completeAuthentication).not.toHaveBeenCalled();
-    expect(testFlow.controller.getSnapshot()).toEqual({
-      status: 'feedback',
-      messageKey: 'errors.google.invalidCallback',
-      tone: 'error',
-    });
+    expect(testFlow.controller.getSnapshot()).toEqual({ status: 'idle' });
   });
 
   it('ignores callback URLs outside the exact configured desktop return location', async () => {
