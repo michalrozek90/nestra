@@ -70,6 +70,8 @@ export const plReleases = {
           'Żądania z poprzedniego logowania nie są już kontynuowane po zmianie sesji.',
         signOutRefreshRace:
           'Wylogowanie teraz w pełni kończy sesję nawet wtedy, gdy odświeżanie tokenu było już w toku.',
+        googleAccountLinking:
+          'Połączenie konta Google kończy się teraz przed zalogowaniem do Nestry, a po wylogowaniu logowanie przez Google jest od razu ponownie dostępne.',
         newNoteDraftMigration:
           'Tworzenie notatki zachowuje teraz najnowsze zmiany i nie zostawia lokalnego szkicu, który mógłby otworzyć się w nowej notatce.',
         updatePromptCoordination:

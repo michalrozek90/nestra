@@ -7,6 +7,7 @@ import type {
   GoogleAuthStartResponse,
   GoogleLinkStartRequest,
   LoginRequest,
+  PublicUser,
 } from '@nestra/contracts';
 
 import {
@@ -38,6 +39,8 @@ type GoogleAuthFlowDependencies = {
   readonly login: (request: LoginRequest) => Promise<AuthenticationSessionResponse>;
   readonly startLink: (request: GoogleLinkStartRequest) => Promise<GoogleAuthStartResponse>;
   readonly exchangeLink: (request: GoogleAuthExchangeRequest) => Promise<ExternalIdentityResponse>;
+  readonly stageAuthentication: (session: AuthenticationSessionResponse) => Promise<void>;
+  readonly activateAuthentication: (user: PublicUser) => void;
   readonly completeAuthentication: (session: AuthenticationSessionResponse) => Promise<void>;
   readonly navigateToNotes: () => void;
   readonly getApiErrorCode: (error: unknown) => string | null;
@@ -51,6 +54,8 @@ export class GoogleAuthFlowController {
   private state: GoogleAuthState = { status: 'idle' };
   private readonly listeners = new Set<StateListener>();
   private activeOperation: Promise<void> | null = null;
+  private operationGeneration = 0;
+  private stagedLinkUser: PublicUser | null = null;
 
   public constructor(private readonly dependencies: GoogleAuthFlowDependencies) {}
 
@@ -66,9 +71,9 @@ export class GoogleAuthFlowController {
       return this.activeOperation ?? Promise.resolve();
     }
 
-    return this.runPreparedBrowserOperation('sign-in', async () => {
+    return this.runPreparedBrowserOperation('sign-in', async (operationGeneration) => {
       this.setState({ status: 'pending', intent: 'sign-in' });
-      await this.startAuthorization('sign-in');
+      await this.startAuthorization('sign-in', operationGeneration);
     });
   }
 
@@ -77,18 +82,27 @@ export class GoogleAuthFlowController {
       return this.activeOperation ?? Promise.resolve();
     }
 
-    return this.runPreparedBrowserOperation('link', async () => {
+    return this.runPreparedBrowserOperation('link', async (operationGeneration) => {
       this.setState({ status: 'pending', intent: 'link' });
       try {
         const passwordSession = await this.dependencies.login(request);
-        await this.dependencies.completeAuthentication(passwordSession);
-        this.dependencies.navigateToNotes();
+        if (!this.isCurrentOperation(operationGeneration)) {
+          return;
+        }
+        await this.dependencies.stageAuthentication(passwordSession);
+        if (!this.isCurrentOperation(operationGeneration)) {
+          return;
+        }
+        this.stagedLinkUser = passwordSession.user;
       } catch (error: unknown) {
+        if (!this.isCurrentOperation(operationGeneration)) {
+          return;
+        }
         this.setState({ status: 'link-required', errorKey: this.dependencies.getErrorKey(error) });
         return;
       }
 
-      await this.startAuthorization('link', request.password);
+      await this.startAuthorization('link', operationGeneration, request.password);
     });
   }
 
@@ -101,19 +115,20 @@ export class GoogleAuthFlowController {
       return this.activeOperation;
     }
 
-    return this.runExclusive(async () => {
+    return this.runExclusive(async (operationGeneration) => {
       const pendingAuth = await this.dependencies.pendingStorage.read();
+      if (!this.isCurrentOperation(operationGeneration)) {
+        return;
+      }
       if (!pendingAuth) {
-        this.setState({
-          status: 'feedback',
-          messageKey: 'errors.google.invalidCallback',
-          tone: 'error',
-        });
+        // Tauri keeps the process launch URL available for the lifetime of the process. A WebView
+        // reload can therefore replay an already consumed callback, which is safe to ignore when
+        // no verifier-bound operation exists.
         return;
       }
 
       this.setState({ status: 'pending', intent: pendingAuth.intent });
-      await this.exchangeCallback(callbackUrl, pendingAuth);
+      await this.exchangeCallback(callbackUrl, pendingAuth, operationGeneration);
     });
   }
 
@@ -129,12 +144,33 @@ export class GoogleAuthFlowController {
     }
   }
 
-  private runExclusive(operation: () => Promise<void>): Promise<void> {
+  public reset(): Promise<void> {
+    this.operationGeneration += 1;
+    const resetGeneration = this.operationGeneration;
+    this.stagedLinkUser = null;
+    const resetOperation = this.dependencies.pendingStorage
+      .clear()
+      .finally(() => {
+        if (this.isCurrentOperation(resetGeneration)) {
+          this.setState({ status: 'idle' });
+        }
+      })
+      .finally(() => {
+        if (this.activeOperation === resetOperation) {
+          this.activeOperation = null;
+        }
+      });
+    this.activeOperation = resetOperation;
+    return resetOperation;
+  }
+
+  private runExclusive(operation: (operationGeneration: number) => Promise<void>): Promise<void> {
     if (this.activeOperation) {
       return this.activeOperation;
     }
 
-    const activeOperation = operation().finally(() => {
+    const operationGeneration = this.operationGeneration;
+    const activeOperation = operation(operationGeneration).finally(() => {
       if (this.activeOperation === activeOperation) {
         this.activeOperation = null;
       }
@@ -145,20 +181,20 @@ export class GoogleAuthFlowController {
 
   private runPreparedBrowserOperation(
     intent: PendingExternalAuth['intent'],
-    operation: () => Promise<void>,
+    operation: (operationGeneration: number) => Promise<void>,
   ): Promise<void> {
     try {
       // Web must reserve its popup synchronously while the user gesture is still active.
       this.dependencies.browser.prepareAuthorization();
     } catch (error: unknown) {
-      return this.runExclusive(async () => {
-        await this.handleFlowError(intent, error);
+      return this.runExclusive(async (operationGeneration) => {
+        await this.handleFlowError(intent, error, operationGeneration);
       });
     }
 
-    return this.runExclusive(async () => {
+    return this.runExclusive(async (operationGeneration) => {
       try {
-        await operation();
+        await operation(operationGeneration);
       } finally {
         this.dependencies.browser.dismissPreparedAuthorization();
       }
@@ -167,10 +203,14 @@ export class GoogleAuthFlowController {
 
   private async startAuthorization(
     intent: PendingExternalAuth['intent'],
+    operationGeneration: number,
     currentPassword?: string,
   ): Promise<void> {
     try {
       const proof = await this.dependencies.createHandoffProof();
+      if (!this.isCurrentOperation(operationGeneration)) {
+        return;
+      }
       const startResponse =
         intent === 'sign-in'
           ? await this.dependencies.startSignIn({
@@ -182,6 +222,9 @@ export class GoogleAuthFlowController {
               handoffChallenge: proof.handoffChallenge,
               currentPassword: currentPassword ?? '',
             });
+      if (!this.isCurrentOperation(operationGeneration)) {
+        return;
+      }
       const pendingAuth: PendingExternalAuth = {
         intent,
         platform: this.dependencies.platform,
@@ -190,13 +233,22 @@ export class GoogleAuthFlowController {
         handoffVerifier: proof.handoffVerifier,
       };
       await this.dependencies.pendingStorage.write(pendingAuth);
+      if (!this.isCurrentOperation(operationGeneration)) {
+        return;
+      }
 
       const browserResult = await this.dependencies.browser.openAuthorization(
         startResponse.authorizationUrl,
         this.dependencies.returnUri,
       );
+      if (!this.isCurrentOperation(operationGeneration)) {
+        return;
+      }
       if (browserResult.type === 'cancelled') {
         await this.dependencies.pendingStorage.clear();
+        if (!this.isCurrentOperation(operationGeneration)) {
+          return;
+        }
         this.setState(
           intent === 'link'
             ? {
@@ -206,20 +258,24 @@ export class GoogleAuthFlowController {
               }
             : { status: 'idle' },
         );
+        if (intent === 'link' && this.activateStagedLinkAuthentication()) {
+          this.dependencies.navigateToNotes();
+        }
         return;
       }
 
       if (browserResult.type === 'callback') {
-        await this.exchangeCallback(browserResult.callbackUrl, pendingAuth);
+        await this.exchangeCallback(browserResult.callbackUrl, pendingAuth, operationGeneration);
       }
     } catch (error: unknown) {
-      await this.handleFlowError(intent, error);
+      await this.handleFlowError(intent, error, operationGeneration);
     }
   }
 
   private async exchangeCallback(
     callbackUrl: string,
     pendingAuth: PendingExternalAuth,
+    operationGeneration: number,
   ): Promise<void> {
     try {
       const handoffCode = readGoogleHandoffCode(
@@ -236,31 +292,54 @@ export class GoogleAuthFlowController {
 
       if (pendingAuth.intent === 'sign-in') {
         const session = await this.dependencies.exchangeSignIn(exchangeRequest);
+        if (!this.isCurrentOperation(operationGeneration)) {
+          return;
+        }
         await this.dependencies.completeAuthentication(session);
+        if (!this.isCurrentOperation(operationGeneration)) {
+          return;
+        }
         await this.dependencies.pendingStorage.clear();
+        if (!this.isCurrentOperation(operationGeneration)) {
+          return;
+        }
         this.setState({ status: 'idle' });
         this.dependencies.navigateToNotes();
         return;
       }
 
       await this.dependencies.exchangeLink(exchangeRequest);
+      if (!this.isCurrentOperation(operationGeneration)) {
+        return;
+      }
       await this.dependencies.pendingStorage.clear();
+      if (!this.isCurrentOperation(operationGeneration)) {
+        return;
+      }
       this.setState({
         status: 'feedback',
         messageKey: 'google.feedback.linked',
         tone: 'success',
       });
+      this.activateStagedLinkAuthentication();
       this.dependencies.navigateToNotes();
     } catch (error: unknown) {
-      await this.handleFlowError(pendingAuth.intent, error);
+      await this.handleFlowError(pendingAuth.intent, error, operationGeneration);
     }
   }
 
   private async handleFlowError(
     intent: PendingExternalAuth['intent'],
     error: unknown,
+    operationGeneration: number,
   ): Promise<void> {
+    if (!this.isCurrentOperation(operationGeneration)) {
+      return;
+    }
     await this.dependencies.pendingStorage.clear();
+    if (!this.isCurrentOperation(operationGeneration)) {
+      return;
+    }
     const apiErrorCode = this.dependencies.getApiErrorCode(error);
 
     if (apiErrorCode === 'AUTH_GOOGLE_CANCELLED') {
@@ -273,6 +352,9 @@ export class GoogleAuthFlowController {
             }
           : { status: 'idle' },
       );
+      if (intent === 'link' && this.activateStagedLinkAuthentication()) {
+        this.dependencies.navigateToNotes();
+      }
       return;
     }
 
@@ -289,6 +371,24 @@ export class GoogleAuthFlowController {
           : this.dependencies.getErrorKey(error);
 
     this.setState({ status: 'feedback', messageKey: errorKey, tone: 'error' });
+    if (intent === 'link' && this.activateStagedLinkAuthentication()) {
+      this.dependencies.navigateToNotes();
+    }
+  }
+
+  private activateStagedLinkAuthentication(): boolean {
+    if (!this.stagedLinkUser) {
+      return false;
+    }
+
+    const authenticatedUser = this.stagedLinkUser;
+    this.stagedLinkUser = null;
+    this.dependencies.activateAuthentication(authenticatedUser);
+    return true;
+  }
+
+  private isCurrentOperation(operationGeneration: number): boolean {
+    return operationGeneration === this.operationGeneration;
   }
 
   private setState(state: GoogleAuthState): void {

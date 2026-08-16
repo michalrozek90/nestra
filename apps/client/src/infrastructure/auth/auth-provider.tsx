@@ -20,6 +20,8 @@ type AuthContextValue = {
   readonly status: AuthenticationStatus;
   readonly user: PublicUser | null;
   readonly isSigningOut: boolean;
+  readonly stageAuthentication: (session: AuthenticationSessionResponse) => Promise<void>;
+  readonly activateAuthentication: (user: PublicUser) => void;
   readonly completeAuthentication: (session: AuthenticationSessionResponse) => Promise<void>;
   readonly signOut: () => Promise<void>;
 };
@@ -99,21 +101,32 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   useEffect(() => registerAuthenticationFailureHandler(clearSessionState), [clearSessionState]);
 
-  const completeAuthentication = useCallback(
-    async (session: AuthenticationSessionResponse) => {
+  const stageAuthentication = useCallback(async (session: AuthenticationSessionResponse) => {
+    try {
+      await persistAuthenticationSessionTokens(session);
+    } catch (storageError: unknown) {
       try {
-        await persistAuthenticationSessionTokens(session);
-      } catch (storageError: unknown) {
-        try {
-          await logout({ refreshToken: session.refreshToken });
-        } catch {
-          logger.warn('Authentication session cleanup did not reach the API');
-        }
-        throw storageError;
+        await logout({ refreshToken: session.refreshToken });
+      } catch {
+        logger.warn('Authentication session cleanup did not reach the API');
       }
-      client.setQueryData<PublicUser>(AUTH_SESSION_QUERY_KEY, session.user);
+      throw storageError;
+    }
+  }, []);
+
+  const activateAuthentication = useCallback(
+    (authenticatedUser: PublicUser) => {
+      client.setQueryData<PublicUser>(AUTH_SESSION_QUERY_KEY, authenticatedUser);
     },
     [client],
+  );
+
+  const completeAuthentication = useCallback(
+    async (session: AuthenticationSessionResponse) => {
+      await stageAuthentication(session);
+      activateAuthentication(session.user);
+    },
+    [activateAuthentication, stageAuthentication],
   );
 
   const signOut = useCallback(async () => {
@@ -159,10 +172,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
       status,
       user,
       isSigningOut,
+      stageAuthentication,
+      activateAuthentication,
       completeAuthentication,
       signOut,
     }),
-    [completeAuthentication, isSigningOut, user, signOut, status],
+    [
+      activateAuthentication,
+      completeAuthentication,
+      isSigningOut,
+      signOut,
+      stageAuthentication,
+      status,
+      user,
+    ],
   );
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

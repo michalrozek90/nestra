@@ -74,8 +74,14 @@ function getGoogleAuthErrorKey(error: unknown): GoogleAuthErrorKey {
 export function GoogleAuthProvider({ children }: PropsWithChildren) {
   const { t } = useTranslation('auth');
   const router = useRouter();
-  const { completeAuthentication, status: authenticationStatus } = useAuth();
+  const {
+    activateAuthentication,
+    completeAuthentication,
+    stageAuthentication,
+    status: authenticationStatus,
+  } = useAuth();
   const queuedCallbackUrlRef = useRef<string | null>(null);
+  const hadAuthenticatedSessionRef = useRef(authenticationStatus === 'authenticated');
   const platform = getGoogleAuthPlatform();
   const returnUri = getGoogleAuthReturnUri(platform);
   const navigateToNotes = useCallback(() => router.replace('/notes'), [router]);
@@ -92,13 +98,22 @@ export function GoogleAuthProvider({ children }: PropsWithChildren) {
         login,
         startLink: startGoogleLink,
         exchangeLink: exchangeGoogleLink,
+        stageAuthentication,
+        activateAuthentication,
         completeAuthentication,
         navigateToNotes,
         getApiErrorCode: getAuthApiErrorCode,
         getErrorKey: getGoogleAuthErrorKey,
         now: Date.now,
       }),
-    [completeAuthentication, navigateToNotes, platform, returnUri],
+    [
+      activateAuthentication,
+      completeAuthentication,
+      navigateToNotes,
+      platform,
+      returnUri,
+      stageAuthentication,
+    ],
   );
   const callbackRuntimeRef = useRef({ authenticationStatus, controller });
   callbackRuntimeRef.current = { authenticationStatus, controller };
@@ -175,6 +190,23 @@ export function GoogleAuthProvider({ children }: PropsWithChildren) {
     const callbackUrl = queuedCallbackUrlRef.current;
     queuedCallbackUrlRef.current = null;
     void controller.resumeCallback(callbackUrl);
+  }, [authenticationStatus, controller]);
+
+  useEffect(() => {
+    if (authenticationStatus === 'authenticated') {
+      hadAuthenticatedSessionRef.current = true;
+      return;
+    }
+
+    if (authenticationStatus !== 'unauthenticated' || !hadAuthenticatedSessionRef.current) {
+      return;
+    }
+
+    hadAuthenticatedSessionRef.current = false;
+    queuedCallbackUrlRef.current = null;
+    void controller.reset().catch((error: unknown) => {
+      logger.error('External authentication state could not be reset after sign-out', error);
+    });
   }, [authenticationStatus, controller]);
 
   useEffect(() => {
