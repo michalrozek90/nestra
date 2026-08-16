@@ -77,6 +77,7 @@ export function GoogleAuthProvider({ children }: PropsWithChildren) {
   const {
     activateAuthentication,
     completeAuthentication,
+    discardAuthentication,
     stageAuthentication,
     status: authenticationStatus,
   } = useAuth();
@@ -100,6 +101,7 @@ export function GoogleAuthProvider({ children }: PropsWithChildren) {
         exchangeLink: exchangeGoogleLink,
         stageAuthentication,
         activateAuthentication,
+        discardAuthentication,
         completeAuthentication,
         navigateToNotes,
         getApiErrorCode: getAuthApiErrorCode,
@@ -109,6 +111,7 @@ export function GoogleAuthProvider({ children }: PropsWithChildren) {
     [
       activateAuthentication,
       completeAuthentication,
+      discardAuthentication,
       navigateToNotes,
       platform,
       returnUri,

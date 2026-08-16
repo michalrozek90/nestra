@@ -22,6 +22,7 @@ type AuthContextValue = {
   readonly isSigningOut: boolean;
   readonly stageAuthentication: (session: AuthenticationSessionResponse) => Promise<void>;
   readonly activateAuthentication: (user: PublicUser) => void;
+  readonly discardAuthentication: () => Promise<void>;
   readonly completeAuthentication: (session: AuthenticationSessionResponse) => Promise<void>;
   readonly signOut: () => Promise<void>;
 };
@@ -129,36 +130,41 @@ export function AuthProvider({ children }: PropsWithChildren) {
     [activateAuthentication, stageAuthentication],
   );
 
+  const discardAuthentication = useCallback(async () => {
+    invalidateAuthenticationPersistence();
+    let refreshToken: string | null = null;
+    try {
+      refreshToken = await authTokenStorage.getRefreshToken();
+    } catch (error: unknown) {
+      logger.error('Refresh token could not be read while discarding authentication', error);
+    }
+
+    if (refreshToken) {
+      try {
+        await logout({ refreshToken });
+      } catch {
+        logger.warn('Authentication cleanup did not reach the API');
+      }
+    }
+
+    await clearStoredTokensSafely();
+    clearSessionState();
+  }, [clearSessionState]);
+
   const signOut = useCallback(async () => {
     if (isSigningOut) {
       return;
     }
 
     setIsSigningOut(true);
-    // Fence in-flight refresh persistence before the logout network round-trip.
-    invalidateAuthenticationPersistence();
     try {
-      let refreshToken: string | null = null;
-      try {
-        refreshToken = await authTokenStorage.getRefreshToken();
-      } catch (error: unknown) {
-        logger.error('Refresh token could not be read during sign-out', error);
-      }
-
-      if (refreshToken) {
-        try {
-          await logout({ refreshToken });
-        } catch {
-          logger.warn('Server sign-out did not complete; continuing with local sign-out');
-        }
-      }
+      await discardAuthentication();
     } finally {
-      await clearStoredTokensSafely();
       client.clear();
       client.setQueryData<PublicUser | null>(AUTH_SESSION_QUERY_KEY, null);
       setIsSigningOut(false);
     }
-  }, [client, isSigningOut]);
+  }, [client, discardAuthentication, isSigningOut]);
 
   const user = sessionQuery.data ?? null;
   const status: AuthenticationStatus = sessionQuery.isPending
@@ -174,12 +180,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isSigningOut,
       stageAuthentication,
       activateAuthentication,
+      discardAuthentication,
       completeAuthentication,
       signOut,
     }),
     [
       activateAuthentication,
       completeAuthentication,
+      discardAuthentication,
       isSigningOut,
       signOut,
       stageAuthentication,

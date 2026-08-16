@@ -82,6 +82,7 @@ function createController(
   }));
   const stageAuthentication = vi.fn(async () => undefined);
   const activateAuthentication = vi.fn();
+  const discardAuthentication = vi.fn(async () => undefined);
   const completeAuthentication = vi.fn(async () => undefined);
   const navigateToNotes = vi.fn();
   const controller = new GoogleAuthFlowController({
@@ -97,6 +98,7 @@ function createController(
     exchangeLink,
     stageAuthentication,
     activateAuthentication,
+    discardAuthentication,
     completeAuthentication,
     navigateToNotes,
     getApiErrorCode: (error) => (error as TestError).code ?? null,
@@ -112,6 +114,7 @@ function createController(
     createHandoffProof,
     exchangeLink,
     exchangeSignIn,
+    discardAuthentication,
     login,
     navigateToNotes,
     pendingStorage,
@@ -317,6 +320,29 @@ describe('GoogleAuthFlowController', () => {
     expect(testFlow.navigateToNotes).not.toHaveBeenCalled();
     expect(testFlow.pendingStorage.pendingAuth).toBeNull();
     expect(testFlow.controller.getSnapshot()).toEqual({ status: 'idle' });
+  });
+
+  it('discards the staged password session when link exchange fails', async () => {
+    const testFlow = createController();
+    testFlow.exchangeSignIn.mockRejectedValueOnce({ code: 'AUTH_ACCOUNT_LINK_REQUIRED' });
+    await testFlow.controller.startSignIn();
+    testFlow.browser.openAuthorization.mockResolvedValueOnce({ type: 'opened' });
+    await testFlow.controller.confirmLink({
+      email: 'reader@example.com',
+      password: 'password',
+    });
+    testFlow.exchangeLink.mockRejectedValueOnce({ key: 'errors.google.network' });
+
+    await testFlow.controller.resumeCallback(CALLBACK_URL);
+
+    expect(testFlow.discardAuthentication).toHaveBeenCalledOnce();
+    expect(testFlow.activateAuthentication).not.toHaveBeenCalled();
+    expect(testFlow.navigateToNotes).not.toHaveBeenCalled();
+    expect(testFlow.controller.getSnapshot()).toEqual({
+      status: 'feedback',
+      messageKey: 'errors.google.network',
+      tone: 'error',
+    });
   });
 
   it.each([

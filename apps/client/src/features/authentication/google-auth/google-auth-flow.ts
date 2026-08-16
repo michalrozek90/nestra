@@ -41,6 +41,7 @@ type GoogleAuthFlowDependencies = {
   readonly exchangeLink: (request: GoogleAuthExchangeRequest) => Promise<ExternalIdentityResponse>;
   readonly stageAuthentication: (session: AuthenticationSessionResponse) => Promise<void>;
   readonly activateAuthentication: (user: PublicUser) => void;
+  readonly discardAuthentication: () => Promise<void>;
   readonly completeAuthentication: (session: AuthenticationSessionResponse) => Promise<void>;
   readonly navigateToNotes: () => void;
   readonly getApiErrorCode: (error: unknown) => string | null;
@@ -370,10 +371,13 @@ export class GoogleAuthFlowController {
           ? 'errors.google.invalidCallback'
           : this.dependencies.getErrorKey(error);
 
-    this.setState({ status: 'feedback', messageKey: errorKey, tone: 'error' });
-    if (intent === 'link' && this.activateStagedLinkAuthentication()) {
-      this.dependencies.navigateToNotes();
+    if (intent === 'link') {
+      await this.discardStagedLinkAuthentication();
+      if (!this.isCurrentOperation(operationGeneration)) {
+        return;
+      }
     }
+    this.setState({ status: 'feedback', messageKey: errorKey, tone: 'error' });
   }
 
   private activateStagedLinkAuthentication(): boolean {
@@ -385,6 +389,15 @@ export class GoogleAuthFlowController {
     this.stagedLinkUser = null;
     this.dependencies.activateAuthentication(authenticatedUser);
     return true;
+  }
+
+  private async discardStagedLinkAuthentication(): Promise<void> {
+    if (!this.stagedLinkUser) {
+      return;
+    }
+
+    this.stagedLinkUser = null;
+    await this.dependencies.discardAuthentication();
   }
 
   private isCurrentOperation(operationGeneration: number): boolean {
