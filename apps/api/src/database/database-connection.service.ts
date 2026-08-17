@@ -23,15 +23,15 @@ export class DatabaseConnectionService {
     }
   }
 
-  private async ensureInitialized(): Promise<void> {
-    if (this.dataSource.isInitialized) {
-      return;
-    }
-
+  async ensureInitialized(): Promise<void> {
     const pendingInitialization = this.initializationPromise;
 
     if (pendingInitialization !== undefined) {
       await pendingInitialization;
+      return;
+    }
+
+    if (this.dataSource.isInitialized) {
       return;
     }
 

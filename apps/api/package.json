@@ -14,7 +14,7 @@
     "db:seed": "pnpm build && node dist/database/seed.js",
     "dev": "nest start --watch",
     "start": "node dist/main.js",
-    "test": "tsc -p tsconfig.test.json && node --test dist-test/auth/*.test.js dist-test/mobile-app-links/*.test.js",
+    "test": "tsc -p tsconfig.test.json && node --test dist-test/auth/*.test.js dist-test/database/*.test.js dist-test/mobile-app-links/*.test.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

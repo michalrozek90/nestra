@@ -74,6 +74,8 @@ export const plReleases = {
           'Połączenie konta Google kończy się teraz przed zalogowaniem do Nestry, a po wylogowaniu logowanie przez Google jest od razu ponownie dostępne.',
         androidGoogleReturn:
           'Logowanie przez Google wraca teraz bezpośrednio do Nestry na Androidzie, a w razie problemu wyświetla czytelną stronę pomocy.',
+        googleFirstSignInReliability:
+          'Logowanie przez Google działa teraz niezawodnie już przy pierwszej próbie po uruchomieniu usługi Nestry.',
         newNoteDraftMigration:
           'Tworzenie notatki zachowuje teraz najnowsze zmiany i nie zostawia lokalnego szkicu, który mógłby otworzyć się w nowej notatce.',
         updatePromptCoordination:
