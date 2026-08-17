@@ -24,14 +24,14 @@ export class DatabaseConnectionService {
   }
 
   async ensureInitialized(): Promise<void> {
-    if (this.dataSource.isInitialized) {
-      return;
-    }
-
     const pendingInitialization = this.initializationPromise;
 
     if (pendingInitialization !== undefined) {
       await pendingInitialization;
+      return;
+    }
+
+    if (this.dataSource.isInitialized) {
       return;
     }
 
