@@ -20,6 +20,7 @@ import {
 
 import { ApiException } from '../common/api.exception';
 import type { ApiEnvironment } from '../config/api-environment';
+import { DatabaseConnectionService } from '../database/database-connection.service';
 import { AuthService } from './auth.service';
 import {
   EXTERNAL_AUTH_TRANSACTION_PROVIDER,
@@ -71,6 +72,7 @@ export class GoogleAuthService {
     private readonly authService: AuthService,
     private readonly identityService: ExternalAuthIdentityService,
     private readonly transactionMaintenanceService: ExternalAuthTransactionMaintenanceService,
+    private readonly databaseConnectionService: DatabaseConnectionService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -78,6 +80,7 @@ export class GoogleAuthService {
     platform: GoogleAuthPlatform,
     handoffChallenge: string,
   ): Promise<GoogleAuthStartResponse> {
+    await this.databaseConnectionService.ensureInitialized();
     return this.start('sign_in', platform, handoffChallenge, null);
   }
 
@@ -87,6 +90,7 @@ export class GoogleAuthService {
     platform: GoogleAuthPlatform,
     handoffChallenge: string,
   ): Promise<GoogleAuthStartResponse> {
+    await this.databaseConnectionService.ensureInitialized();
     const user = await this.dataSource.getRepository(UserEntity).findOne({ where: { id: userId } });
     const passwordIsValid = await this.passwordService.verifyPassword(
       currentPassword,
@@ -108,6 +112,7 @@ export class GoogleAuthService {
       return { kind: 'error' };
     }
 
+    await this.databaseConnectionService.ensureInitialized();
     const transaction = await this.transactionRepository.findOne({
       where: { stateHash: hashExternalAuthValue(state) },
     });
@@ -320,6 +325,7 @@ export class GoogleAuthService {
       );
     }
 
+    await this.databaseConnectionService.ensureInitialized();
     return this.dataSource.transaction(async (entityManager) => {
       const transactionRepository = entityManager.getRepository(ExternalAuthTransactionEntity);
       const transaction = await transactionRepository.findOne({

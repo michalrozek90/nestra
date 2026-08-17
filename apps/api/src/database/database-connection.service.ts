@@ -23,7 +23,7 @@ export class DatabaseConnectionService {
     }
   }
 
-  private async ensureInitialized(): Promise<void> {
+  async ensureInitialized(): Promise<void> {
     if (this.dataSource.isInitialized) {
       return;
     }

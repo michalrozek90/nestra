@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { describe, it } from 'node:test';
 
 import type { GoogleAuthExchangeRequest } from '@nestra/contracts';
-import { QueryFailedError } from 'typeorm';
+import { EntityMetadataNotFoundError, QueryFailedError } from 'typeorm';
 
 import { ApiException } from '../common/api.exception';
 import type { ApiEnvironment } from '../config/api-environment';
@@ -171,6 +171,37 @@ function createUniqueEmailViolation(): QueryFailedError {
 }
 
 describe('GoogleAuthService protocol behavior', () => {
+  it('initializes the database before the first Google sign-in transaction access', async () => {
+    let isDatabaseInitialized = false;
+    const service = createService(
+      {
+        findOne: async () => null,
+        update: async () => ({ affected: 1 }),
+        create: (transaction) => createTransaction(transaction),
+        save: async (transaction) => transaction,
+      },
+      {
+        ensureDatabaseInitialized: async () => {
+          isDatabaseInitialized = true;
+        },
+        scrubExpiredTransactions: async () => {
+          if (!isDatabaseInitialized) {
+            throw new EntityMetadataNotFoundError(ExternalAuthTransactionEntity);
+          }
+        },
+      },
+    );
+
+    const response = await service.startSignIn(
+      'web',
+      createPkceChallenge(createExternalAuthRandomValue()),
+    );
+
+    assert.equal(isDatabaseInitialized, true);
+    assert.equal(response.transactionId, '11111111-1111-4111-8111-111111111111');
+    assert.equal(response.authorizationUrl, 'https://accounts.google.com/o/oauth2/v2/auth');
+  });
+
   it('rejects unknown callback state without redirecting', async () => {
     const service = createService({
       findOne: async () => null,
@@ -835,6 +866,8 @@ describe('GoogleAuthService account provisioning and linking', () => {
 type TransactionRepositoryMock = {
   findOne: (options: unknown) => Promise<MutableTransaction | null>;
   update: (criteria: unknown, values: Record<string, unknown>) => Promise<{ affected: number }>;
+  create?: (transaction: Partial<MutableTransaction>) => MutableTransaction;
+  save?: (transaction: MutableTransaction) => Promise<MutableTransaction>;
 };
 
 function createService(
@@ -861,6 +894,8 @@ function createService(
       readonly passwordHash: string | null;
     }) => Promise<UserEntity>;
     verifyPassword?: (password: string, passwordHash: string | null) => Promise<boolean>;
+    ensureDatabaseInitialized?: () => Promise<void>;
+    scrubExpiredTransactions?: () => Promise<void>;
   } = {},
 ): GoogleAuthService {
   const encryptionKey = options.encryptionKey ?? Buffer.from(randomBytes(32));
@@ -965,7 +1000,10 @@ function createService(
     authService as never,
     identityService as never,
     {
-      scrubExpiredTransactions: async () => undefined,
+      scrubExpiredTransactions: options.scrubExpiredTransactions ?? (async () => undefined),
+    } as never,
+    {
+      ensureInitialized: options.ensureDatabaseInitialized ?? (async () => undefined),
     } as never,
     dataSource as never,
   );
