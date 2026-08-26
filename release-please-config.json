@@ -16,9 +16,8 @@
           "jsonpath": "$.package.version"
         },
         {
-          "type": "toml",
-          "path": "apps/desktop/src-tauri/Cargo.lock",
-          "jsonpath": "$.package[?(@.name=='nestra-desktop')].version"
+          "type": "generic",
+          "path": "apps/desktop/src-tauri/Cargo.lock"
         }
       ]
     }
