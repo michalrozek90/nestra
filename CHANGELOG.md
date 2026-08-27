@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0](https://github.com/michalrozek90/nestra/compare/v0.2.0...v0.3.0) (2026-08-27)
+
+
+### Features
+
+* **auth:** Google accounts now provision and link without silent email merges ([#128](https://github.com/michalrozek90/nestra/issues/128)) ([e7d6bb0](https://github.com/michalrozek90/nestra/commit/e7d6bb06e8ffc5b5c18766f05bf8aa679ea7c309))
+* **auth:** Nestra can now finish Google sign-in through a secure API handoff ([#127](https://github.com/michalrozek90/nestra/issues/127)) ([b65e279](https://github.com/michalrozek90/nestra/commit/b65e279aabf00313958dc46be056f5f2dec4bff4))
+* **auth:** You can now sign in to Nestra with Google ([#129](https://github.com/michalrozek90/nestra/issues/129)) ([d8a02d5](https://github.com/michalrozek90/nestra/commit/d8a02d51622aa64d63369f4eaf2bbac567516623))
+* **client:** What's new now shows every update you missed ([9f64809](https://github.com/michalrozek90/nestra/commit/9f64809a0cb1e43583d561d79b09cfaeace4b7a5))
+* **settings:** About now shows the author Michał Rożek ([#115](https://github.com/michalrozek90/nestra/issues/115)) ([f71c31b](https://github.com/michalrozek90/nestra/commit/f71c31b49d1e2352f56e354e9675bacc096f0244))
+* **settings:** Developer diagnostics now checks API health and draft storage ([#112](https://github.com/michalrozek90/nestra/issues/112)) ([745eba4](https://github.com/michalrozek90/nestra/commit/745eba41e6d2f7b4becd4a813dc883e304328dc3))
+
+
+### Bug Fixes
+
+* **android:** Google sign-in now returns directly to Nestra ([#137](https://github.com/michalrozek90/nestra/issues/137)) ([7b0d58e](https://github.com/michalrozek90/nestra/commit/7b0d58ecc498ef0d3b53d67bd0425bb0c24aeefa))
+* **api:** Service outages now show clear connection errors ([#101](https://github.com/michalrozek90/nestra/issues/101)) ([963896e](https://github.com/michalrozek90/nestra/commit/963896e0c0857dfd3f6df982c1f269857da5dcd2))
+* **auth:** Google account linking now completes reliably on Windows ([#136](https://github.com/michalrozek90/nestra/issues/136)) ([d1baacf](https://github.com/michalrozek90/nestra/commit/d1baacf477d5b843686d8718f735504ba33d995a)), closes [#135](https://github.com/michalrozek90/nestra/issues/135)
+* **auth:** Google sign-in now works immediately after service startup ([#144](https://github.com/michalrozek90/nestra/issues/144)) ([a5e0949](https://github.com/michalrozek90/nestra/commit/a5e09491c52067e7fea050fe8e31a0b693568751))
+* **auth:** Previous-session requests no longer continue after you sign in again ([#105](https://github.com/michalrozek90/nestra/issues/105)) ([d762363](https://github.com/michalrozek90/nestra/commit/d7623637e8ff77aedbea2302bf754c2b98f4b518))
+* **auth:** Signing out now fully ends your session during an in-flight refresh ([#106](https://github.com/michalrozek90/nestra/issues/106)) ([1a5c3d9](https://github.com/michalrozek90/nestra/commit/1a5c3d9594c5748f5bd97405ce3fe454be3eac68))
+* **desktop:** Packaged builds no longer allow local API connections ([#109](https://github.com/michalrozek90/nestra/issues/109)) ([b52744b](https://github.com/michalrozek90/nestra/commit/b52744bc0bcbf617aca297966370a9919338e876))
+* **desktop:** Update prompts now wait for What's New and honor About checks ([#111](https://github.com/michalrozek90/nestra/issues/111)) ([45b920f](https://github.com/michalrozek90/nestra/commit/45b920ff3f4d3f9232c4a2aa1520a9b555513f09))
+* **notes:** Creating a note now keeps your latest edits safely ([#108](https://github.com/michalrozek90/nestra/issues/108)) ([214a2cb](https://github.com/michalrozek90/nestra/commit/214a2cba2c7e5025b2af6288696c15937ab122a5))
+
 ## [0.2.0](https://github.com/michalrozek90/nestra/compare/v0.1.0...v0.2.0) (2026-07-31)
 
 ### Features
