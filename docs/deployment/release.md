@@ -35,7 +35,7 @@ The root `package.json` `version` is the only product version.
 | API / contracts diagnostics   | `packages/contracts` injects root version at build time        |
 | Tauri application / installer | `tauri.conf.json` → `../../../package.json`                    |
 | Desktop Cargo crate metadata  | Release Please updates `apps/desktop/src-tauri/Cargo.toml`     |
-| Desktop Cargo locked metadata | Release Please updates `apps/desktop/src-tauri/Cargo.lock`     |
+| Desktop Cargo locked metadata | Release Please updates the annotated package in `Cargo.lock`   |
 | Release Please tracking       | `.release-please-manifest.json` must match root `package.json` |
 | Installer file name           | `Nestra_{version}_x64-setup.exe`                               |
 

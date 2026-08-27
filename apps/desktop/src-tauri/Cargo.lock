@@ -2168,7 +2168,7 @@ dependencies = [
 
 [[package]]
 name = "nestra-desktop"
-version = "0.2.0"
+version = "0.2.0" # x-release-please-version
 dependencies = [
  "keyring",
  "serde",

@@ -51,6 +51,24 @@ if (manifestVersion !== productVersion) {
   );
 }
 
+const releasePleaseConfig = readJson('release-please-config.json');
+const releasePleaseRootPackageConfig = releasePleaseConfig.value.packages?.['.'];
+const releasePleaseExtraFiles = Array.isArray(releasePleaseRootPackageConfig?.['extra-files'])
+  ? releasePleaseRootPackageConfig['extra-files']
+  : [];
+const cargoLockUpdaterConfigs = releasePleaseExtraFiles.filter(
+  (extraFile) =>
+    typeof extraFile === 'object' &&
+    extraFile !== null &&
+    extraFile.path === 'apps/desktop/src-tauri/Cargo.lock',
+);
+
+if (cargoLockUpdaterConfigs.length !== 1 || cargoLockUpdaterConfigs[0].type !== 'generic') {
+  fail(
+    'Release Please must use exactly one generic updater for apps/desktop/src-tauri/Cargo.lock.',
+  );
+}
+
 const tauriConfig = readJson('apps/desktop/src-tauri/tauri.conf.json');
 const tauriVersionReference = tauriConfig.value.version;
 
@@ -95,12 +113,14 @@ if (desktopCargoLockPackageSections.length !== 1) {
     `apps/desktop/src-tauri/Cargo.lock must contain exactly one nestra-desktop package entry. Found: ${desktopCargoLockPackageSections.length}`,
   );
 } else {
-  const cargoLockVersionMatch = /^version\s*=\s*"([^"]+)"$/m.exec(
+  const cargoLockVersionMatch = /^version\s*=\s*"([^"]+)"\s+#\s+x-release-please-version\s*$/m.exec(
     desktopCargoLockPackageSections[0],
   );
 
   if (cargoLockVersionMatch === null) {
-    fail('The nestra-desktop Cargo.lock package entry must declare a version.');
+    fail(
+      'The nestra-desktop Cargo.lock package entry must declare its version with the x-release-please-version annotation.',
+    );
   } else if (cargoLockVersionMatch[1] !== productVersion) {
     fail(
       [

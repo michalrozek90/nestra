@@ -38,7 +38,9 @@ Use Google Release Please with a single repository-wide `node` package at the re
   existing draft.
 - Release Please also updates the `nestra-desktop` package version in both
   `apps/desktop/src-tauri/Cargo.toml` and `Cargo.lock` so the Rust crate metadata stays aligned with
-  the product version. Tauri continues to read the installer and application version from root
+  the product version. `Cargo.toml` uses the TOML updater, while the generated lockfile uses a
+  scoped generic updater annotation because Release Please does not resolve the package-array
+  JSONPath reliably. Tauri continues to read the installer and application version from root
   `package.json` through `tauri.conf.json`.
 - After Release Please creates or updates its pull request, the same workflow operates only on the
   pull request returned by that specific action run. It verifies the live pull request identity,
