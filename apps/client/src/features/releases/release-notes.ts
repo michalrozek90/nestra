@@ -16,6 +16,7 @@ export type ReleaseNote = {
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
   {
     version: '0.3.0',
+    releaseDate: '2026-08-27',
     changes: {
       new: [
         {
