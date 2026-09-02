@@ -16,7 +16,6 @@ export const plReleases = {
   },
   whatsNew: {
     title: 'Co nowego',
-    intro: 'Oto wszystko, co Cię ominęło do wersji Nestry {{version}}.',
     dismiss: 'Rozumiem',
   },
   update: {
@@ -55,6 +54,12 @@ export const plReleases = {
     },
   },
   versions: {
+    v040: {
+      changes: {
+        quietFirstLaunch:
+          'Co nowego nie przeszkadza przy pierwszym uruchomieniu i pokazuje po aktualizacji tylko pominięte wersje.',
+      },
+    },
     v030: {
       changes: {
         googleAuthentication:

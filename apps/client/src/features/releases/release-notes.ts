@@ -15,6 +15,17 @@ export type ReleaseNote = {
 
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
   {
+    version: '0.4.0',
+    changes: {
+      new: [
+        {
+          descriptionTranslationKey: 'versions.v040.changes.quietFirstLaunch',
+        },
+      ],
+      fixes: [],
+    },
+  },
+  {
     version: '0.3.0',
     releaseDate: '2026-08-27',
     changes: {

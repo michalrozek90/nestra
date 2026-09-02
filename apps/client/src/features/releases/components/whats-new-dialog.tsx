@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
-import { Button as PaperButton, Dialog, Portal, Text } from 'react-native-paper';
+import { Button as PaperButton, Dialog, Portal } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getResponsiveLayout } from '@/theme/breakpoints';
-import { radii, spacing, typography } from '@/theme/tokens';
+import { radii, spacing } from '@/theme/tokens';
 
 const DIALOG_MAX_WIDTH_PX = 560;
 const DIALOG_SCROLL_MAX_HEIGHT_RATIO = 0.58;
@@ -82,15 +82,6 @@ export function WhatsNewDialog({
   );
 }
 
-type WhatsNewIntroProps = {
-  readonly isCompact?: boolean;
-  readonly text: string;
-};
-
-export function WhatsNewIntro({ isCompact = false, text }: WhatsNewIntroProps) {
-  return <Text style={isCompact ? styles.compactIntro : styles.intro}>{text}</Text>;
-}
-
 const styles = StyleSheet.create({
   actions: {
     flexWrap: 'wrap',
@@ -112,9 +103,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginVertical: 0,
-  },
-  compactIntro: {
-    ...typography.supporting,
   },
   compactScrollArea: {
     marginBottom: spacing.sm,
@@ -144,9 +132,6 @@ const styles = StyleSheet.create({
   dismissLabel: {
     fontSize: 16,
     fontWeight: '600',
-  },
-  intro: {
-    ...typography.body,
   },
   scrollArea: {
     marginBottom: spacing.md,
