@@ -4,7 +4,7 @@ import { Text } from 'react-native-paper';
 
 import { ApplicationUpdateHost } from '@/features/application-update/application-update-host';
 import { ReleaseNoteChanges } from '@/features/releases/components/release-note-changes';
-import { WhatsNewDialog, WhatsNewIntro } from '@/features/releases/components/whats-new-dialog';
+import { WhatsNewDialog } from '@/features/releases/components/whats-new-dialog';
 import { useWhatsNew } from '@/features/releases/use-whats-new';
 import { getResponsiveLayout } from '@/theme/breakpoints';
 import { spacing, typography } from '@/theme/tokens';
@@ -27,7 +27,6 @@ export function ProductSurfaceOverlays() {
           title={t('whatsNew.title')}
           visible={isWhatsNewVisible}
         >
-          <WhatsNewIntro isCompact={isCompact} text={t('whatsNew.intro', { version })} />
           <View style={styles.versionList}>
             {releaseNotes.map((releaseNote) => (
               <View key={releaseNote.version} style={styles.versionBlock}>

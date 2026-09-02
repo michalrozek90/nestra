@@ -8,16 +8,9 @@ import {
   writeLastSeenReleaseNotesVersion,
 } from '@/infrastructure/storage/preference-storage';
 
-import { getUnseenReleaseNotesNewestFirst, type ReleaseNote } from './release-notes';
+import { resolveWhatsNewLaunch, type WhatsNewLaunchState } from './resolve-whats-new-launch';
 
-type WhatsNewState = {
-  readonly isReady: boolean;
-  readonly isVisible: boolean;
-  readonly releaseNotes: readonly ReleaseNote[];
-  readonly version: string | null;
-};
-
-const initialState: WhatsNewState = {
+const initialState: WhatsNewLaunchState = {
   isReady: false,
   isVisible: false,
   releaseNotes: [],
@@ -25,39 +18,29 @@ const initialState: WhatsNewState = {
 };
 
 export function useWhatsNew() {
-  const [state, setState] = useState<WhatsNewState>(initialState);
+  const [state, setState] = useState<WhatsNewLaunchState>(initialState);
   const applicationVersion = runtimeConfig.applicationVersion;
 
   useEffect(() => {
     let isCancelled = false;
 
     async function resolveWhatsNewVisibility(): Promise<void> {
-      try {
-        const lastSeenVersion = await readLastSeenReleaseNotesVersion();
-        const releaseNotes = getUnseenReleaseNotesNewestFirst(lastSeenVersion, applicationVersion);
+      const nextState = await resolveWhatsNewLaunch(applicationVersion, {
+        onPreferenceStorageError: (operation, error) => {
+          markPreferenceStorageUnavailable('releaseNotes');
+          logger.error(
+            operation === 'read'
+              ? 'Last seen release notes version could not be read'
+              : 'Last seen release notes version could not be saved',
+            error,
+          );
+        },
+        readLastSeenVersion: readLastSeenReleaseNotesVersion,
+        writeLastSeenVersion: writeLastSeenReleaseNotesVersion,
+      });
 
-        if (isCancelled) {
-          return;
-        }
-
-        setState({
-          isReady: true,
-          isVisible: releaseNotes.length > 0,
-          releaseNotes,
-          version: applicationVersion,
-        });
-      } catch (error: unknown) {
-        markPreferenceStorageUnavailable('releaseNotes');
-        logger.error('Last seen release notes version could not be read', error);
-
-        if (!isCancelled) {
-          setState({
-            isReady: true,
-            isVisible: false,
-            releaseNotes: [],
-            version: null,
-          });
-        }
+      if (!isCancelled) {
+        setState(nextState);
       }
     }
 

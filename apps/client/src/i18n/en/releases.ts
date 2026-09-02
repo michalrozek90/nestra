@@ -16,7 +16,6 @@ export const enReleases = {
   },
   whatsNew: {
     title: 'What’s new',
-    intro: 'Here is everything you have missed up to Nestra {{version}}.',
     dismiss: 'Got it',
   },
   update: {
@@ -54,6 +53,12 @@ export const enReleases = {
     },
   },
   versions: {
+    v040: {
+      changes: {
+        quietFirstLaunch:
+          'What’s New stays quiet on your first launch and shows only the updates you missed after an upgrade.',
+      },
+    },
     v030: {
       changes: {
         googleAuthentication:
