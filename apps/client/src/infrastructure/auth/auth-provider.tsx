@@ -4,6 +4,7 @@ import type { PropsWithChildren } from 'react';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { registerAuthenticationFailureHandler } from '@/infrastructure/api/api-client';
+import { verifyApiReadiness } from '@/infrastructure/api/api-health';
 import { logger } from '@/infrastructure/logging/logger';
 import { logout, refreshSession } from './auth-api';
 import { isRecoverableConnectionError } from './auth-error';
@@ -65,6 +66,7 @@ async function restoreAuthenticationSession(): Promise<PublicUser | null> {
     attempt += 1;
     const attemptStartedAt = Date.now();
     try {
+      await verifyApiReadiness();
       const session = await refreshSession({ refreshToken });
       await persistAuthenticationSessionTokens(session);
       logger.info('Session restoration completed', {
