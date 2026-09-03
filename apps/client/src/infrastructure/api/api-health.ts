@@ -3,18 +3,41 @@ import axios from 'axios';
 
 import { AUTH_REQUEST_TIMEOUT_MS, apiClient, type ApiRequestConfig } from './api-client';
 
+const API_READINESS_RETRY_DELAY_MS = 1_000;
 const healthRequestConfig: Partial<ApiRequestConfig> = {
-  timeout: AUTH_REQUEST_TIMEOUT_MS,
   _skipDiagnostics: true,
 };
 
-async function requestApiHealth(): Promise<HealthResponse> {
-  const response = await apiClient.get<unknown>('/health', healthRequestConfig);
+async function requestApiHealth(timeoutMs = AUTH_REQUEST_TIMEOUT_MS): Promise<HealthResponse> {
+  const response = await apiClient.get<unknown>('/health', {
+    ...healthRequestConfig,
+    timeout: timeoutMs,
+  });
   return healthResponseSchema.parse(response.data);
 }
 
 export async function verifyApiReadiness(): Promise<void> {
-  await requestApiHealth();
+  const readinessDeadline = Date.now() + AUTH_REQUEST_TIMEOUT_MS;
+
+  while (true) {
+    try {
+      await requestApiHealth(readinessDeadline - Date.now());
+      return;
+    } catch (error: unknown) {
+      const isRecoverableReadinessError =
+        axios.isAxiosError(error) && (!error.response || error.response.status >= 500);
+      if (!isRecoverableReadinessError) {
+        throw error;
+      }
+
+      const remainingWaitMs = readinessDeadline - Date.now();
+      if (remainingWaitMs <= 0) {
+        throw error;
+      }
+
+      await wait(Math.min(API_READINESS_RETRY_DELAY_MS, remainingWaitMs));
+    }
+  }
 }
 
 export async function getApiHealth(): Promise<HealthResponse> {
@@ -28,4 +51,10 @@ export async function getApiHealth(): Promise<HealthResponse> {
 
     throw error;
   }
+}
+
+function wait(durationMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, durationMs);
+  });
 }

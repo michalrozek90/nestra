@@ -12,9 +12,10 @@ export class DatabaseConnectionService {
 
   constructor(private readonly dataSource: DataSource) {}
 
-  async waitForInitialization(): Promise<void> {
+  async waitForConnection(): Promise<void> {
     try {
       await this.ensureInitialized();
+      await this.dataSource.query('SELECT 1');
     } catch (error: unknown) {
       throw new DatabaseUnavailableException(error);
     }

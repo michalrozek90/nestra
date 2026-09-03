@@ -37,7 +37,7 @@ export class AuthService {
   ) {}
 
   async register(email: string, password: string): Promise<AuthenticationSessionResponse> {
-    await this.databaseConnectionService.waitForInitialization();
+    await this.databaseConnectionService.waitForConnection();
     const normalizedEmail = normalizeEmail(email);
     const passwordHash = await this.passwordService.hashPassword(password);
 
@@ -66,7 +66,7 @@ export class AuthService {
   }
 
   async login(email: string, password: string): Promise<AuthenticationSessionResponse> {
-    await this.databaseConnectionService.waitForInitialization();
+    await this.databaseConnectionService.waitForConnection();
     const normalizedEmail = normalizeEmail(email);
     const user = await this.userRepository.findOne({
       where: { email: normalizedEmail },
@@ -91,7 +91,7 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string): Promise<AuthenticationSessionResponse> {
-    await this.databaseConnectionService.waitForInitialization();
+    await this.databaseConnectionService.waitForConnection();
     const parsedRefreshToken = parseRefreshToken(refreshToken);
 
     if (parsedRefreshToken === null) {
@@ -171,7 +171,7 @@ export class AuthService {
   }
 
   async logout(refreshToken: string): Promise<void> {
-    await this.databaseConnectionService.waitForInitialization();
+    await this.databaseConnectionService.waitForConnection();
     const parsedRefreshToken = parseRefreshToken(refreshToken);
 
     if (parsedRefreshToken === null) {
@@ -202,7 +202,7 @@ export class AuthService {
   }
 
   async getCurrentUser(userId: string): Promise<PublicUser> {
-    await this.databaseConnectionService.waitForInitialization();
+    await this.databaseConnectionService.waitForConnection();
     const user = await this.userRepository.findOne({
       where: { id: userId },
     });
