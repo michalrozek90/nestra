@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0](https://github.com/michalrozek90/nestra/compare/v0.3.0...v0.4.0) (2026-09-03)
+
+
+### Features
+
+* **client:** What's New now stays quiet on your first launch ([#174](https://github.com/michalrozek90/nestra/issues/174)) ([d1cb58f](https://github.com/michalrozek90/nestra/commit/d1cb58ff6ee0eb5b29c103b550d63a50f44cc44d)), closes [#138](https://github.com/michalrozek90/nestra/issues/138)
+
+
+### Bug Fixes
+
+* **auth:** Nestra now waits safely through slow service starts ([#176](https://github.com/michalrozek90/nestra/issues/176)) ([be92da2](https://github.com/michalrozek90/nestra/commit/be92da2aef271640c3a407fe37c2218ac01d5a47))
+* **notes:** The note editor Back control is easier to tap on a phone ([64753e9](https://github.com/michalrozek90/nestra/commit/64753e937f34617ac7a6525af3b376e4d7a95c06))
+* **notes:** You now create notes only from the active list ([b971023](https://github.com/michalrozek90/nestra/commit/b97102312b3c5219228ae672fc88595438c4b643))
+
 ## [0.3.0](https://github.com/michalrozek90/nestra/compare/v0.2.0...v0.3.0) (2026-08-27)
 
 ### Features
