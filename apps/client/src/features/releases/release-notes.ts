@@ -22,7 +22,11 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
           descriptionTranslationKey: 'versions.v040.changes.quietFirstLaunch',
         },
       ],
-      fixes: [],
+      fixes: [
+        {
+          descriptionTranslationKey: 'versions.v040.changes.slowStartupAuthentication',
+        },
+      ],
     },
   },
   {

@@ -58,6 +58,8 @@ export const plReleases = {
       changes: {
         quietFirstLaunch:
           'Co nowego nie przeszkadza przy pierwszym uruchomieniu i pokazuje po aktualizacji tylko pominięte wersje.',
+        slowStartupAuthentication:
+          'Podczas wolnego startu Nestra czeka teraz na gotowość logowania, zamiast zbyt wcześnie ponawiać próbę lub usuwać sesję.',
       },
     },
     v030: {

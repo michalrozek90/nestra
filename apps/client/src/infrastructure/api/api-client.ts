@@ -24,12 +24,14 @@ export type ApiRequestConfig = AuthenticatedRequestConfig;
 type AuthenticationFailureHandler = () => void;
 
 const AUTH_HEADER_EXCLUDED_PATHS = [
+  '/health',
   '/auth/register',
   '/auth/login',
   '/auth/refresh',
   '/auth/logout',
 ] as const;
 const REFRESH_EXCLUDED_PATHS = [
+  '/health',
   '/auth/register',
   '/auth/login',
   '/auth/refresh',

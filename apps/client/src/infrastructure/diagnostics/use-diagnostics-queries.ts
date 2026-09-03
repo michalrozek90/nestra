@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { getApiHealth } from './health-api';
+import { getApiHealth } from '@/infrastructure/api/api-health';
 
 export const diagnosticsQueryKeys = {
   apiHealth: ['diagnostics', 'api-health'] as const,

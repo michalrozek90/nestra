@@ -205,12 +205,16 @@ upgrade.
 
 ## Troubleshooting
 
+For a long first response, compare the request delay with the safe
+`Database initialization completed: durationMs=...` Render log. Time before initialization starts
+points to Render waking the container; a long initialization duration points to Neon.
+
 | Symptom                                               | Likely cause                                         | Action                                                                         |
 | ----------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------ |
 | Container exits at boot mentioning environment fields | Missing or invalid env vars                          | Compare Render env to the table above; logs include field names only           |
 | Health `503 degraded`                                 | Database unreachable, wrong URL, or Neon asleep      | Verify pooled URL, TLS, and Neon project status                                |
 | CORS browser errors                                   | Origin not listed                                    | Add the exact browser origin to `CORS_ALLOWED_ORIGINS`                         |
-| Long first response                                   | Cold start after free-tier spin-down                 | Expected on free tier; measure and document                                    |
+| Long first response                                   | Render or Neon cold start after free-tier spin-down  | Compare the safe database initialization timing in Render logs                 |
 | Migration CLI fails env validation                    | Local `.env` incomplete                              | Provide the full API env set, not only `DATABASE_URL`                          |
 | API exits with a `GOOGLE_OAUTH_*` field               | Enabled Google configuration is incomplete or unsafe | Compare names and exact URIs with the Google OAuth runbook; never print values |
 | Google reports `redirect_uri_mismatch`                | Google client and API callback differ exactly        | Compare scheme, host, port, path, case, and trailing slash                     |

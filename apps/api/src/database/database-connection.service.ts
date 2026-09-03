@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 import { DatabaseUnavailableException } from './database-unavailable.exception';
@@ -7,9 +7,19 @@ const databaseConnectionTimeoutMs = 3_000;
 
 @Injectable()
 export class DatabaseConnectionService {
+  private readonly logger = new Logger(DatabaseConnectionService.name);
   private initializationPromise: Promise<void> | undefined;
 
   constructor(private readonly dataSource: DataSource) {}
+
+  async waitForConnection(): Promise<void> {
+    try {
+      await this.ensureInitialized();
+      await this.dataSource.query('SELECT 1');
+    } catch (error: unknown) {
+      throw new DatabaseUnavailableException(error);
+    }
+  }
 
   async verifyConnection(): Promise<void> {
     try {
@@ -35,7 +45,22 @@ export class DatabaseConnectionService {
       return;
     }
 
-    const initializationPromise = this.dataSource.initialize().then(() => undefined);
+    const initializationStartedAt = Date.now();
+    this.logger.log('Database initialization started.');
+    const initializationPromise = this.dataSource.initialize().then(
+      () => {
+        this.logger.log(
+          `Database initialization completed: durationMs=${Date.now() - initializationStartedAt}`,
+        );
+      },
+      (error: unknown) => {
+        const safeErrorName = error instanceof Error ? error.name : 'UnknownError';
+        this.logger.error(
+          `Database initialization failed: durationMs=${Date.now() - initializationStartedAt} errorName=${safeErrorName}`,
+        );
+        throw error;
+      },
+    );
     this.initializationPromise = initializationPromise;
 
     try {
