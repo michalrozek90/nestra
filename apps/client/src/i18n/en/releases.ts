@@ -60,7 +60,7 @@ export const enReleases = {
         slowStartupAuthentication:
           'Nestra now waits for authentication to become ready during a slow start instead of retrying early or dropping your session.',
         stableNotesActions:
-          'The New note action now stays in place when you switch between active notes and Trash.',
+          'You now create notes from the active list only. Trash shows Empty trash instead of New note.',
       },
     },
     v030: {

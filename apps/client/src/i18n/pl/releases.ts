@@ -61,7 +61,7 @@ export const plReleases = {
         slowStartupAuthentication:
           'Podczas wolnego startu Nestra czeka teraz na gotowość logowania, zamiast zbyt wcześnie ponawiać próbę lub usuwać sesję.',
         stableNotesActions:
-          'Przycisk Nowa notatka pozostaje teraz na swoim miejscu podczas przełączania między notatkami a Koszem.',
+          'Nowe notatki tworzysz teraz tylko z listy aktywnych. W Koszu jest Opróżnij kosz zamiast Nowa notatka.',
       },
     },
     v030: {

@@ -59,6 +59,7 @@ export function NotesListScreen({
       ? actionMutation.error
       : null;
   const hasTrashedNotes = isTrashed && notesQuery.isSuccess && notesQuery.data.length > 0;
+  const hasHeaderAction = !isTrashed || hasTrashedNotes;
 
   function handleHeaderTitleLayout(event: LayoutChangeEvent): void {
     headerTitleOffsetYRef.current = event.nativeEvent.layout.y;
@@ -73,30 +74,31 @@ export function NotesListScreen({
 
   return (
     <Screen>
-      <View style={styles.headerBlock}>
-        <View style={styles.headerRow}>
-          <View onLayout={handleHeaderTitleLayout} style={styles.headerTitle}>
-            <Header title={title} />
-          </View>
+      <View style={styles.headerRow}>
+        <View onLayout={handleHeaderTitleLayout} style={styles.headerTitle}>
+          <Header title={title} />
+        </View>
+        {hasHeaderAction ? (
           <View
             onLayout={handleHeaderActionsLayout}
             style={[styles.headerActions, isHeaderStacked ? styles.headerActionsStacked : null]}
           >
-            <Button isFullWidth={isHeaderStacked} label={t('actions.new')} onPress={onCreateNote} />
-          </View>
-        </View>
-        {hasTrashedNotes ? (
-          <View
-            style={[styles.emptyTrashActions, isHeaderStacked ? styles.headerActionsStacked : null]}
-          >
-            <Button
-              isDisabled={actionMutation.isPending}
-              isFullWidth={isHeaderStacked}
-              isLoading={emptyTrashMutation.isPending}
-              label={t('actions.emptyTrash')}
-              onPress={() => setIsEmptyTrashDialogVisible(true)}
-              variant="destructive"
-            />
+            {isTrashed ? (
+              <Button
+                isDisabled={actionMutation.isPending}
+                isFullWidth={isHeaderStacked}
+                isLoading={emptyTrashMutation.isPending}
+                label={t('actions.emptyTrash')}
+                onPress={() => setIsEmptyTrashDialogVisible(true)}
+                variant="destructive"
+              />
+            ) : (
+              <Button
+                isFullWidth={isHeaderStacked}
+                label={t('actions.new')}
+                onPress={onCreateNote}
+              />
+            )}
           </View>
         ) : null}
       </View>
@@ -230,9 +232,6 @@ const styles = StyleSheet.create({
     ...typography.supporting,
     textAlign: 'center',
   },
-  headerBlock: {
-    gap: spacing.sm,
-  },
   headerRow: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -255,9 +254,6 @@ const styles = StyleSheet.create({
   },
   headerActionsStacked: {
     width: '100%',
-  },
-  emptyTrashActions: {
-    alignItems: 'flex-end',
   },
   notes: {
     gap: spacing.lg,
