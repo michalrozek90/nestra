@@ -26,6 +26,9 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
         {
           descriptionTranslationKey: 'versions.v040.changes.slowStartupAuthentication',
         },
+        {
+          descriptionTranslationKey: 'versions.v040.changes.stableNotesActions',
+        },
       ],
     },
   },

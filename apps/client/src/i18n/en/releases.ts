@@ -59,6 +59,8 @@ export const enReleases = {
           'What’s New stays quiet on your first launch and shows only the updates you missed after an upgrade.',
         slowStartupAuthentication:
           'Nestra now waits for authentication to become ready during a slow start instead of retrying early or dropping your session.',
+        stableNotesActions:
+          'You now create notes from the active list only. Trash shows Empty trash instead of New note.',
       },
     },
     v030: {

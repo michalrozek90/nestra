@@ -59,6 +59,7 @@ export function NotesListScreen({
       ? actionMutation.error
       : null;
   const hasTrashedNotes = isTrashed && notesQuery.isSuccess && notesQuery.data.length > 0;
+  const hasHeaderAction = !isTrashed || hasTrashedNotes;
 
   function handleHeaderTitleLayout(event: LayoutChangeEvent): void {
     headerTitleOffsetYRef.current = event.nativeEvent.layout.y;
@@ -77,22 +78,29 @@ export function NotesListScreen({
         <View onLayout={handleHeaderTitleLayout} style={styles.headerTitle}>
           <Header title={title} />
         </View>
-        <View
-          onLayout={handleHeaderActionsLayout}
-          style={[styles.headerActions, isHeaderStacked ? styles.headerActionsStacked : null]}
-        >
-          {hasTrashedNotes ? (
-            <Button
-              isDisabled={actionMutation.isPending}
-              isFullWidth={isHeaderStacked}
-              isLoading={emptyTrashMutation.isPending}
-              label={t('actions.emptyTrash')}
-              onPress={() => setIsEmptyTrashDialogVisible(true)}
-              variant="destructive"
-            />
-          ) : null}
-          <Button isFullWidth={isHeaderStacked} label={t('actions.new')} onPress={onCreateNote} />
-        </View>
+        {hasHeaderAction ? (
+          <View
+            onLayout={handleHeaderActionsLayout}
+            style={[styles.headerActions, isHeaderStacked ? styles.headerActionsStacked : null]}
+          >
+            {isTrashed ? (
+              <Button
+                isDisabled={actionMutation.isPending}
+                isFullWidth={isHeaderStacked}
+                isLoading={emptyTrashMutation.isPending}
+                label={t('actions.emptyTrash')}
+                onPress={() => setIsEmptyTrashDialogVisible(true)}
+                variant="destructive"
+              />
+            ) : (
+              <Button
+                isFullWidth={isHeaderStacked}
+                label={t('actions.new')}
+                onPress={onCreateNote}
+              />
+            )}
+          </View>
+        ) : null}
       </View>
 
       {emptyTrashMutation.isError ? (

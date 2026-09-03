@@ -60,6 +60,8 @@ export const plReleases = {
           'Co nowego nie przeszkadza przy pierwszym uruchomieniu i pokazuje po aktualizacji tylko pominięte wersje.',
         slowStartupAuthentication:
           'Podczas wolnego startu Nestra czeka teraz na gotowość logowania, zamiast zbyt wcześnie ponawiać próbę lub usuwać sesję.',
+        stableNotesActions:
+          'Nowe notatki tworzysz teraz tylko z listy aktywnych. W Koszu jest Opróżnij kosz zamiast Nowa notatka.',
       },
     },
     v030: {
