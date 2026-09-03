@@ -61,6 +61,8 @@ export const enReleases = {
           'Nestra now waits for authentication to become ready during a slow start instead of retrying early or dropping your session.',
         stableNotesActions:
           'You now create notes from the active list only. Trash shows Empty trash instead of New note.',
+        noteEditorBackTarget:
+          'The note editor Back control is easier to tap on a phone, without making the arrow look larger.',
       },
     },
     v030: {

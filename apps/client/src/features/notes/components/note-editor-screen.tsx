@@ -2,14 +2,14 @@ import { NOTE_DOCUMENT_MAX_LENGTH, type Note } from '@nestra/contracts';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
-import { Button as PaperButton, IconButton, Text } from 'react-native-paper';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Button as PaperButton, Icon, Text } from 'react-native-paper';
 
 import { ActionDialog } from '@/components/action-dialog';
 import { Loader } from '@/components/loader';
 import { Screen } from '@/components/screen';
 import { useAuth } from '@/infrastructure/auth/auth-provider';
-import { spacing, typography } from '@/theme/tokens';
+import { radii, sizes, spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
 import { validateNoteEditorValue } from '../editor/note-editor-value';
 import { useNoteEditorWithFocusTransfer } from '../editor/use-note-editor-with-focus-transfer';
@@ -19,6 +19,15 @@ type NoteEditorScreenProps = {
   readonly mode: 'new' | 'existing';
   readonly note: Note | null;
 };
+
+type BackButtonVisualState = {
+  readonly hovered?: boolean;
+  readonly pressed: boolean;
+};
+
+function hasBackButtonHighlight(state: BackButtonVisualState): boolean {
+  return state.pressed || state.hovered === true;
+}
 
 export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
   const router = useRouter();
@@ -57,13 +66,21 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
       isScrollable={false}
     >
       <View style={styles.topBar}>
-        <IconButton
+        <Pressable
           accessibilityLabel={t('actions.back')}
-          icon="arrow-left"
+          accessibilityRole="button"
           onPress={() => {
             void editor.flush().finally(() => router.back());
           }}
-        />
+          style={(state) => [
+            styles.backButton,
+            hasBackButtonHighlight(state)
+              ? { backgroundColor: theme.colors.elevation.level2 }
+              : null,
+          ]}
+        >
+          <Icon color={theme.colors.onSurface} size={22} source="arrow-left" />
+        </Pressable>
         {editor.saveStatus === 'save-failed' ? (
           <Text
             accessibilityLiveRegion="assertive"
@@ -158,5 +175,12 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     width: '100%',
+  },
+  backButton: {
+    alignItems: 'center',
+    borderRadius: radii.pill,
+    height: sizes.minimumTouchTarget,
+    justifyContent: 'center',
+    width: sizes.minimumTouchTarget,
   },
 });
