@@ -62,6 +62,8 @@ export const plReleases = {
           'Podczas wolnego startu Nestra czeka teraz na gotowość logowania, zamiast zbyt wcześnie ponawiać próbę lub usuwać sesję.',
         stableNotesActions:
           'Nowe notatki tworzysz teraz tylko z listy aktywnych. W Koszu jest Opróżnij kosz zamiast Nowa notatka.',
+        noteEditorBackTarget:
+          'W edytorze notatki łatwiej trafiasz w przycisk Wstecz na telefonie, bez powiększania strzałki.',
       },
     },
     v030: {

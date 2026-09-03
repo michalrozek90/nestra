@@ -29,6 +29,9 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
         {
           descriptionTranslationKey: 'versions.v040.changes.stableNotesActions',
         },
+        {
+          descriptionTranslationKey: 'versions.v040.changes.noteEditorBackTarget',
+        },
       ],
     },
   },
