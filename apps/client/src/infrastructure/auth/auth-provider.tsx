@@ -47,6 +47,7 @@ function wait(durationMs: number): Promise<void> {
 }
 
 async function restoreAuthenticationSession(): Promise<PublicUser | null> {
+  const restorationStartedAt = Date.now();
   const [accessToken, refreshToken] = await Promise.all([
     authTokenStorage.getAccessToken(),
     authTokenStorage.getRefreshToken(),
@@ -62,12 +63,23 @@ async function restoreAuthenticationSession(): Promise<PublicUser | null> {
   let attempt = 0;
   while (attempt < SESSION_RESTORE_MAX_ATTEMPTS) {
     attempt += 1;
+    const attemptStartedAt = Date.now();
     try {
       const session = await refreshSession({ refreshToken });
       await persistAuthenticationSessionTokens(session);
+      logger.info('Session restoration completed', {
+        attempt,
+        attemptDurationMs: Date.now() - attemptStartedAt,
+        totalDurationMs: Date.now() - restorationStartedAt,
+      });
       return session.user;
     } catch (error: unknown) {
       if (!isRecoverableConnectionError(error)) {
+        logger.info('Session restoration rejected stored credentials', {
+          attempt,
+          attemptDurationMs: Date.now() - attemptStartedAt,
+          totalDurationMs: Date.now() - restorationStartedAt,
+        });
         await clearStoredTokensSafely();
         return null;
       }
@@ -76,12 +88,19 @@ async function restoreAuthenticationSession(): Promise<PublicUser | null> {
         break;
       }
 
-      logger.warn('Session restoration recoverable failure; retrying');
+      logger.warn('Session restoration recoverable failure; retrying', {
+        attempt,
+        attemptDurationMs: Date.now() - attemptStartedAt,
+        totalDurationMs: Date.now() - restorationStartedAt,
+      });
       await wait(SESSION_RESTORE_RETRY_DELAY_MS);
     }
   }
 
-  logger.warn('Session restoration exhausted recoverable attempts');
+  logger.warn('Session restoration exhausted recoverable attempts', {
+    attempts: SESSION_RESTORE_MAX_ATTEMPTS,
+    totalDurationMs: Date.now() - restorationStartedAt,
+  });
   await clearStoredTokensSafely();
   return null;
 }
