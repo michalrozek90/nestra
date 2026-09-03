@@ -73,15 +73,22 @@ export function NotesListScreen({
 
   return (
     <Screen>
-      <View style={styles.headerRow}>
-        <View onLayout={handleHeaderTitleLayout} style={styles.headerTitle}>
-          <Header title={title} />
+      <View style={styles.headerBlock}>
+        <View style={styles.headerRow}>
+          <View onLayout={handleHeaderTitleLayout} style={styles.headerTitle}>
+            <Header title={title} />
+          </View>
+          <View
+            onLayout={handleHeaderActionsLayout}
+            style={[styles.headerActions, isHeaderStacked ? styles.headerActionsStacked : null]}
+          >
+            <Button isFullWidth={isHeaderStacked} label={t('actions.new')} onPress={onCreateNote} />
+          </View>
         </View>
-        <View
-          onLayout={handleHeaderActionsLayout}
-          style={[styles.headerActions, isHeaderStacked ? styles.headerActionsStacked : null]}
-        >
-          {hasTrashedNotes ? (
+        {hasTrashedNotes ? (
+          <View
+            style={[styles.emptyTrashActions, isHeaderStacked ? styles.headerActionsStacked : null]}
+          >
             <Button
               isDisabled={actionMutation.isPending}
               isFullWidth={isHeaderStacked}
@@ -90,9 +97,8 @@ export function NotesListScreen({
               onPress={() => setIsEmptyTrashDialogVisible(true)}
               variant="destructive"
             />
-          ) : null}
-          <Button isFullWidth={isHeaderStacked} label={t('actions.new')} onPress={onCreateNote} />
-        </View>
+          </View>
+        ) : null}
       </View>
 
       {emptyTrashMutation.isError ? (
@@ -224,6 +230,9 @@ const styles = StyleSheet.create({
     ...typography.supporting,
     textAlign: 'center',
   },
+  headerBlock: {
+    gap: spacing.sm,
+  },
   headerRow: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -246,6 +255,9 @@ const styles = StyleSheet.create({
   },
   headerActionsStacked: {
     width: '100%',
+  },
+  emptyTrashActions: {
+    alignItems: 'flex-end',
   },
   notes: {
     gap: spacing.lg,
