@@ -1,6 +1,6 @@
 [package]
 name = "nestra-desktop"
-version = "0.3.0"
+version = "0.4.0"
 description = "Nestra desktop shell"
 authors = ["Nestra"]
 license = "AGPL-3.0-only"
