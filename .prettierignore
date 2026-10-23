@@ -4,6 +4,7 @@ dist/
 build/
 coverage/
 .expo/
+.cursor/mcp.json
 **/expo-env.d.ts
 **/src-tauri/target/
 **/src-tauri/gen/

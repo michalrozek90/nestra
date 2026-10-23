@@ -1,6 +1,6 @@
 const durationPattern = /^([1-9]\d*)([smhd])$/;
 
-export function parseDurationToMilliseconds(duration: string): number {
+function parseDurationToMilliseconds(duration: string): number {
   const match = durationPattern.exec(duration);
 
   if (match === null) {

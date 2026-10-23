@@ -2,7 +2,7 @@ export type ReleaseChange = {
   readonly descriptionTranslationKey: string;
 };
 
-export type ReleaseChangeGroups = {
+type ReleaseChangeGroups = {
   readonly fixes: readonly ReleaseChange[];
   readonly new: readonly ReleaseChange[];
 };
@@ -13,7 +13,7 @@ export type ReleaseNote = {
   readonly changes: ReleaseChangeGroups;
 };
 
-export const RELEASE_NOTES: readonly ReleaseNote[] = [
+const RELEASE_NOTES: readonly ReleaseNote[] = [
   {
     version: '0.4.0',
     changes: {

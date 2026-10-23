@@ -7,7 +7,6 @@ import {
   googleLinkStartRequestSchema,
   loginRequestSchema,
   logoutRequestSchema,
-  publicUserSchema,
   refreshRequestSchema,
   registerRequestSchema,
   type AuthenticationSessionResponse,
@@ -18,7 +17,6 @@ import {
   type GoogleLinkStartRequest,
   type LoginRequest,
   type LogoutRequest,
-  type PublicUser,
   type RefreshRequest,
   type RegisterRequest,
 } from '@nestra/contracts';
@@ -63,11 +61,6 @@ export async function refreshSession(
 
 export async function logout(request: LogoutRequest): Promise<void> {
   await apiClient.post('/auth/logout', logoutRequestSchema.parse(request), authRequestConfig);
-}
-
-export async function getCurrentUser(): Promise<PublicUser> {
-  const response = await apiClient.get<unknown>('/auth/me', authRequestConfig);
-  return publicUserSchema.parse(response.data);
 }
 
 export async function startGoogleSignIn(

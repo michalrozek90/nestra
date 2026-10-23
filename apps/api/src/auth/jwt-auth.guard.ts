@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, HttpStatus, Injectable, type Type } from '@nestjs/common';
+import { CanActivate, ExecutionContext, HttpStatus, Injectable } from '@nestjs/common';
 import type { Request } from 'express';
 
 import { ApiException } from '../common/api.exception';
@@ -47,8 +47,4 @@ export class JwtAuthGuard implements CanActivate {
     request.accessToken = verifiedAccessToken;
     return true;
   }
-}
-
-export function createJwtAuthGuard(): Type<CanActivate> {
-  return JwtAuthGuard;
 }

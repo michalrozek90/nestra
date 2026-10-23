@@ -52,7 +52,7 @@ export function recordFailedApiRequest(error: unknown): void {
   });
 }
 
-export function getApiDiagnosticsSnapshot(): ApiDiagnosticsSnapshot {
+function getApiDiagnosticsSnapshot(): ApiDiagnosticsSnapshot {
   return snapshot;
 }
 

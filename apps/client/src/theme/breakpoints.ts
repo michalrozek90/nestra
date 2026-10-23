@@ -8,8 +8,6 @@ export const BREAKPOINTS = {
   expanded: 1200,
 } as const;
 
-export const MINIMUM_SUPPORTED_LAYOUT_WIDTH = BREAKPOINTS.compact;
-
 export type ResponsiveLayout = keyof typeof BREAKPOINTS;
 
 export function getResponsiveLayout(windowWidth: number): ResponsiveLayout {

@@ -1,4 +1,4 @@
-export type NoteDocumentSelection = {
+type NoteDocumentSelection = {
   readonly start: number;
   readonly end: number;
 };
