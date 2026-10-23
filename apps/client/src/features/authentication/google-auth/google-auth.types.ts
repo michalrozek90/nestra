@@ -1,6 +1,6 @@
-import type { GoogleAuthPlatform, LoginRequest } from '@nestra/contracts';
+import type { GoogleAuthPlatform } from '@nestra/contracts';
 
-export type GoogleAuthIntent = 'sign-in' | 'link';
+type GoogleAuthIntent = 'sign-in' | 'link';
 
 export type PendingExternalAuth = {
   readonly intent: GoogleAuthIntent;
@@ -59,5 +59,3 @@ export type GoogleAuthState =
         GoogleAuthErrorKey | 'google.feedback.linked' | 'google.feedback.linkCancelled';
       readonly tone: 'error' | 'success' | 'neutral';
     };
-
-export type GoogleLinkConfirmation = LoginRequest;

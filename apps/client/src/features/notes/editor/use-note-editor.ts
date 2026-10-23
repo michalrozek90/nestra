@@ -21,7 +21,7 @@ import {
 const LOCAL_DRAFT_DEBOUNCE_MS = 150;
 const SERVER_SAVE_DEBOUNCE_MS = 800;
 
-export type NoteSaveStatus = 'saving' | 'saved' | 'save-failed' | 'saved-locally';
+type NoteSaveStatus = 'saving' | 'saved' | 'save-failed' | 'saved-locally';
 
 type UseNoteEditorOptions = {
   readonly userId: string;

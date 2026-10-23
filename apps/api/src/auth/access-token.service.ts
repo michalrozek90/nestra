@@ -4,8 +4,8 @@ import { JwtService } from '@nestjs/jwt';
 
 import type { ApiEnvironment } from '../config/api-environment';
 
-export const ACCESS_TOKEN_ISSUER = 'nestra-api';
-export const ACCESS_TOKEN_AUDIENCE = 'nestra-client';
+const ACCESS_TOKEN_ISSUER = 'nestra-api';
+const ACCESS_TOKEN_AUDIENCE = 'nestra-client';
 
 export type AccessTokenPayload = {
   readonly sub: string;

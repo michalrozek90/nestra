@@ -4,7 +4,7 @@ import { Button as PaperButton } from 'react-native-paper';
 import { radii, sizes, spacing } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'destructive';
+type ButtonVariant = 'primary' | 'secondary' | 'destructive';
 
 type ButtonProps = {
   readonly label: string;

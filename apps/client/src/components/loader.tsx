@@ -3,7 +3,7 @@ import { ActivityIndicator } from 'react-native-paper';
 
 import { useNestraTheme } from '@/theme/themes';
 
-export type LoaderSize = 'small' | 'large' | number;
+type LoaderSize = 'small' | 'large' | number;
 
 type LoaderProps = {
   /** Visual size of the spinner. Defaults to `large`. */

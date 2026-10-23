@@ -2,7 +2,6 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import {
-  getPreferenceStorageAvailability,
   markPreferenceStorageUnavailable,
   readLanguagePreference,
   writeLanguagePreference,
@@ -73,5 +72,3 @@ export async function changeApplicationLanguage(language: SupportedLanguage): Pr
 export function getSelectedLanguage(): SupportedLanguage {
   return isSupportedLanguage(i18n.resolvedLanguage) ? i18n.resolvedLanguage : DEFAULT_LANGUAGE;
 }
-
-export { getPreferenceStorageAvailability, i18n };

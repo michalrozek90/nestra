@@ -15,7 +15,7 @@ import {
 } from './auth-session-storage';
 import { authTokenStorage } from './auth-token-storage';
 
-export type AuthenticationStatus = 'unknown' | 'authenticated' | 'unauthenticated';
+type AuthenticationStatus = 'unknown' | 'authenticated' | 'unauthenticated';
 
 type AuthContextValue = {
   readonly status: AuthenticationStatus;
