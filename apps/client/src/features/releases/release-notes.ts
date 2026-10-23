@@ -24,6 +24,9 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
       ],
       fixes: [
         {
+          descriptionTranslationKey: 'versions.v040.changes.desktopGoogleAuthentication',
+        },
+        {
           descriptionTranslationKey: 'versions.v040.changes.slowStartupAuthentication',
         },
         {

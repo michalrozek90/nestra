@@ -51,6 +51,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify desktop production configuration
+        run: pnpm check:desktop-production-config
+
       - name: Prepare desktop production environment file
         shell: pwsh
         run: |

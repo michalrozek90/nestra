@@ -111,6 +111,9 @@ jobs:
       - name: Verify product version synchronization
         run: pnpm check:product-version
 
+      - name: Verify desktop production configuration
+        run: pnpm check:desktop-production-config
+
       - name: Validate checked-out release candidate
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
