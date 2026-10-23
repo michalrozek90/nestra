@@ -5,6 +5,7 @@
   "description": "Tauri desktop shell that packages the Expo web client",
   "license": "AGPL-3.0-only",
   "scripts": {
+    "check:production-config": "node ./scripts/check-production-config.mjs",
     "dev": "node ./scripts/run-tauri.mjs dev",
     "build": "node ./scripts/run-tauri.mjs build -- --locked",
     "tauri": "tauri"

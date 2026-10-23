@@ -103,6 +103,11 @@ Copy the desktop example before the first packaged build:
 Copy-Item apps/client/.env.desktop.example apps/client/.env.desktop
 ```
 
+The checked-in production desktop environment enables Google authentication. Official packaging
+validates this setting before building so the Windows installer cannot silently omit the Google
+sign-in action. Build it only against an API deployment with the complete Google OAuth
+configuration described in [`google-oauth.md`](./google-oauth.md).
+
 The checked-in desktop example points at the current provider-assigned HTTPS API from the hosted
 demo deployment. Changing hosts is a configuration change, not a UI change.
 
