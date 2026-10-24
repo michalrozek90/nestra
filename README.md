@@ -151,9 +151,10 @@ CI on pull requests and `main` runs the quality gate and the API persistence job
 attachment. The root `package.json` version is the product version shared by Expo, Tauri, the
 installer, and Release Please (`pnpm check:product-version`).
 
-Release preparation is owner-triggered from the **Release Please** GitHub Actions workflow. Normal
-merges to `main` accumulate until the owner chooses to prepare a candidate; Release Please then
-derives the version from Conventional Commits.
+Release publication is owner-triggered with the repository `/release` skill in Cursor or Codex.
+Normal merges to `main` accumulate until the owner invokes it; the agent then resumes or prepares,
+validates, merges, packages, and publishes the next Release Please version. Repeating `/release`
+when nothing new is releasable completes without creating another version.
 
 ## Documentation
 

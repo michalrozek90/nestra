@@ -6,6 +6,23 @@ const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(scriptDirectory, '..');
 const workflowPath = path.join(repositoryRoot, '.github', 'workflows', 'release-please.yml');
 const workflow = readFileSync(workflowPath, 'utf8');
+const agentsInstructions = readFileSync(path.join(repositoryRoot, 'AGENTS.md'), 'utf8');
+const releaseSkill = readFileSync(
+  path.join(repositoryRoot, '.agents', 'skills', 'release', 'SKILL.md'),
+  'utf8',
+);
+const releaseSkillMetadata = readFileSync(
+  path.join(repositoryRoot, '.agents', 'skills', 'release', 'agents', 'openai.yaml'),
+  'utf8',
+);
+const releaseWorkflow = readFileSync(
+  path.join(repositoryRoot, 'docs', 'workflows', 'release-workflow.md'),
+  'utf8',
+);
+const releaseDocumentation = readFileSync(
+  path.join(repositoryRoot, 'docs', 'deployment', 'release.md'),
+  'utf8',
+);
 
 function fail(message) {
   throw new Error(`Release workflow policy check failed: ${message}`);
@@ -87,6 +104,54 @@ for (const identityRequirement of [
   'EXPECTED_RELEASE_SHA: ${{ github.event.pull_request.merge_commit_sha }}',
 ]) {
   requireText(finalizationJob, identityRequirement, 'finalize-release');
+}
+
+for (const instructionRequirement of [
+  '### Autonomous release workflow',
+  "the first non-empty line of the user's current message is exactly `/release`",
+  'Treat either form as authorization for the complete scoped release lifecycle',
+  'docs/workflows/release-workflow.md',
+  '.agents/skills/release/',
+]) {
+  requireText(agentsInstructions, instructionRequirement, 'AGENTS.md release policy');
+}
+
+requireText(releaseSkill, 'name: release', 'release skill frontmatter');
+requireText(
+  releaseSkill,
+  'only after an explicit `/release` command',
+  'release skill invocation policy',
+);
+requireText(releaseSkill, 'Read `docs/workflows/release-workflow.md`', 'release skill delegation');
+requireText(releaseSkillMetadata, 'allow_implicit_invocation: false', 'release skill metadata');
+
+for (const workflowRequirement of [
+  '## Invocation and authorization',
+  '## 1. Reconstruct the release state',
+  '**Nothing to release:**',
+  '**Preparation in progress:**',
+  '**Finalization in progress:**',
+  '**Draft in progress:**',
+  '**Already published:**',
+  'release-please--branches--main--components--nestra',
+  'release-candidate/current-main',
+  '## 3. Review the candidate',
+  '## 5. Validate updater assets',
+  'Publish the exact validated draft release by its immutable release ID.',
+  'confirmation: the explicit `/release` invocation already authorized this step.',
+  'Never convert uncertainty into a second release.',
+]) {
+  requireText(releaseWorkflow, workflowRequirement, 'autonomous release workflow');
+}
+
+for (const documentationRequirement of [
+  'invoke `/release` in Cursor Agent Chat or',
+  'select `$release` in Codex',
+  'A repeated `/release` resumes the same release or completes as',
+  'a no-op',
+  'does not require a separate manual test of the generated Release Please pull',
+]) {
+  requireText(releaseDocumentation, documentationRequirement, 'release documentation');
 }
 
 console.log('Release workflow policy checks passed.');

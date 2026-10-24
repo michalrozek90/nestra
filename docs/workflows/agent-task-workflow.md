@@ -63,6 +63,8 @@ The workflow ends only after one of these outcomes:
 - That authorization does not cover merging, creating tags or releases, or unrelated repository or
   GitHub changes.
 - Do not merge without the user's explicit `LGTM` approval in the active conversation.
+- These merge and release restrictions apply to `/work`. A separate explicit `/release` invocation
+  follows `docs/workflows/release-workflow.md` and authorizes its complete scoped release lifecycle.
 - A plain `LGTM` applies to the pull request currently being discussed. Ask for clarification only when the target is genuinely ambiguous.
 - Do not delete local branches after merge.
 - Keep user-facing completion summaries short and concrete.
