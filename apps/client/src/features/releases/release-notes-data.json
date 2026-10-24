@@ -1,12 +1,7 @@
 {
   "unreleased": {
     "new": ["quietFirstLaunch", "whatsNewHistory"],
-    "fixes": [
-      "desktopGoogleAuthentication",
-      "slowStartupAuthentication",
-      "stableNotesActions",
-      "noteEditorBackTarget"
-    ]
+    "fixes": ["desktopGoogleAuthentication", "slowStartupAuthentication"]
   },
   "released": [
     {
