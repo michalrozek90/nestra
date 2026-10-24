@@ -13,6 +13,13 @@ on:
       - synchronize
     branches:
       - main
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - synchronize
+    branches:
+      - main
 
 permissions: {}
 
@@ -29,9 +36,12 @@ jobs:
   allow-ordinary-pull-request:
     name: Mark ordinary PR for current-main protection
     if: >-
-      github.event_name == 'pull_request' &&
       github.event.action != 'closed' &&
-      github.event.pull_request.head.ref != 'release-please--branches--main--components--nestra'
+      github.event.pull_request.head.ref != 'release-please--branches--main--components--nestra' &&
+      ((github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository) ||
+       (github.event_name == 'pull_request_target' &&
+        github.event.pull_request.head.repo.full_name != github.repository))
     permissions:
       statuses: write
     runs-on: ubuntu-latest
@@ -39,7 +49,7 @@ jobs:
       - name: Mark the ordinary pull request
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          STATUS_SHA: ${{ github.sha }}
+          STATUS_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           gh api \
             --method POST \

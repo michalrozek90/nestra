@@ -33,10 +33,14 @@ owner command that orchestrates them:
   longer contains the latest `main` receives a failing status and must be regenerated with the
   owner-triggered preparation workflow.
 - The active `main` ruleset requires `release-candidate/current-main` with strict current-branch
-  enforcement. Ordinary pull requests receive that status from a lightweight guard job. The
-  reserved Release Please branch receives it only from the owner-triggered preparation workflow after its
-  identity and exact base commit are verified. GitHub therefore blocks a stale release candidate
-  before merge rather than relying only on finalization-time detection.
+  enforcement. Ordinary pull requests, including forks, receive that status on their exact head
+  commit. Same-repository pull requests use the regular event, while forks use a trusted
+  `pull_request_target` guard that never checks out or executes pull-request code. The reserved
+  Release Please branch receives the status only from the owner-triggered preparation workflow
+  after its identity and exact base commit are verified. Release Please uses `always-update` so a
+  rerun refreshes the candidate after maintenance-only changes to `main`, even when its generated
+  release notes remain unchanged. GitHub therefore blocks a stale release candidate before merge
+  rather than relying only on finalization-time detection.
 - Closing a pull request runs finalization only when the pull request was merged and positively
   matches the Release Please identity: the expected same-repository branch and base, the
   `github-actions[bot]` author, and the `autorelease: pending` label. The workflow also requires the

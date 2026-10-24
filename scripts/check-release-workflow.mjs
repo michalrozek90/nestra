@@ -23,6 +23,10 @@ const releaseDocumentation = readFileSync(
   path.join(repositoryRoot, 'docs', 'deployment', 'release.md'),
   'utf8',
 );
+const releasePleaseConfig = readFileSync(
+  path.join(repositoryRoot, 'release-please-config.json'),
+  'utf8',
+);
 
 function fail(message) {
   throw new Error(`Release workflow policy check failed: ${message}`);
@@ -67,10 +71,40 @@ requireText(
 const ordinaryPullRequestJob = jobSource('allow-ordinary-pull-request', 'prepare-release-pr');
 requireText(
   ordinaryPullRequestJob,
+  "github.event_name == 'pull_request_target'",
+  'allow-ordinary-pull-request fork event',
+);
+requireText(
+  ordinaryPullRequestJob,
+  "github.event_name == 'pull_request'",
+  'allow-ordinary-pull-request same-repository event',
+);
+requireText(
+  ordinaryPullRequestJob,
+  'github.event.pull_request.head.repo.full_name != github.repository',
+  'allow-ordinary-pull-request fork restriction',
+);
+requireText(
+  ordinaryPullRequestJob,
+  'github.event.pull_request.head.repo.full_name == github.repository',
+  'allow-ordinary-pull-request same-repository restriction',
+);
+requireText(
+  ordinaryPullRequestJob,
   "github.event.pull_request.head.ref != 'release-please--branches--main--components--nestra'",
-  'allow-ordinary-pull-request',
+  'allow-ordinary-pull-request branch restriction',
 );
 requireText(ordinaryPullRequestJob, 'statuses: write', 'allow-ordinary-pull-request permissions');
+requireText(
+  ordinaryPullRequestJob,
+  'STATUS_SHA: ${{ github.event.pull_request.head.sha }}',
+  'allow-ordinary-pull-request exact head status',
+);
+if (ordinaryPullRequestJob.includes('actions/checkout')) {
+  fail('allow-ordinary-pull-request must not check out pull-request code');
+}
+requireText(workflow, 'pull_request_target:', 'trusted ordinary pull request trigger');
+requireText(releasePleaseConfig, '"always-update": true', 'Release Please candidate refresh');
 
 const prepareJob = jobSource('prepare-release-pr', 'invalidate-stale-release-pr');
 requireText(prepareJob, "if: github.event_name == 'workflow_dispatch'", 'prepare-release-pr');
@@ -154,4 +188,4 @@ for (const documentationRequirement of [
   requireText(releaseDocumentation, documentationRequirement, 'release documentation');
 }
 
-console.log('Release workflow policy checks passed.');
+process.stdout.write('Release workflow policy checks passed.\n');
