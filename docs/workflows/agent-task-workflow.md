@@ -58,7 +58,13 @@ The workflow ends only after one of these outcomes:
 - Process exactly one selected GitHub Project work item at a time.
 - Do not start unrelated work.
 - Do not discard, overwrite, stash, commit, or otherwise alter pre-existing user changes.
+- Starting or resuming this workflow authorizes task-scoped branch creation, commits, pushes, and
+  opening or updating a pull request. Do not request a separate confirmation for those operations.
+- That authorization does not cover merging, creating tags or releases, or unrelated repository or
+  GitHub changes.
 - Do not merge without the user's explicit `LGTM` approval in the active conversation.
+- These merge and release restrictions apply to `/work`. A separate explicit `/release` invocation
+  follows `docs/workflows/release-workflow.md` and authorizes its complete scoped release lifecycle.
 - A plain `LGTM` applies to the pull request currently being discussed. Ask for clarification only when the target is genuinely ambiguous.
 - Do not delete local branches after merge.
 - Keep user-facing completion summaries short and concrete.
@@ -255,6 +261,9 @@ After `pnpm verify` passes:
 4. Create a **draft pull request** targeting `main`.
 5. Assign the pull request to the repository owner/user.
 
+These operations are already authorized by the invocation of this workflow. Perform them without
+asking the user for an additional commit, push, or pull-request confirmation.
+
 The pull request title must summarize the implemented change. Its description must briefly include:
 
 - why the pull request exists;
@@ -279,23 +288,64 @@ When review causes code changes:
 
 Repeat review only as required by `docs/code-review.md` and the actual corrections. Do not create an unbounded review/refactor loop.
 
-## 8. Hand off for manual review
+## 8. GitHub Codex review and corrections
 
-When all required implementation work and agent review corrections are complete and `pnpm verify` passes:
+After the internal agent review is complete and `pnpm verify` passes:
 
 1. Mark the draft pull request as ready for review.
-2. Move the GitHub Project item to `Review`.
-3. Stop autonomous implementation work.
-4. Return a short handoff containing only:
+2. Resolve the exact current pull-request head SHA.
+3. Inspect the Codex review summary, submitted reviews, and every review thread before deciding
+   whether a review is complete.
+4. Wait for automatic GitHub Codex Code Review to finish on that exact head. If no review is running
+   or complete for the current head, first confirm that a request is not already pending, then post
+   one `@codex review` request and wait for it. Do not create duplicate requests.
+5. For every GitHub Codex review comment:
+   - verify the finding against the current code and repository rules;
+   - apply valid corrections;
+   - record the evidence when no change is appropriate; and
+   - leave the thread unresolved until the disposition can reference the verified correction or
+     evidence.
+6. When corrections change the pull-request head:
+   - run `pnpm verify` using the same four-cycle limit;
+   - commit and push only the review corrections;
+   - repeat the internal review from section 7 on the new head.
+7. Reply to every reviewed thread with the correction and resulting commit, or explain with concrete
+   evidence why no change is appropriate. Resolve the thread only after that response is posted and
+   the disposition is complete.
+8. If a correction changed the head, request and wait for a fresh GitHub Codex review of that exact
+   new head.
+9. Repeat until the Codex review summary reports a completed review for the exact current head and
+   no unresolved review thread remains.
+
+While waiting for GitHub Codex, provide a concise progress update at least once per minute. A failed,
+unavailable, or ambiguous review is not a successful review. If four GitHub Codex correction cycles
+do not produce a clean current head, follow the blocking procedure from section 5 and report the
+review history and remaining findings.
+
+Do not move the work item to `Review` or hand it to the user before both the internal review and the
+GitHub Codex review are complete on the same current head.
+
+## 9. Hand off for manual review
+
+When all required implementation work, both review stages, review responses, and verification are
+complete on the exact current pull-request head:
+
+1. Move the GitHub Project item to `Review`.
+2. Stop autonomous implementation work.
+3. Return a short handoff containing only:
    - issue and pull request;
    - branch;
+   - the exact reviewed head SHA;
    - verification result;
-   - whether review produced additional commits;
+   - whether the internal or GitHub Codex review produced findings or additional commits;
    - the main manual checks the user should perform.
+
+The ready pull request is the user's review gate. The user may verify the application manually,
+inspect the code, or do both before approving the exact reviewed pull-request head with `LGTM`.
 
 A separate pull request comment is not required merely to announce readiness.
 
-## 9. User feedback loop
+## 10. User feedback loop
 
 When the user requests changes to the pull request:
 
@@ -306,27 +356,34 @@ When the user requests changes to the pull request:
    behavior or makes an existing note inaccurate.
 5. Run `pnpm verify` with the four-cycle limit.
 6. Commit and push the corrections using a Conventional Commit.
-7. Review the corrections according to `docs/code-review.md`.
-8. Apply any required review corrections.
-9. Run `pnpm verify` again when review changes code.
-10. Commit and push any additional corrections.
-11. Mark the pull request ready for review if it became draft for any reason.
-12. Move the item back to `Review`.
-13. Return another short manual-review handoff.
+7. Repeat the internal review and correction process from section 7.
+8. Repeat GitHub Codex review and correction on the exact new head according to section 8.
+9. Move the item back to `Review` only after both reviews are complete and every Codex review thread
+   has an evidence-backed response and is resolved.
+10. Return another short manual-review handoff.
 
 New ideas outside the current issue scope should be created as separate GitHub Project work items when the user requests it.
 
-## 10. Merge on LGTM
+## 11. Merge on LGTM
 
-A plain `LGTM` in the active conversation authorizes merging the pull request currently under discussion. Ask one short clarification question only when more than one target is plausibly active and the intended pull request cannot be determined reliably.
+A plain `LGTM` in the active conversation authorizes merging the pull request currently under
+discussion and completing its Project transition. Ask one short clarification question only when
+more than one target is plausibly active and the intended pull request cannot be determined
+reliably.
 
 Before merge:
 
 1. Resolve the exact active pull request and issue.
 2. Confirm the pull request is open, not a draft, and targets `main`.
 3. Confirm required CI checks pass.
-4. Confirm there are no merge conflicts or unresolved blocking review findings.
-5. Confirm the pull request head has not changed since the version presented for the user's manual review. If it changed after the user's review, do not merge; explain that the new commit needs approval.
+4. Confirm the latest internal review and completed GitHub Codex review both cover the exact current
+   pull-request head.
+5. Confirm every GitHub Codex review comment has an evidence-backed response and every review thread
+   is resolved.
+6. Confirm there are no merge conflicts or unresolved blocking review findings.
+7. Confirm the pull request head has not changed since the version presented for the user's manual
+   review. If it changed after the user's review, do not merge; explain that the new commit needs
+   approval.
 
 Then:
 
@@ -339,7 +396,7 @@ Then:
 7. Do not delete the local task branch.
 8. Return a short confirmation containing the merged PR and updated `main` state.
 
-## 11. Recovery and idempotency
+## 12. Recovery and idempotency
 
 At the beginning of every invocation, reconstruct the current workflow state from Git, GitHub, and the active conversation.
 
@@ -347,7 +404,10 @@ Examples:
 
 - Existing branch but no PR: resume the branch, verify it, then create the draft PR when appropriate.
 - Existing draft PR: inspect its state and continue implementation or review.
-- Existing ready PR in `Review`: do not repeat implementation; wait for feedback or `LGTM`.
+- Existing ready PR with a pending, stale, or incomplete GitHub Codex review: resume section 8 and
+  do not hand it to the user yet.
+- Existing ready PR in `Review`: confirm that both reviews cover its exact current head and that all
+  review threads are resolved, then wait for feedback or `LGTM`.
 - Existing merged PR: confirm the issue and Project state, update local `main`, and report completion.
 - Closed unmerged PR: stop and ask for direction unless the user's request clearly authorizes reopening or replacing it.
 

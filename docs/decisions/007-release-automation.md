@@ -2,7 +2,10 @@
 
 ## Status
 
-Accepted
+Superseded in part by [ADR 011](./011-owner-triggered-release-preparation.md), which replaces
+automatic release-PR preparation on every push with an owner-triggered preparation and a guarded
+merge finalization flow. The versioning, changelog, draft-release, tag, and asset decisions below
+remain accepted.
 
 ## Context
 
@@ -10,7 +13,7 @@ Nestra needs a controlled path from Conventional Commits on `main` to a versione
 desktop release candidate. The root `package.json` version is already the product-version source
 for Expo, compiled contracts metadata, Tauri configuration, and the NSIS installer name. The
 repository must automate changelog preparation and version bumps without publishing a public
-release or distributing an installer until an explicit operator approval.
+release or distributing an installer until the owner explicitly invokes `/release`.
 
 ADR numbering note: earlier planning documents referred to this decision as
 `004-release-automation.md`, but ADR `004` already records the unified note document model. This
@@ -28,7 +31,8 @@ Use Google Release Please with a single repository-wide `node` package at the re
 - `fix` commits bump patch and `feat` commits bump minor.
 - `bump-minor-pre-major` is enabled so pre-1.0 breaking changes bump the minor version instead of
   forcing `1.0.0`.
-- GitHub Releases created by Release Please are drafts until an operator explicitly publishes them.
+- GitHub Releases created by Release Please are drafts until the owner-authorized `/release`
+  workflow validates and publishes them.
   Release Please forces creation of the corresponding Git tag at the exact release commit so later
   runs can identify the previous release without reconstructing an incorrect changelog. The tag
   anchors version history but does not publish the draft or expose its installer assets. After a
@@ -70,14 +74,15 @@ lockfile fails instead of being modified during packaging.
 
 ## Consequences
 
-- Version preparation and technical changelog generation become automated on pushes to `main`.
+- Version preparation and technical changelog generation are automated only after the owner invokes
+  `/release`; ordinary pushes to `main` do not prepare a version.
 - Generated release pull requests remain formatting-clean and receive CI for their final formatted
   commit without requiring a manual changelog-only correction.
 - A stale `autorelease: pending` pull request cannot be revived by an unrelated workflow run, and a
   release candidate cannot lower or desynchronize the product version.
-- Merging an explicitly approved Release Please PR creates a draft GitHub Release and its Git tag at
-  the exact release commit. Publishing the draft remains a separate explicit operator action
-  outside autonomous agent publication authority.
+- Merging the verified Release Please PR creates a draft GitHub Release and its Git tag at the exact
+  release commit. The initial `/release` invocation authorizes the agent to publish only that exact
+  draft after updater-asset validation.
 - Draft releases allow installer attachment and smoke testing without a public release
   publication.
 - Operators must still follow the release checklist for hosted-API readiness, cold-start
@@ -89,8 +94,8 @@ lockfile fails instead of being modified during packaging.
 
 - Manual version bumps and changelog edits: rejected because they drift quickly across Expo,
   Tauri, installer metadata, and release assets.
-- Publishing non-draft GitHub Releases automatically: rejected because the family/demo phase
-  requires an explicit publication gate.
+- Publishing a GitHub Release without an explicit owner command: rejected because the family/demo
+  phase requires the `/release` authorization and exact identity and artifact validation.
 - Treating Release Please as the packaging workflow: rejected because Windows NSIS packaging
   remains a separate Windows runner concern; Release Please only prepares version and changelog
   state.

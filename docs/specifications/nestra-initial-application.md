@@ -370,14 +370,22 @@ Their automation is deferred until native build pipelines are introduced.
 Configure Release Please independently of desktop packaging. The `0.1.0` release must not be
 published until the Windows x64 installer has been built and verified.
 
-On pushes to `main`, it must:
+When the repository owner explicitly invokes `/release` or selects `$release`, the agent must:
 
-1. analyze Conventional Commits;
-2. maintain one release PR;
-3. update root `CHANGELOG.md`;
-4. update the root product version;
-5. create a Git tag when the release PR is merged;
-6. create a GitHub Release.
+1. reconstruct existing release state and safely exit when no version-bumping change exists;
+2. analyze accumulated Conventional Commits without requiring a version input;
+3. create, update, or resume one release PR against the latest `main`;
+4. verify its generated changelog, version files, curated release notes, identity, freshness, and CI;
+5. merge the trusted current release PR without another approval;
+6. create a Git tag and draft GitHub Release and start release-asset preparation automatically;
+7. validate the exact draft, release commit, signed installer, signature, and updater manifest; and
+8. publish that exact release without another approval.
+
+Ordinary pushes to `main` must not create or update the release PR. If `main` advances after a
+candidate is prepared, the candidate must be marked stale and prepared again before merge.
+Repeated `/release` invocations must resume the same in-progress release or complete as a no-op;
+they must not create duplicate candidates, tags, or releases. Any ambiguous identity, failed check,
+or invalid artifact must stop the workflow before merge or publication.
 
 Expected first tag:
 
@@ -400,6 +408,7 @@ Before release automation is considered complete:
 - validate current Release Please bootstrap behavior from official docs;
 - use a dry run or another non-destructive check;
 - document the bootstrap in ADR 007;
+- document the owner-triggered end-to-end release and guarded finalization in ADR 011;
 - verify the first release will be `0.1.0`, not `1.0.0`.
 
 Do not create a local tag.

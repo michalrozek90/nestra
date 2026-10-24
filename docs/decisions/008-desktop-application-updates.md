@@ -41,8 +41,8 @@ Use the official Tauri v2 updater and process plugins with these boundaries:
 - Losing the private key or password prevents updating existing installs through this channel;
   generating a replacement key alone does not restore that trust.
 - Ordinary `pnpm build:desktop` remains unsigned and usable without release credentials.
-- Public release publication remains an explicit operator action; building and validating assets
-  does not publish the draft.
+- Public release publication remains an explicit owner action through `/release`; building and
+  validating assets alone does not publish the draft.
 
 ## Alternatives considered
 

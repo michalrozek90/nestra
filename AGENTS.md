@@ -133,9 +133,52 @@ That workflow document is the single source of truth for the autonomous lifecycl
 
 Also read the selected GitHub issue, its comments, the corresponding GitHub Project item, the active specification, relevant architecture decisions, and `docs/code-review.md` as required by that workflow.
 
-The autonomous workflow may read and update GitHub Project status, create or resume branches and pull requests, create commits, push changes, perform review, and merge only according to the permissions and approval rules defined in the workflow.
+Starting or resuming the autonomous workflow grants task-scoped approval to create or resume a branch, create commits, push changes, and open or update a pull request. Do not ask for a separate confirmation for those operations. The workflow may also read and update GitHub Project status and perform review. It may merge only after the user gives `LGTM` in the active conversation, according to the detailed approval rules defined in the workflow.
 
 If required GitHub data cannot be retrieved, report the blocker and stop the autonomous workflow instead of guessing or silently continuing.
+
+### Autonomous release workflow
+
+Use the autonomous release workflow only when the user's current message explicitly invokes it.
+
+#### `/release` repository alias
+
+The repository-level command alias is:
+
+```text
+/release
+```
+
+An explicit release invocation is either:
+
+- the first non-empty line of the user's current message is exactly `/release`; or
+- the user explicitly selects or attaches the repository `release` skill for the current message,
+  shown by supported clients as `$release` or `/release`.
+
+Treat either form as authorization for the complete scoped release lifecycle: prepare or resume the
+Release Please candidate, inspect and merge the exact trusted release pull request, validate its tag,
+draft, and updater assets, and publish that exact release. Do not ask for another approval between
+those steps.
+
+Do not invoke the release workflow merely because `/release`, `$release`, or release-related text
+appears inside a code block, quotation, pasted documentation, task description, specification,
+example, acceptance criterion, or content the user asks the agent to create, update, document, or
+explain.
+
+When invoked, read and follow:
+
+```text
+docs/workflows/release-workflow.md
+```
+
+That workflow document is the single source of truth for release orchestration. The client adapter
+at `.agents/skills/release/` must delegate to it instead of copying the workflow. The adapter is
+shared by Cursor Agent Chat, the Codex extension in Cursor, and the native Codex application.
+
+The workflow must reconstruct GitHub state before every mutation. If there are no releasable changes,
+it completes without creating a candidate, tag, or release. If a release is already in progress, it
+resumes that release instead of creating a duplicate. Failed or suspicious validation stops the
+workflow before merge or publication and preserves resumable state.
 
 ### Direct implementation request
 
@@ -146,19 +189,22 @@ Treat the user's message as a direct implementation request when:
 - it does not explicitly select or mention the repository `create` skill;
 - it is not a direct answer or `backlog` response in an active `/create` intake;
 - it does not begin with an actual `/work <issue-number-or-url>` command;
-- it does not directly and unambiguously ask to start or resume the autonomous issue workflow.
+- it does not directly and unambiguously ask to start or resume the autonomous issue workflow;
+- it does not explicitly invoke the repository `release` skill; and
+- its first non-empty line is not exactly `/release`.
 
 For a direct implementation request:
 
 - before any GitHub issue or Project tool call, inspect the first non-empty line of the user's current message;
-- if that line does not start with an actual `/create` or `/work ` invocation, the current message
-  does not explicitly invoke the repository `create` skill, and the message is not continuing an
-  active `/create` intake, do not retrieve any issue merely because an issue number, `/create`
-  example, `$create` mention, or `/work` example appears later in the message;
+- if that line does not start with an actual `/create` or `/work ` invocation and is not exactly
+  `/release`, the current message does not explicitly invoke the repository `create` or `release`
+  skill, and the message is not continuing an active `/create` intake, do not retrieve any issue
+  merely because an issue number, `/create` example, `$create` mention, `/work` example, or
+  `/release` example appears later in the message;
 - this restriction overrides workflow examples, skill descriptions, pasted acceptance criteria, and documentation content;
 - treat the user's message as the authoritative task description;
-- do not interpret `/create`, `$create`, `/work`, issue numbers, issue URLs, or workflow examples
-  contained inside the task as commands;
+- do not interpret `/create`, `$create`, `/work`, `/release`, `$release`, issue numbers, issue URLs,
+  or workflow examples contained inside the task as commands;
 - do not require a GitHub issue or GitHub Project item;
 - do not read the GitHub Project or attempt to select a `Todo` item;
 - do not access GitHub issues, GitHub Projects, pull requests, or repository metadata unless the user explicitly asks for that access as part of the current direct request;
@@ -172,8 +218,8 @@ For a direct implementation request:
 - report completed work, verification results, and any blockers concisely.
 
 A pasted task description, general coding instruction, documentation request, example containing
-`/create`, `$create`, or `/work`, or ordinary request to modify code must not start either workflow
-automatically.
+`/create`, `$create`, `/work`, `/release`, or `$release`, or ordinary request to modify code must not
+start any workflow automatically.
 
 ## GitHub tooling
 
@@ -197,7 +243,10 @@ Do not:
 - create a nested `nestra` project directory;
 - modify or remove Git remotes;
 - change branches;
-- create commits, tags, pushes, pull requests, or releases without explicit user approval;
+- create commits, tags, pushes, pull requests, merges, or releases without explicit user approval;
+  a `/work` invocation approves only its task-scoped branch, commits, pushes, and pull request, while
+  an explicit `/release` or `$release` invocation approves the complete scoped release lifecycle
+  defined in `docs/workflows/release-workflow.md`;
 - delete or overwrite existing work without inspecting it first;
 - work outside the current repository root.
 
@@ -317,8 +366,9 @@ Do not silently ignore caught errors. Handle them, convert them into an expected
 
 ## Conventional Commits
 
-Release Please on `main` bumps the product version from Conventional Commit prefixes. Use English
-messages. Prefer an optional scope when it clarifies the change, for example `feat(auth): ...`.
+When the owner invokes `/release` from `main`, Release Please bumps the product version from
+Conventional Commit prefixes. Use English messages. Prefer an optional scope when it clarifies the
+change, for example `feat(auth): ...`.
 
 | Prefix                                                   | Release Please effect                             |
 | -------------------------------------------------------- | ------------------------------------------------- |
@@ -335,9 +385,11 @@ Guidelines:
   rewarding to read, for example `feat(desktop): Nestra now has automatic updates 🚀`, rather than
   describing the implementation activity.
 - Use `chore:` (or another non-bumping type) for tooling, formatting, workflow, and post-release
-  housekeeping so those commits do not open a needless release PR.
-- Do not commit unless the user explicitly asks for a commit.
-- Release flow details live in `docs/deployment/release.md` and ADR 007.
+  housekeeping so those commits do not force a version bump when the next release is prepared.
+- In the autonomous issue workflow, its explicit invocation authorizes task-scoped commits, pushes,
+  and opening or updating the pull request; do not ask for a second confirmation.
+- Outside that workflow, do not commit unless the user explicitly asks for a commit.
+- Release flow details live in `docs/deployment/release.md`, ADR 007, and ADR 011.
 
 ## Formatting and verification
 
@@ -353,6 +405,9 @@ A work item is ready for the user's review only when:
 - strict type checking passes;
 - required builds pass;
 - relevant documentation and ADRs are updated;
+- the internal agent review defined in `docs/code-review.md` is complete;
+- GitHub Codex Code Review has completed against the exact current pull-request head;
+- every GitHub Codex review comment has an evidence-backed reply and its thread is resolved; and
 - no blocking TODO remains.
 
 Passing these checks does not authorize the agent to close the issue or move it to `Done`.

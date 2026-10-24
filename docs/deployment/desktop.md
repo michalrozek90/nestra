@@ -336,7 +336,7 @@ after the prerequisites above are installed, or download the CI workflow artifac
 
 ## Out of scope
 
-- Public GitHub Release publication without explicit operator approval
+- Public GitHub Release publication without an explicit owner `/release` invocation
 - Windows Authenticode code signing
 - Ambient audio caching, notifications, and related platform plugins
 - macOS or Linux packaging
