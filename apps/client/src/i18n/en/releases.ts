@@ -6,8 +6,6 @@ export const enReleases = {
     productName: 'Nestra',
     versionLabel: 'Version {{version}}',
     creatorCredit: 'Author: Michał Rożek',
-    historyTitle: 'What’s new history',
-    historyDescription: 'Browse curated product notes for each released version.',
     actions: {
       back: 'Back',
     },
@@ -20,6 +18,12 @@ export const enReleases = {
   whatsNew: {
     title: 'What’s new',
     dismiss: 'Got it',
+    viewAll: 'View all updates',
+    earlier: 'Earlier',
+    versionSummary: 'Version {{version}}, released {{date}}',
+    actions: {
+      back: 'Back',
+    },
   },
   update: {
     title: 'Nestra update',

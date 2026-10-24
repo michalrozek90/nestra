@@ -1,5 +1,6 @@
 {
   "quietFirstLaunch": "What’s New stays quiet on your first launch and shows only the updates you missed after an upgrade.",
+  "whatsNewHistory": "You can now browse every released update on a dedicated What’s New screen in Settings.",
   "desktopGoogleAuthentication": "You can now sign in or create your account with Google in the Windows app.",
   "slowStartupAuthentication": "Nestra now waits for authentication to become ready during a slow start instead of retrying early or dropping your session.",
   "stableNotesActions": "You now create notes from the active list only. Trash shows Empty trash instead of New note.",

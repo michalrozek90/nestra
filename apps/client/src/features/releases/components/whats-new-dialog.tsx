@@ -14,7 +14,9 @@ type WhatsNewDialogProps = {
   readonly children: ReactNode;
   readonly dismissLabel: string;
   readonly onDismiss: () => void;
+  readonly onViewHistory: () => void;
   readonly title: string;
+  readonly viewHistoryLabel: string;
   readonly visible: boolean;
 };
 
@@ -22,7 +24,9 @@ export function WhatsNewDialog({
   children,
   dismissLabel,
   onDismiss,
+  onViewHistory,
   title,
+  viewHistoryLabel,
   visible,
 }: WhatsNewDialogProps) {
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
@@ -68,6 +72,15 @@ export function WhatsNewDialog({
         <Dialog.Actions style={[styles.actions, isCompact ? styles.compactActions : null]}>
           <PaperButton
             compact={isCompact}
+            contentStyle={isCompact ? styles.compactSecondaryContent : styles.secondaryContent}
+            labelStyle={isCompact ? styles.compactDismissLabel : styles.dismissLabel}
+            mode="text"
+            onPress={onViewHistory}
+          >
+            {viewHistoryLabel}
+          </PaperButton>
+          <PaperButton
+            compact={isCompact}
             contentStyle={isCompact ? styles.compactDismissContent : styles.dismissContent}
             labelStyle={isCompact ? styles.compactDismissLabel : styles.dismissLabel}
             mode="contained"
@@ -91,9 +104,17 @@ const styles = StyleSheet.create({
     rowGap: spacing.sm,
   },
   compactActions: {
+    alignItems: 'stretch',
+    flexDirection: 'column',
     paddingBottom: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.xs,
+  },
+  compactSecondaryContent: {
+    minHeight: COMPACT_DISMISS_MIN_HEIGHT_PX,
+  },
+  secondaryContent: {
+    minHeight: 48,
   },
   compactDismissContent: {
     minHeight: COMPACT_DISMISS_MIN_HEIGHT_PX,
