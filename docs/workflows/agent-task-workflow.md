@@ -299,7 +299,9 @@ After the internal agent review is complete and `pnpm verify` passes:
    whether a review is complete.
 4. Wait for automatic GitHub Codex Code Review to finish on that exact head. If no review is running
    or complete for the current head, first confirm that a request is not already pending, then post
-   one `@codex review` request and wait for it. Do not create duplicate requests.
+   one `@codex review` request and wait for it. Do not create duplicate requests. If that attempt
+   cannot run because of an account limit, follow the account-limit skip below instead of requesting
+   again.
 5. For every GitHub Codex review comment:
    - verify the finding against the current code and repository rules;
    - apply valid corrections;
@@ -318,13 +320,33 @@ After the internal agent review is complete and `pnpm verify` passes:
 9. Repeat until the Codex review summary reports a completed review for the exact current head and
    no unresolved review thread remains.
 
-While waiting for GitHub Codex, provide a concise progress update at least once per minute. A failed,
-unavailable, or ambiguous review is not a successful review. If four GitHub Codex correction cycles
-do not produce a clean current head, follow the blocking procedure from section 5 and report the
-review history and remaining findings.
+While waiting for GitHub Codex, provide a concise progress update at least once per minute. Except
+for the account-limit skip below, a failed, unavailable, or ambiguous review is not a successful
+review. If four GitHub Codex correction cycles do not produce a clean current head, follow the
+blocking procedure from section 5 and report the review history and remaining findings.
 
-Do not move the work item to `Review` or hand it to the user before both the internal review and the
-GitHub Codex review are complete on the same current head.
+Do not move the work item to `Review` or hand it to the user before the internal review is complete
+and GitHub Codex review has either completed or been skipped for an account limit on the same
+current head.
+
+### Account-limit skip
+
+Skip GitHub Codex review for the exact current head when Codex reports that the review cannot run
+because the account usage limit, review credits, or code-review allowance is exhausted.
+
+Use only an explicit connector comment or Codex review summary that states that limit. Do not infer
+the skip from silence, a pending review, an incomplete review, a review that produced findings, or
+any other failure.
+
+When the skip applies:
+
+1. Do not post another `@codex review` request for that head.
+2. Do not move the work item to `Blocked`, and do not count the limit as a correction cycle.
+3. Continue to section 9. The handoff must name the skipped head and the evidence that the limit
+   prevented the review.
+4. A later commit needs a new Codex review attempt. That attempt must finish or meet this skip again
+   before the new head is handed over.
+5. Findings and review threads from a review that did run still follow the correction rules above.
 
 ## 9. Hand off for manual review
 
@@ -338,7 +360,9 @@ complete on the exact current pull-request head:
    - branch;
    - the exact reviewed head SHA;
    - verification result;
-   - whether the internal or GitHub Codex review produced findings or additional commits;
+   - whether the internal review produced findings or additional commits;
+   - whether GitHub Codex review completed, was skipped because of an account limit, or produced
+     findings or additional commits;
    - the main manual checks the user should perform; and
    - a separate **In-app release notes** section in exactly one form:
      - `Added` — list the exact English and Polish sentences committed in the pull request;
@@ -363,8 +387,9 @@ When the user requests changes to the pull request:
 6. Commit and push the corrections using a Conventional Commit.
 7. Repeat the internal review and correction process from section 7.
 8. Repeat GitHub Codex review and correction on the exact new head according to section 8.
-9. Move the item back to `Review` only after both reviews are complete and every Codex review thread
-   has an evidence-backed response and is resolved.
+9. Move the item back to `Review` only after the internal review is complete and GitHub Codex review
+   has either completed, with every review thread answered and resolved, or been skipped for that
+   head because of an account limit.
 10. Return another short manual-review handoff.
 
 New ideas outside the current issue scope should be created as separate GitHub Project work items when the user requests it.
@@ -381,10 +406,10 @@ Before merge:
 1. Resolve the exact active pull request and issue.
 2. Confirm the pull request is open, not a draft, and targets `main`.
 3. Confirm required CI checks pass.
-4. Confirm the latest internal review and completed GitHub Codex review both cover the exact current
-   pull-request head.
-5. Confirm every GitHub Codex review comment has an evidence-backed response and every review thread
-   is resolved.
+4. Confirm the latest internal review covers the exact current pull-request head, and that GitHub
+   Codex review either completed for that head or was skipped for it because of an account limit.
+5. When a Codex review ran, confirm every GitHub Codex review comment has an evidence-backed
+   response and every review thread is resolved. An account-limit notice is not a review finding.
 6. Confirm there are no merge conflicts or unresolved blocking review findings.
 7. Confirm the pull request head has not changed since the version presented for the user's manual
    review. If it changed after the user's review, do not merge; explain that the new commit needs
@@ -410,9 +435,11 @@ Examples:
 - Existing branch but no PR: resume the branch, verify it, then create the draft PR when appropriate.
 - Existing draft PR: inspect its state and continue implementation or review.
 - Existing ready PR with a pending, stale, or incomplete GitHub Codex review: resume section 8 and
-  do not hand it to the user yet.
-- Existing ready PR in `Review`: confirm that both reviews cover its exact current head and that all
-  review threads are resolved, then wait for feedback or `LGTM`.
+  do not hand it to the user yet. If the current head already has an explicit account-limit skip,
+  continue to section 9 instead of waiting or requesting another review.
+- Existing ready PR in `Review`: confirm that the internal review covers its exact current head,
+  that GitHub Codex review completed or was skipped for an account limit on that head, and that all
+  review threads from a review that ran are resolved, then wait for feedback or `LGTM`.
 - Existing merged PR: confirm the issue and Project state, update local `main`, and report completion.
 - Closed unmerged PR: stop and ask for direction unless the user's request clearly authorizes reopening or replacing it.
 
