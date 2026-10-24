@@ -124,16 +124,15 @@ requires the successful freshness status and refuses finalization if the candida
 its final base commit, either required CI job did not pass, or `main` advanced after the merge.
 Arbitrary merged pull requests therefore cannot create a release through this workflow.
 
-The repository ruleset **Require current main for release candidates** requires the
-`release-candidate/current-main` status and enforces an up-to-date branch. A lightweight guard
-grants that status to the exact head commit of ordinary pull requests. Same-repository pull requests
-use the regular event; forks use trusted `pull_request_target` without checking out or executing
-pull-request code. The reserved Release Please branch can receive the status only from the
+`release-candidate/current-main` is a commit status, not a branch protection rule. A lightweight
+guard grants that status to the exact head commit of ordinary pull requests. Same-repository pull
+requests use the regular event; forks use trusted `pull_request_target` without checking out or
+executing pull-request code. The reserved Release Please branch can receive the status only from the
 owner-triggered preparation path after the workflow validates the bot identity and exact current
 `main` commit. Release Please uses `always-update` so rerunning preparation refreshes an existing
-candidate even when newly merged maintenance commits do not alter its release notes. Keep this
-ruleset active; without it, the finalizer would still reject a stale merge, but GitHub would no
-longer block that merge in advance.
+candidate even when newly merged maintenance commits do not alter its release notes. `main` does not
+require this status, so a direct push is allowed. The `/release` workflow still refuses to merge a
+candidate whose status is missing or failing, and finalization refuses to publish a stale merge.
 
 Do not manually add a dated `0.1.0` heading to `CHANGELOG.md` before the release PR. Release Please
 owns the technical release history. In-app product notes remain smaller, curated, typed, local and

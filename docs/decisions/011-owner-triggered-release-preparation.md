@@ -32,15 +32,14 @@ owner command that orchestrates them:
   pull request and updates the `release-candidate/current-main` commit status. A candidate that no
   longer contains the latest `main` receives a failing status and must be regenerated with the
   owner-triggered preparation workflow.
-- The active `main` ruleset requires `release-candidate/current-main` with strict current-branch
-  enforcement. Ordinary pull requests, including forks, receive that status on their exact head
-  commit. Same-repository pull requests use the regular event, while forks use a trusted
-  `pull_request_target` guard that never checks out or executes pull-request code. The reserved
-  Release Please branch receives the status only from the owner-triggered preparation workflow
-  after its identity and exact base commit are verified. Release Please uses `always-update` so a
-  rerun refreshes the candidate after maintenance-only changes to `main`, even when its generated
-  release notes remain unchanged. GitHub therefore blocks a stale release candidate before merge
-  rather than relying only on finalization-time detection.
+- `main` does not require `release-candidate/current-main`. Ordinary pull requests, including
+  forks, still receive that status on their exact head commit. Same-repository pull requests use
+  the regular event, while forks use a trusted `pull_request_target` guard that never checks out or
+  executes pull-request code. The reserved Release Please branch receives the status only from the
+  owner-triggered preparation workflow after its identity and exact base commit are verified.
+  Release Please uses `always-update` so a rerun refreshes the candidate after maintenance-only
+  changes to `main`, even when its generated release notes remain unchanged. A stale release
+  candidate is stopped by the `/release` review and by finalization, not by a GitHub ruleset.
 - Closing a pull request runs finalization only when the pull request was merged and positively
   matches the Release Please identity: the expected same-repository branch and base, the
   `github-actions[bot]` author, and the `autorelease: pending` label. The workflow also requires the
@@ -75,8 +74,8 @@ invalid artifacts stop the workflow before the next irreversible step.
 - The owner chooses release timing but not a hand-written version. Conventional Commits remain the
   version policy and Release Please remains the implementation.
 - A candidate becomes stale as soon as `main` advances. Its failing freshness status is visible on
-  the pull request, the `main` ruleset blocks its merge, and finalization also refuses to create a
-  tag or draft from it.
+  the pull request. The `/release` workflow must not merge it, and finalization refuses to create a
+  tag or draft from it. GitHub does not block that merge itself.
 - The single `/release` invocation is the approval for candidate preparation, trusted release-PR
   merge, tag and draft finalization, artifact validation, and publication.
 - A repeated invocation safely resumes the same release or finishes as a no-op when nothing new is
