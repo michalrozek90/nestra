@@ -1699,12 +1699,18 @@ No language sub-route.
 - shown only when configuration allows;
 - opens diagnostics route.
 
+### What's New
+
+- dedicated Settings route, not a primary-navigation destination;
+- newest curated release shown first and expanded, with earlier releases behind a localized separator;
+- the post-update dialog can open this screen without marking the update as seen.
+
 ### About
 
 - Nestra;
 - current product version;
 - creator credit: Author: Michał Rożek / Autor: Michał Rożek;
-- View changelog.
+- supported desktop update controls.
 
 Shopping, Reminders, and Relax show only localized “Coming in a future version” placeholders with no fake controls.
 
