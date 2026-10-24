@@ -26,6 +26,7 @@ export interface NoteDraftStorage {
   remove(userId: string, identity: NoteDraftIdentity): Promise<void>;
   move(userId: string, from: NoteDraftIdentity, to: NoteDraftIdentity): Promise<void>;
   listExistingNoteIds(userId: string): Promise<readonly string[]>;
+  clearForUser(userId: string): Promise<void>;
   probeAvailability(): Promise<boolean>;
 }
 
@@ -109,6 +110,18 @@ class AsyncStorageNoteDraftStorage implements NoteDraftStorage {
       const parsedNoteId = noteIdSchema.safeParse(storageKey.slice(draftKeyPrefix.length));
       return parsedNoteId.success ? [parsedNoteId.data] : [];
     });
+  }
+
+  public async clearForUser(userId: string): Promise<void> {
+    const draftKeyPrefix = `nestra.notes.drafts.${userId}.`;
+    const storageKeys = await AsyncStorage.getAllKeys();
+    const userDraftKeys = storageKeys.filter((storageKey) => storageKey.startsWith(draftKeyPrefix));
+
+    if (userDraftKeys.length === 0) {
+      return;
+    }
+
+    await AsyncStorage.multiRemove(userDraftKeys);
   }
 
   public async probeAvailability(): Promise<boolean> {

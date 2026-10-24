@@ -6,7 +6,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { registerAuthenticationFailureHandler } from '@/infrastructure/api/api-client';
 import { verifyApiReadiness } from '@/infrastructure/api/api-health';
 import { logger } from '@/infrastructure/logging/logger';
-import { logout, refreshSession } from './auth-api';
+import { deleteAccount as deleteAccountRequest, logout, refreshSession } from './auth-api';
 import { isRecoverableConnectionError } from './auth-error';
 import {
   clearAuthenticationSessionTokens,
@@ -25,6 +25,7 @@ type AuthContextValue = {
   readonly activateAuthentication: (user: PublicUser) => void;
   readonly discardAuthentication: () => Promise<void>;
   readonly completeAuthentication: (session: AuthenticationSessionResponse) => Promise<void>;
+  readonly deleteAccount: () => Promise<void>;
   readonly signOut: () => Promise<void>;
 };
 
@@ -172,6 +173,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     clearSessionState();
   }, [clearSessionState]);
 
+  const deleteAccount = useCallback(async () => {
+    await deleteAccountRequest();
+    await clearStoredTokensSafely();
+    client.clear();
+    client.setQueryData<PublicUser | null>(AUTH_SESSION_QUERY_KEY, null);
+  }, [client]);
+
   const signOut = useCallback(async () => {
     if (isSigningOut) {
       return;
@@ -203,11 +211,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
       activateAuthentication,
       discardAuthentication,
       completeAuthentication,
+      deleteAccount,
       signOut,
     }),
     [
       activateAuthentication,
       completeAuthentication,
+      deleteAccount,
       discardAuthentication,
       isSigningOut,
       signOut,

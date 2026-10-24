@@ -1,6 +1,6 @@
 {
   "unreleased": {
-    "new": ["quietFirstLaunch", "whatsNewHistory"],
+    "new": ["quietFirstLaunch", "whatsNewHistory", "deleteAccount"],
     "fixes": ["desktopGoogleAuthentication", "slowStartupAuthentication"]
   },
   "released": [

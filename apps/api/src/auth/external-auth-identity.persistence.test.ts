@@ -11,6 +11,7 @@ import {
   EXTERNAL_AUTH_PROVIDER_GOOGLE,
   ExternalAuthIdentityEntity,
 } from './entities/external-auth-identity.entity';
+import { NoteEntity } from '../notes/entities/note.entity';
 import { RefreshSessionEntity } from './entities/refresh-session.entity';
 import { UserEntity } from './entities/user.entity';
 import { ExternalAuthIdentityService } from './external-auth-identity.service';
@@ -382,6 +383,39 @@ describe('external auth identity persistence', () => {
       .findOneBy({ id: identity.id });
 
     assert.equal(remainingIdentity, null);
+  });
+
+  it('removes notes and refresh sessions when the user is deleted', async (testContext) => {
+    const persistence = requirePersistence(testContext);
+    if (persistence === null) {
+      return;
+    }
+
+    const user = await createExternalOnlyUser(persistence, `delete-${randomUUID()}@example.com`);
+    const noteRepository = persistence.dataSource.getRepository(NoteEntity);
+    const sessionRepository = persistence.dataSource.getRepository(RefreshSessionEntity);
+    const note = await noteRepository.save(
+      noteRepository.create({
+        userId: user.id,
+        document: 'A private note',
+      }),
+    );
+    const refreshSession = await sessionRepository.save(
+      sessionRepository.create({
+        userId: user.id,
+        tokenHash: 'a'.repeat(64),
+        expiresAt: new Date(Date.now() + 60_000),
+      }),
+    );
+
+    await persistence.dataSource.getRepository(UserEntity).delete({ id: user.id });
+
+    assert.equal(await noteRepository.findOneBy({ id: note.id }), null);
+    assert.equal(await sessionRepository.findOneBy({ id: refreshSession.id }), null);
+    assert.equal(
+      await persistence.dataSource.getRepository(UserEntity).findOneBy({ id: user.id }),
+      null,
+    );
   });
 
   it('fails concurrent duplicate inserts deterministically', async (testContext) => {

@@ -201,6 +201,37 @@ export class AuthService {
     );
   }
 
+  async assertActiveRefreshSession(userId: string, sessionId: string): Promise<void> {
+    await this.databaseConnectionService.waitForConnection();
+    const refreshSession = await this.refreshSessionRepository.findOne({
+      where: { id: sessionId, userId },
+    });
+
+    if (refreshSession === null || refreshSession.revokedAt !== null) {
+      throw new ApiException(
+        'AUTH_ACCESS_TOKEN_INVALID',
+        'The access token is invalid.',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+  }
+
+  async deleteCurrentAccount(userId: string): Promise<void> {
+    await this.databaseConnectionService.waitForConnection();
+    await this.dataSource.transaction(async (entityManager) => {
+      const user = await entityManager.findOne(UserEntity, {
+        where: { id: userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (user === null) {
+        return;
+      }
+
+      await entityManager.delete(UserEntity, { id: user.id });
+    });
+  }
+
   async getCurrentUser(userId: string): Promise<PublicUser> {
     await this.databaseConnectionService.waitForConnection();
     const user = await this.userRepository.findOne({

@@ -19,6 +19,17 @@ export const plSettings = {
   account: {
     signOut: 'Wyloguj się',
   },
+  dangerZone: {
+    title: 'Strefa zagrożenia',
+    description: 'Usunięcie konta jest trwałe.',
+    deleteAccount: 'Usuń konto',
+    confirmationTitle: 'Usunąć konto?',
+    confirmation: 'Znikną konto, notatki i aktywne logowania. Nie da się tego cofnąć.',
+    cancel: 'Anuluj',
+    confirm: 'Usuń konto',
+    failed: 'Nie udało się usunąć konta. Spróbuj ponownie.',
+    offline: 'Do usunięcia konta potrzebne jest połączenie z internetem.',
+  },
   language: {
     english: 'Angielski',
     polish: 'Polski',

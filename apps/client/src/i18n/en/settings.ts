@@ -19,6 +19,17 @@ export const enSettings = {
   account: {
     signOut: 'Sign out',
   },
+  dangerZone: {
+    title: 'Danger zone',
+    description: 'Deleting your account is permanent.',
+    deleteAccount: 'Delete account',
+    confirmationTitle: 'Delete account?',
+    confirmation: 'Your account, notes, and active sign-ins will be gone. This cannot be undone.',
+    cancel: 'Cancel',
+    confirm: 'Delete account',
+    failed: 'The account could not be deleted. Try again.',
+    offline: 'Deleting your account needs an internet connection.',
+  },
   language: {
     english: 'English',
     polish: 'Polish',

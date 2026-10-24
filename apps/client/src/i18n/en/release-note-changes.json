@@ -1,6 +1,7 @@
 {
   "quietFirstLaunch": "You’ll only see the updates you missed.",
   "whatsNewHistory": "Earlier updates are in \"What’s new\" in Settings.",
+  "deleteAccount": "You can permanently delete your account in \"Settings\".",
   "desktopGoogleAuthentication": "You can sign in with Google now!",
   "slowStartupAuthentication": "Sign-in waits if the start takes a moment.",
   "googleAuthentication": "You can now sign in or create your Nestra account with Google on every supported platform, including the Windows desktop app, while keeping password access available.",

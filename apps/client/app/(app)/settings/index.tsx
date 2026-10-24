@@ -17,6 +17,7 @@ import { useAppearance } from '@/theme/appearance-provider';
 import type { AppearancePreference } from '@/theme/appearance-preference';
 import { spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
+import { DeleteAccountSection } from '@/features/account/components/delete-account-section';
 import { useAuth } from '@/infrastructure/auth/auth-provider';
 import { logger } from '@/infrastructure/logging/logger';
 
@@ -91,6 +92,8 @@ export default function SettingsScreen() {
           variant="secondary"
         />
       </View>
+
+      <DeleteAccountSection />
 
       <View style={styles.section}>
         <SectionHeader title={t('sections.language')} />

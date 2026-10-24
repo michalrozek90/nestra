@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -138,6 +139,32 @@ export class AuthController {
   })
   async logout(@Body() request: LogoutRequestDto): Promise<void> {
     await this.authService.logout(request.refreshToken);
+  }
+
+  @Delete('account')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Permanently delete the authenticated account' })
+  @ApiNoContentResponse({
+    description: 'The authenticated account and its owned data were deleted.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'The access token is invalid.',
+    type: ApiErrorResponseDto,
+  })
+  async deleteAccount(@Req() request: RequestWithAccessToken): Promise<void> {
+    const accessToken = request.accessToken;
+
+    if (accessToken === undefined) {
+      throw new ApiException(
+        'AUTH_ACCESS_TOKEN_INVALID',
+        'The access token is invalid.',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    await this.authService.deleteCurrentAccount(accessToken.userId);
   }
 
   @Get('me')
