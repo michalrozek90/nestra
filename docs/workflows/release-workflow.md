@@ -102,6 +102,12 @@ Resolve the resulting candidate by its reserved branch and validate all of the f
 - the candidate version is greater than the latest published version; and
 - all product version consumers agree with the candidate version.
 
+The preparation workflow promotes the exact current `main` `Unreleased` collection after Release
+Please selects the candidate version. It uses the preparation run's UTC date as the planned
+publication date, clears `Unreleased` on the candidate, preserves released history against the
+recorded `main` SHA, and creates no in-app entry when no curated notes are pending. A repeated run
+must update the same pending promotion idempotently rather than append another version entry.
+
 If `main` advances before merge, do not merge the stale candidate. Re-run preparation once, then
 repeat all identity, content, freshness, and check validation against the updated candidate.
 
@@ -116,7 +122,8 @@ Review the complete pull-request diff and generated release content before mergi
 - the version bump agrees with Conventional Commit policy;
 - root package, manifest, Tauri, Cargo package, and Cargo lock versions are synchronized;
 - curated in-app notes follow the active release-note model, contain concise English and Polish
-  copy, preserve older entries, and target the selected version and intended publication date;
+  copy, preserve older entries, leave no unpromoted copy, and target the selected version and the
+  publication date planned by the release-preparation run;
 - no unexpected dependency, workflow, application-code, binary, deletion, history rewrite, or
   unrelated file change is present; and
 - repository release-policy checks and all required CI checks pass on the exact candidate head.

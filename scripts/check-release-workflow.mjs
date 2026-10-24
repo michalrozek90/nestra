@@ -112,6 +112,21 @@ requireText(prepareJob, 'skip-github-release: true', 'prepare-release-pr');
 requireText(prepareJob, 'target-branch: main', 'prepare-release-pr');
 requireText(prepareJob, 'refs/heads/${TARGET_BRANCH}', 'prepare-release-pr');
 requireText(prepareJob, 'issues: write', 'prepare-release-pr permissions');
+requireText(
+  prepareJob,
+  'node scripts/promote-release-notes.mjs',
+  'prepare-release-pr curated-note promotion',
+);
+requireText(
+  prepareJob,
+  '--candidate-version="${release_version}"',
+  'prepare-release-pr curated-note validation',
+);
+requireText(
+  prepareJob,
+  '--baseline-ref="${MAIN_SHA}"',
+  'prepare-release-pr released-history validation',
+);
 
 const invalidationJob = jobSource('invalidate-stale-release-pr', 'finalize-release');
 requireText(invalidationJob, "if: github.event_name == 'push'", 'invalidate-stale-release-pr');

@@ -431,8 +431,22 @@ Do not manually add a dated `0.1.0` heading before the release PR. Release Pleas
 
 ### In-app release notes
 
-Use curated localized typed release notes shown as a simple bullet list (no per-item change
-categories in the UI):
+Use curated localized typed release notes shown as a simple bullet list. Keep technical changelog
+generation separate; the application must not parse `CHANGELOG.md` at runtime.
+
+Ordinary implementation work accumulates only notable user-facing outcomes in one explicit
+`Unreleased` collection. It must not guess the next version or publication date. Each entry uses a
+stable unique identifier, belongs to exactly one `new` or `fixes` group, and has concise English and
+Polish copy. Borderline entries are proposed to the owner but are not committed without acceptance;
+minor polish and internal-only changes normally have no curated entry.
+
+The owner-triggered release preparation promotes `Unreleased` into at most one immutable entry for
+the version selected by Release Please and the planned publication date, then clears `Unreleased` on
+the candidate. Promotion is deterministic and idempotent, replaces an earlier pending promotion if
+the candidate version changes, and creates no in-app entry when `Unreleased` is empty. Released
+history remains newest first, local, offline-capable, and immutable.
+
+Runtime released notes use this shape (no per-item change categories are displayed in the UI):
 
 ```ts
 export type ReleaseChange = {
@@ -442,12 +456,18 @@ export type ReleaseChange = {
 export type ReleaseNote = {
   version: string;
   releaseDate: string;
-  titleTranslationKey: string;
-  changes: readonly ReleaseChange[];
+  changes: {
+    new: readonly ReleaseChange[];
+    fixes: readonly ReleaseChange[];
+  };
 };
 ```
 
 Prepare `0.1.0` product notes. Do not parse technical CHANGELOG at runtime.
+
+Automated validation must require valid unique SemVer versions, `YYYY-MM-DD` dates, unique and
+resolvable identifiers, paired English and Polish copy, no unpromoted candidate copy, no duplicate
+candidate version, and preservation of released history.
 
 ---
 

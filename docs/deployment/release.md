@@ -5,7 +5,8 @@ Windows x64 release. The autonomous orchestration steps live in
 [`release-workflow.md`](../workflows/release-workflow.md). Architecture decisions live in
 [ADR 005](../decisions/005-desktop-and-hosted-service-architecture.md) and
 [ADR 007](../decisions/007-release-automation.md), with owner-triggered preparation defined by
-[ADR 011](../decisions/011-owner-triggered-release-preparation.md). Packaging details live in
+[ADR 011](../decisions/011-owner-triggered-release-preparation.md) and the curated note lifecycle in
+[ADR 012](../decisions/012-curated-release-note-lifecycle.md). Packaging details live in
 [`desktop.md`](./desktop.md). Hosted API and database details live in
 [`hosted-api.md`](./hosted-api.md).
 
@@ -46,6 +47,7 @@ Run the synchronization check locally or in CI:
 
 ```bash
 pnpm check:product-version
+pnpm check:release-notes
 pnpm check:release-workflow
 ```
 
@@ -103,12 +105,18 @@ The Actions **Run workflow** control remains an operator recovery tool. Starting
 prepares the candidate; it does not grant an agent permission to merge or publish. Use `/release`
 for the normal end-to-end path.
 
-Preparation only post-processes the pull request returned by that owner-triggered Release Please run. It
-confirms the trusted bot identity and branch pair, requires the candidate to contain the exact
-current `main` commit, rejects a non-increasing version, and checks complete product-version
-synchronization before pushing. It does not merge `main` into an older pending release branch. The
-workflow also formats the generated `CHANGELOG.md`, marks the exact candidate commit as current, and
-starts CI for it.
+Preparation only post-processes the pull request returned by that owner-triggered Release Please
+run. It confirms the trusted bot identity and branch pair, requires the candidate to contain the
+exact current `main` commit, rejects a non-increasing version, and checks complete product-version
+synchronization before pushing. It promotes the current curated `Unreleased` collection to the
+version selected by Release Please, uses the UTC date of the owner-authorized release attempt as the
+planned publication date, clears `Unreleased` on the candidate, and preserves all released history.
+Re-running preparation is idempotent: it refreshes the same candidate entry, and a changed candidate
+version replaces the prior pending promotion rather than creating a duplicate. An empty
+`Unreleased` collection remains a valid maintenance release and creates no empty in-app entry. The
+workflow does not merge `main` into an older pending release branch. It also formats the generated
+`CHANGELOG.md`, validates curated notes against the exact `main` baseline, marks the exact candidate
+commit as current, and starts CI for it.
 
 Finalization runs only for a merged pull request that positively matches the expected Release
 Please bot, same-repository branch, `main` base, and `autorelease: pending` label. It additionally
@@ -128,13 +136,15 @@ ruleset active; without it, the finalizer would still reject a stale merge, but 
 longer block that merge in advance.
 
 Do not manually add a dated `0.1.0` heading to `CHANGELOG.md` before the release PR. Release Please
-owns the technical release history. In-app product notes remain curated localization content and
-must not parse `CHANGELOG.md` at runtime.
+owns the technical release history. In-app product notes remain smaller, curated, typed, local and
+offline-capable content; the application never parses `CHANGELOG.md` at runtime.
 
-User-facing issue pull requests maintain the pending in-app entry incrementally according to
-`docs/workflows/agent-task-workflow.md`. Before merging a Release Please PR, confirm that the pending
-entry matches the version selected by Release Please and has the intended publication date. A
-separate aggregate pull request should not be needed to reconstruct product notes at release time.
+Notable user-facing issue pull requests append stable identifiers to `unreleased` in
+`apps/client/src/features/releases/release-notes-data.json` and exact English and Polish copy to the
+paired `release-note-changes.json` resources. Ordinary work never guesses a version or release date.
+Before merging a Release Please PR, confirm that `Unreleased` is empty on the candidate, the optional
+promoted entry matches the selected version and planned date, and `pnpm check:release-notes` passes.
+A separate aggregate pull request is not needed to reconstruct product notes at release time.
 
 ## Associating the Windows installer with a release candidate
 

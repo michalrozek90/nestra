@@ -1,3 +1,5 @@
+import releaseNotesData from './release-notes-data.json';
+
 export type ReleaseChange = {
   readonly descriptionTranslationKey: string;
 };
@@ -7,134 +9,37 @@ type ReleaseChangeGroups = {
   readonly new: readonly ReleaseChange[];
 };
 
+type StoredReleaseChangeGroups = {
+  readonly fixes: readonly string[];
+  readonly new: readonly string[];
+};
+
+type StoredReleaseNote = {
+  readonly version: string;
+  readonly releaseDate: string;
+  readonly changes: StoredReleaseChangeGroups;
+};
+
+type ReleaseNotesData = {
+  readonly unreleased: StoredReleaseChangeGroups;
+  readonly released: readonly StoredReleaseNote[];
+};
+
 export type ReleaseNote = {
   readonly version: string;
-  readonly releaseDate?: string;
+  readonly releaseDate: string;
   readonly changes: ReleaseChangeGroups;
 };
 
-const RELEASE_NOTES: readonly ReleaseNote[] = [
-  {
-    version: '0.4.0',
-    changes: {
-      new: [
-        {
-          descriptionTranslationKey: 'versions.v040.changes.quietFirstLaunch',
-        },
-      ],
-      fixes: [
-        {
-          descriptionTranslationKey: 'versions.v040.changes.desktopGoogleAuthentication',
-        },
-        {
-          descriptionTranslationKey: 'versions.v040.changes.slowStartupAuthentication',
-        },
-        {
-          descriptionTranslationKey: 'versions.v040.changes.stableNotesActions',
-        },
-        {
-          descriptionTranslationKey: 'versions.v040.changes.noteEditorBackTarget',
-        },
-      ],
-    },
+const typedReleaseNotesData: ReleaseNotesData = releaseNotesData;
+
+const RELEASE_NOTES: readonly ReleaseNote[] = typedReleaseNotesData.released.map((releaseNote) => ({
+  ...releaseNote,
+  changes: {
+    new: releaseNote.changes.new.map(createReleaseChange),
+    fixes: releaseNote.changes.fixes.map(createReleaseChange),
   },
-  {
-    version: '0.3.0',
-    releaseDate: '2026-08-27',
-    changes: {
-      new: [
-        {
-          descriptionTranslationKey: 'versions.v030.changes.googleAuthentication',
-        },
-        {
-          descriptionTranslationKey: 'versions.v030.changes.completeReleaseHistory',
-        },
-        {
-          descriptionTranslationKey: 'versions.v030.changes.creatorCredit',
-        },
-        {
-          descriptionTranslationKey: 'versions.v030.changes.developerDiagnosticsHealth',
-        },
-      ],
-      fixes: [
-        {
-          descriptionTranslationKey: 'versions.v030.changes.serviceOutageErrors',
-        },
-        {
-          descriptionTranslationKey: 'versions.v030.changes.sessionRequestIsolation',
-        },
-        {
-          descriptionTranslationKey: 'versions.v030.changes.signOutRefreshRace',
-        },
-        {
-          descriptionTranslationKey: 'versions.v030.changes.googleAccountLinking',
-        },
-        {
-          descriptionTranslationKey: 'versions.v030.changes.androidGoogleReturn',
-        },
-        {
-          descriptionTranslationKey: 'versions.v030.changes.googleFirstSignInReliability',
-        },
-        {
-          descriptionTranslationKey: 'versions.v030.changes.newNoteDraftMigration',
-        },
-        {
-          descriptionTranslationKey: 'versions.v030.changes.updatePromptCoordination',
-        },
-      ],
-    },
-  },
-  {
-    version: '0.2.0',
-    releaseDate: '2026-07-31',
-    changes: {
-      new: [
-        {
-          descriptionTranslationKey: 'versions.v020.changes.desktopUpdates',
-        },
-        {
-          descriptionTranslationKey: 'versions.v020.changes.diagnosticsBack',
-        },
-        {
-          descriptionTranslationKey: 'versions.v020.changes.releaseHistory',
-        },
-      ],
-      fixes: [
-        {
-          descriptionTranslationKey: 'versions.v020.changes.narrowLayout',
-        },
-        {
-          descriptionTranslationKey: 'versions.v020.changes.centeredNavigation',
-        },
-      ],
-    },
-  },
-  {
-    version: '0.1.0',
-    releaseDate: '2026-07-29',
-    changes: {
-      new: [
-        {
-          descriptionTranslationKey: 'versions.v010.changes.titleOnlyNotes',
-        },
-      ],
-      fixes: [
-        {
-          descriptionTranslationKey: 'versions.v010.changes.responsiveDialogs',
-        },
-        {
-          descriptionTranslationKey: 'versions.v010.changes.editorFocus',
-        },
-        {
-          descriptionTranslationKey: 'versions.v010.changes.patientSessionRestore',
-        },
-        {
-          descriptionTranslationKey: 'versions.v010.changes.packagedDesktopAssets',
-        },
-      ],
-    },
-  },
-] as const;
+}));
 
 export function getReleaseNotesNewestFirst(applicationVersion: string): readonly ReleaseNote[] {
   return RELEASE_NOTES.filter(
@@ -150,6 +55,12 @@ export function getUnseenReleaseNotesNewestFirst(
     (releaseNote) =>
       lastSeenVersion === null || compareVersions(releaseNote.version, lastSeenVersion) > 0,
   );
+}
+
+function createReleaseChange(changeId: string): ReleaseChange {
+  return {
+    descriptionTranslationKey: `releaseNoteChanges.${changeId}`,
+  };
 }
 
 function compareVersions(leftVersion: string, rightVersion: string): number {
