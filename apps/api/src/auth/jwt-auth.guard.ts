@@ -3,7 +3,7 @@ import type { Request } from 'express';
 
 import { ApiException } from '../common/api.exception';
 import { AccessTokenService, type VerifiedAccessToken } from './access-token.service';
-import { AuthService } from './auth.service';
+import { RefreshSessionAccessService } from './refresh-session-access.service';
 
 export type RequestWithAccessToken = Request & {
   accessToken?: VerifiedAccessToken;
@@ -13,7 +13,7 @@ export type RequestWithAccessToken = Request & {
 export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly accessTokenService: AccessTokenService,
-    private readonly authService: AuthService,
+    private readonly refreshSessionAccessService: RefreshSessionAccessService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -48,7 +48,7 @@ export class JwtAuthGuard implements CanActivate {
       );
     }
 
-    await this.authService.assertActiveRefreshSession(
+    await this.refreshSessionAccessService.assertActive(
       verifiedAccessToken.userId,
       verifiedAccessToken.sessionId,
     );
