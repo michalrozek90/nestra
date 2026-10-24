@@ -58,6 +58,10 @@ The workflow ends only after one of these outcomes:
 - Process exactly one selected GitHub Project work item at a time.
 - Do not start unrelated work.
 - Do not discard, overwrite, stash, commit, or otherwise alter pre-existing user changes.
+- Starting or resuming this workflow authorizes task-scoped branch creation, commits, pushes, and
+  opening or updating a pull request. Do not request a separate confirmation for those operations.
+- That authorization does not cover merging, creating tags or releases, or unrelated repository or
+  GitHub changes.
 - Do not merge without the user's explicit `LGTM` approval in the active conversation.
 - A plain `LGTM` applies to the pull request currently being discussed. Ask for clarification only when the target is genuinely ambiguous.
 - Do not delete local branches after merge.
@@ -255,6 +259,9 @@ After `pnpm verify` passes:
 4. Create a **draft pull request** targeting `main`.
 5. Assign the pull request to the repository owner/user.
 
+These operations are already authorized by the invocation of this workflow. Perform them without
+asking the user for an additional commit, push, or pull-request confirmation.
+
 The pull request title must summarize the implemented change. Its description must briefly include:
 
 - why the pull request exists;
@@ -293,6 +300,9 @@ When all required implementation work and agent review corrections are complete 
    - whether review produced additional commits;
    - the main manual checks the user should perform.
 
+The ready pull request is the user's review gate. The user may verify the application manually,
+inspect the code, or do both before approving the exact reviewed pull-request head with `LGTM`.
+
 A separate pull request comment is not required merely to announce readiness.
 
 ## 9. User feedback loop
@@ -318,7 +328,10 @@ New ideas outside the current issue scope should be created as separate GitHub P
 
 ## 10. Merge on LGTM
 
-A plain `LGTM` in the active conversation authorizes merging the pull request currently under discussion. Ask one short clarification question only when more than one target is plausibly active and the intended pull request cannot be determined reliably.
+A plain `LGTM` in the active conversation authorizes merging the pull request currently under
+discussion and completing its Project transition. Ask one short clarification question only when
+more than one target is plausibly active and the intended pull request cannot be determined
+reliably.
 
 Before merge:
 

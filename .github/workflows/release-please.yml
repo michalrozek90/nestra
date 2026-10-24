@@ -1,35 +1,97 @@
 name: Release Please
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
+  pull_request:
+    types:
+      - closed
+      - opened
+      - reopened
+      - synchronize
+    branches:
+      - main
 
-permissions:
-  contents: write
-  pull-requests: write
-  actions: write
+permissions: {}
 
 concurrency:
-  group: release-please-${{ github.workflow }}-${{ github.ref }}
+  group: release-please-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  RELEASE_PR_BRANCH: release-please--branches--main--components--nestra
+  RELEASE_CANDIDATE_STATUS: release-candidate/current-main
+  TARGET_BRANCH: main
+
 jobs:
-  release-please:
-    name: Prepare release PR
+  allow-ordinary-pull-request:
+    name: Mark ordinary PR for current-main protection
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.ref != 'release-please--branches--main--components--nestra'
+    permissions:
+      statuses: write
     runs-on: ubuntu-latest
     steps:
-      - name: Run Release Please
+      - name: Mark the ordinary pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STATUS_SHA: ${{ github.sha }}
+        run: |
+          gh api \
+            --method POST \
+            "repos/${{ github.repository }}/statuses/${STATUS_SHA}" \
+            -f state="success" \
+            -f context="${RELEASE_CANDIDATE_STATUS}" \
+            -f description="ordinary pull request; strict main freshness is enforced by ruleset"
+
+  prepare-release-pr:
+    name: Prepare release PR
+    if: github.event_name == 'workflow_dispatch'
+    permissions:
+      actions: write
+      contents: write
+      issues: write
+      pull-requests: write
+      statuses: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve the current main commit
+        id: main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/${TARGET_BRANCH}" ]; then
+            echo "Run release preparation from the ${TARGET_BRANCH} workflow ref."
+            exit 1
+          fi
+
+          main_sha="$(gh api "repos/${{ github.repository }}/git/ref/heads/${TARGET_BRANCH}" --jq '.object.sha')"
+
+          if [ -z "${main_sha}" ]; then
+            echo "Could not resolve the current ${TARGET_BRANCH} commit."
+            exit 1
+          fi
+
+          echo "sha=${main_sha}" >> "${GITHUB_OUTPUT}"
+
+      - name: Prepare the Release Please pull request
         id: release
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          skip-github-release: true
+          target-branch: main
 
-      - name: Read the updated Release Please pull request
+      - name: Read the prepared Release Please pull request
         id: release-pr
         if: ${{ steps.release.outputs.prs_created == 'true' }}
         env:
+          EXPECTED_MAIN_SHA: ${{ steps.main.outputs.sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_PR_JSON: ${{ steps.release.outputs.pr }}
         run: |
@@ -42,36 +104,56 @@ jobs:
           release_pr_branch="$(jq -er '.headBranchName' <<< "${RELEASE_PR_JSON}")"
           release_pr_base="$(jq -er '.baseBranchName' <<< "${RELEASE_PR_JSON}")"
 
-          if [ "${release_pr_base}" != "${{ github.ref_name }}" ]; then
-            echo "Release Please returned a pull request for ${release_pr_base}, expected ${{ github.ref_name }}."
+          if [ "${release_pr_base}" != "${TARGET_BRANCH}" ] || [ "${release_pr_branch}" != "${RELEASE_PR_BRANCH}" ]; then
+            echo "Release Please returned an unexpected pull request branch pair."
+            exit 1
+          fi
+
+          current_main_sha="$(gh api "repos/${{ github.repository }}/git/ref/heads/${TARGET_BRANCH}" --jq '.object.sha')"
+
+          if [ "${current_main_sha}" != "${EXPECTED_MAIN_SHA}" ]; then
+            echo "${TARGET_BRANCH} moved while the release candidate was being prepared. Run the workflow again."
             exit 1
           fi
 
           live_release_pr_json="$(gh pr view "${release_pr_number}" \
             --repo "${{ github.repository }}" \
-            --json baseRefName,headRefName,labels,state)"
+            --json author,baseRefName,headRefName,headRefOid,labels,state)"
 
           if ! jq -e \
-            --arg base "${release_pr_base}" \
-            --arg branch "${release_pr_branch}" \
+            --arg base "${TARGET_BRANCH}" \
+            --arg branch "${RELEASE_PR_BRANCH}" \
             '.state == "OPEN" and
+             .author.is_bot == true and
+             .author.login == "app/github-actions" and
              .baseRefName == $base and
              .headRefName == $branch and
              ([.labels[].name] | index("autorelease: pending") != null)' \
             <<< "${live_release_pr_json}" > /dev/null; then
-            echo "Release Please pull request metadata no longer matches the open pending pull request."
+            echo "Release Please pull request metadata no longer matches the trusted open candidate."
+            exit 1
+          fi
+
+          release_pr_sha="$(jq -er '.headRefOid' <<< "${live_release_pr_json}")"
+          comparison_status="$(gh api \
+            "repos/${{ github.repository }}/compare/${EXPECTED_MAIN_SHA}...${release_pr_sha}" \
+            --jq '.status')"
+
+          if [ "${comparison_status}" != "ahead" ]; then
+            echo "Release candidate does not contain the exact current ${TARGET_BRANCH} commit."
             exit 1
           fi
 
           echo "found=true" >> "${GITHUB_OUTPUT}"
-          echo "branch=${release_pr_branch}" >> "${GITHUB_OUTPUT}"
+          echo "number=${release_pr_number}" >> "${GITHUB_OUTPUT}"
+          echo "sha=${release_pr_sha}" >> "${GITHUB_OUTPUT}"
 
       - name: Check out the Release Please pull request
         if: ${{ steps.release-pr.outputs.found == 'true' }}
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
-          ref: ${{ steps.release-pr.outputs.branch }}
+          ref: ${{ env.RELEASE_PR_BRANCH }}
 
       - name: Set up pnpm
         if: ${{ steps.release-pr.outputs.found == 'true' }}
@@ -94,17 +176,17 @@ jobs:
         if: ${{ steps.release-pr.outputs.found == 'true' }}
         id: format-release-pr
         env:
-          RELEASE_PR_BRANCH: ${{ steps.release-pr.outputs.branch }}
+          MAIN_SHA: ${{ steps.main.outputs.sha }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          if ! git merge-base --is-ancestor "${GITHUB_SHA}" HEAD; then
-            echo "Release Please pull request does not contain the triggering ${GITHUB_SHA} commit."
+          if ! git merge-base --is-ancestor "${MAIN_SHA}" HEAD; then
+            echo "Release Please pull request does not contain the prepared ${TARGET_BRANCH} commit."
             exit 1
           fi
 
-          base_version="$(git show "${GITHUB_SHA}:package.json" | jq -er '.version')"
+          base_version="$(git show "${MAIN_SHA}:package.json" | jq -er '.version')"
           release_version="$(jq -er '.version' package.json)"
           highest_version="$(printf '%s\n%s\n' "${base_version}" "${release_version}" | sort -V | tail -n 1)"
 
@@ -121,67 +203,225 @@ jobs:
             git commit -m "chore: format generated changelog"
           fi
 
-          if [ "$(git rev-parse HEAD)" = "$(git rev-parse "origin/${RELEASE_PR_BRANCH}")" ]; then
-            echo "updated=false" >> "${GITHUB_OUTPUT}"
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse "origin/${RELEASE_PR_BRANCH}")" ]; then
+            git push origin "HEAD:${RELEASE_PR_BRANCH}"
+          fi
+
+          echo "sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
+
+      - name: Mark the release candidate as current
+        if: ${{ steps.format-release-pr.outputs.sha != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MAIN_SHA: ${{ steps.main.outputs.sha }}
+          RELEASE_PR_SHA: ${{ steps.format-release-pr.outputs.sha }}
+        run: |
+          current_main_sha="$(gh api "repos/${{ github.repository }}/git/ref/heads/${TARGET_BRANCH}" --jq '.object.sha')"
+
+          if [ "${current_main_sha}" != "${MAIN_SHA}" ]; then
+            gh api \
+              --method POST \
+              "repos/${{ github.repository }}/statuses/${RELEASE_PR_SHA}" \
+              -f state="failure" \
+              -f context="${RELEASE_CANDIDATE_STATUS}" \
+              -f description="main changed; prepare the release candidate again"
+            echo "${TARGET_BRANCH} moved before validation completed. Run the workflow again."
+            exit 1
+          fi
+
+          gh api \
+            --method POST \
+            "repos/${{ github.repository }}/statuses/${RELEASE_PR_SHA}" \
+            -f state="success" \
+            -f context="${RELEASE_CANDIDATE_STATUS}" \
+            -f description="candidate contains the current main commit"
+
+      - name: Start checks for the prepared Release Please pull request
+        if: ${{ steps.format-release-pr.outputs.sha != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run ci.yml --repo "${{ github.repository }}" --ref "${RELEASE_PR_BRANCH}"
+
+      - name: Report that no release is pending
+        if: ${{ steps.release.outputs.prs_created != 'true' }}
+        run: echo "Release Please found no releasable commits; no release pull request was created or updated."
+
+  invalidate-stale-release-pr:
+    name: Invalidate stale release PR
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark a pending candidate against the new main commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          release_pr_json="$(gh pr list \
+            --repo "${{ github.repository }}" \
+            --state open \
+            --base "${TARGET_BRANCH}" \
+            --head "${RELEASE_PR_BRANCH}" \
+            --json author,headRefOid,labels \
+            --jq '[.[] | select(
+              .author.is_bot == true and
+              .author.login == "app/github-actions" and
+              ([.labels[].name] | index("autorelease: pending") != null)
+            )]')"
+
+          release_pr_count="$(jq 'length' <<< "${release_pr_json}")"
+
+          if [ "${release_pr_count}" -eq 0 ]; then
+            echo "No trusted pending release candidate exists."
             exit 0
           fi
 
-          git push origin "HEAD:${RELEASE_PR_BRANCH}"
-          echo "updated=true" >> "${GITHUB_OUTPUT}"
+          if [ "${release_pr_count}" -ne 1 ]; then
+            echo "Expected exactly one trusted pending release candidate, found ${release_pr_count}."
+            exit 1
+          fi
 
-      - name: Start checks for the updated Release Please pull request
-        if: ${{ steps.format-release-pr.outputs.updated == 'true' }}
+          release_pr_sha="$(jq -er '.[0].headRefOid' <<< "${release_pr_json}")"
+          comparison_status="$(gh api \
+            "repos/${{ github.repository }}/compare/${GITHUB_SHA}...${release_pr_sha}" \
+            --jq '.status')"
+
+          if [ "${comparison_status}" = "ahead" ]; then
+            status_state="success"
+            status_description="candidate contains the current main commit"
+          else
+            status_state="failure"
+            status_description="main changed; prepare the release candidate again"
+          fi
+
+          gh api \
+            --method POST \
+            "repos/${{ github.repository }}/statuses/${release_pr_sha}" \
+            -f state="${status_state}" \
+            -f context="${RELEASE_CANDIDATE_STATUS}" \
+            -f description="${status_description}"
+
+  finalize-release:
+    name: Finalize merged release PR
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.head.ref == 'release-please--branches--main--components--nestra' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login == 'github-actions[bot]' &&
+      contains(github.event.pull_request.labels.*.name, 'autorelease: pending')
+    permissions:
+      actions: write
+      checks: read
+      contents: write
+      issues: write
+      pull-requests: write
+      statuses: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate the merged release candidate
         env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_PR_BRANCH: ${{ steps.release-pr.outputs.branch }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          RELEASE_PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          release_pr_sha="$(git rev-parse HEAD)"
-          checks_approved=false
+          live_release_pr_json="$(gh api "repos/${{ github.repository }}/pulls/${RELEASE_PR_NUMBER}")"
 
-          for attempt in {1..10}; do
-            mapfile -t pending_run_ids < <(gh api \
-              --method GET \
-              "repos/${{ github.repository }}/actions/runs" \
-              -f head_sha="${release_pr_sha}" \
-              -f event="pull_request" \
-              -f status="action_required" \
-              -f per_page=10 \
-              --jq '.workflow_runs[] | select(.name == "CI") | .id')
+          if ! jq -e \
+            --arg base "${TARGET_BRANCH}" \
+            --arg branch "${RELEASE_PR_BRANCH}" \
+            --arg head_sha "${HEAD_SHA}" \
+            '.state == "closed" and
+             .merged == true and
+             .user.login == "github-actions[bot]" and
+             .base.ref == $base and
+             .head.ref == $branch and
+             .head.sha == $head_sha and
+             .head.repo.full_name == "${{ github.repository }}" and
+             ([.labels[].name] | index("autorelease: pending") != null)' \
+            <<< "${live_release_pr_json}" > /dev/null; then
+            echo "The merged pull request is not the trusted Release Please candidate."
+            exit 1
+          fi
 
-            if [ "${#pending_run_ids[@]}" -gt 0 ]; then
-              checks_approved=true
+          comparison_status="$(gh api \
+            "repos/${{ github.repository }}/compare/${BASE_SHA}...${HEAD_SHA}" \
+            --jq '.status')"
 
-              for run_id in "${pending_run_ids[@]}"; do
-                if ! gh api \
-                  --method POST \
-                  "repos/${{ github.repository }}/actions/runs/${run_id}/approve"; then
-                  checks_approved=false
-                fi
-              done
+          if [ "${comparison_status}" != "ahead" ]; then
+            echo "The merged release candidate was stale relative to its final base commit."
+            exit 1
+          fi
 
-              break
-            fi
+          candidate_status="$(gh api \
+            "repos/${{ github.repository }}/commits/${HEAD_SHA}/status" \
+            --jq ".statuses | map(select(.context == \"${RELEASE_CANDIDATE_STATUS}\")) | first | .state // \"missing\"")"
 
-            sleep 2
-          done
+          if [ "${candidate_status}" != "success" ]; then
+            echo "The release candidate freshness status is ${candidate_status}, expected success."
+            exit 1
+          fi
 
-          if [ "${checks_approved}" = false ]; then
-            echo "Bot-triggered pull request checks could not be approved; dispatching CI directly."
-            gh workflow run ci.yml --repo "${{ github.repository }}" --ref "${RELEASE_PR_BRANCH}"
+          ci_checks_json="$(gh api \
+            --method GET \
+            "repos/${{ github.repository }}/commits/${HEAD_SHA}/check-runs" \
+            -f per_page=100 \
+            --jq '[.check_runs[] |
+              select(.name == "Quality gate" or .name == "API persistence")
+            ] | group_by(.name) | map(max_by(.id))')"
+
+          if ! jq -e \
+            'length == 2 and all(.[]; .status == "completed" and .conclusion == "success")' \
+            <<< "${ci_checks_json}" > /dev/null; then
+            echo "The latest Quality gate and API persistence checks must both pass before finalization."
+            exit 1
+          fi
+
+          current_main_sha="$(gh api "repos/${{ github.repository }}/git/ref/heads/${TARGET_BRANCH}" --jq '.object.sha')"
+
+          if [ "${current_main_sha}" != "${MERGE_SHA}" ]; then
+            echo "${TARGET_BRANCH} advanced after the release pull request merged; refusing ambiguous finalization."
+            exit 1
+          fi
+
+      - name: Finalize the Release Please candidate
+        id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          skip-github-pull-request: true
+          target-branch: main
+
+      - name: Validate the draft release identity
+        env:
+          EXPECTED_RELEASE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          RELEASE_CREATED: ${{ steps.release.outputs.release_created }}
+          RELEASE_SHA: ${{ steps.release.outputs.sha }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
+        run: |
+          if [ "${RELEASE_CREATED}" != "true" ] || [ -z "${RELEASE_TAG}" ] || [ -z "${RELEASE_SHA}" ]; then
+            echo "Release Please did not create the expected draft release."
+            exit 1
+          fi
+
+          if [ "${RELEASE_SHA}" != "${EXPECTED_RELEASE_SHA}" ]; then
+            echo "Release Please created the draft at an unexpected commit."
+            exit 1
           fi
 
       - name: Dispatch Windows installer attachment
-        if: ${{ steps.release.outputs.release_created == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_SHA: ${{ steps.release.outputs.sha }}
           RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
         run: |
-          if [ -z "${RELEASE_TAG}" ] || [ -z "${RELEASE_SHA}" ]; then
-            echo "Release Please reported release_created without tag_name or sha."
-            exit 1
-          fi
-
           gh workflow run desktop-release-assets.yml \
             --repo "${{ github.repository }}" \
             -f "tag_name=${RELEASE_TAG}" \

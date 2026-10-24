@@ -151,6 +151,10 @@ CI on pull requests and `main` runs the quality gate and the API persistence job
 attachment. The root `package.json` version is the product version shared by Expo, Tauri, the
 installer, and Release Please (`pnpm check:product-version`).
 
+Release preparation is owner-triggered from the **Release Please** GitHub Actions workflow. Normal
+merges to `main` accumulate until the owner chooses to prepare a candidate; Release Please then
+derives the version from Conventional Commits.
+
 ## Documentation
 
 - [Product and technical specification](docs/specifications/nestra-initial-application.md)

@@ -3,7 +3,8 @@
 This document is the operator checklist for turning a verified Windows x64 installer into a
 controlled `0.1.0` release candidate. Architecture decisions live in
 [ADR 005](../decisions/005-desktop-and-hosted-service-architecture.md) and
-[ADR 007](../decisions/007-release-automation.md). Packaging details live in
+[ADR 007](../decisions/007-release-automation.md), with owner-triggered preparation defined by
+[ADR 011](../decisions/011-owner-triggered-release-preparation.md). Packaging details live in
 [`desktop.md`](./desktop.md). Hosted API and database details live in
 [`hosted-api.md`](./hosted-api.md).
 
@@ -43,10 +44,12 @@ Run the synchronization check locally or in CI:
 
 ```bash
 pnpm check:product-version
+pnpm check:release-workflow
 ```
 
-`pnpm verify` includes this check. Workspace package versions under `apps/` and `packages/` are
-internal metadata and must not be presented as the product version.
+`pnpm verify` includes both checks. The release-workflow policy check guards the manual-preparation,
+stale-candidate, and trusted-finalization boundaries. Workspace package versions under `apps/` and
+`packages/` are internal metadata and must not be presented as the product version.
 
 ## Release Please automation
 
@@ -70,22 +73,45 @@ Bootstrap choices validated against current Release Please manifest documentatio
   draft.
 - Do not create local tags during development or agent workflows.
 
-On pushes to `main`, Release Please analyzes Conventional Commits and maintains one release PR that
-updates `CHANGELOG.md`, the root product version, the Release Please manifest, and the desktop
-Cargo package and lockfile versions. Merging that PR after explicit operator approval creates a
-draft GitHub Release and the corresponding tag at the exact release commit. Creating the tag does not publish
-the draft or expose its installer assets; publishing remains a later explicit operator action. Do
-not merge the release PR until the checklist below is complete and the operator explicitly approves
-publication preparation.
+Release Please does not prepare a version after ordinary pushes to `main`. When the repository
+owner decides that the accumulated changes should become a release candidate:
 
-The release workflow only post-processes the pull request returned by the current Release Please
-run. It confirms that the live pending pull request contains the exact `main` commit that triggered
-the workflow, rejects any version that is not strictly greater than the version on that commit, and
-checks complete product-version synchronization before pushing. It does not merge `main` into an
-older pending release branch. The workflow also formats the generated `CHANGELOG.md` using the
-repository Prettier configuration and starts CI for the resulting commit, including approval of the
-trusted bot-triggered checks when GitHub requires it. Release pull requests should therefore remain
-formatting-clean without a manual follow-up commit.
+1. Open **Actions → Release Please → Run workflow**.
+2. Select the `main` workflow ref and run the workflow. There is no version input.
+3. Release Please derives the next version from Conventional Commits and creates or updates its
+   single release PR against the latest `main`.
+4. Review the generated changelog, synchronized version files, curated in-app notes, CI, and the
+   release checklist below.
+5. If another pull request reaches `main`, run release preparation again before merging the release
+   PR. The `release-candidate/current-main` status will fail on the stale candidate, and the strict
+   `main` ruleset will block its merge.
+6. Merge the current Release Please PR only after explicit operator approval. That merge
+   automatically creates the tag and draft GitHub Release; no second manual dispatch is required.
+
+The owner chooses when preparation starts, while Release Please continues to choose the SemVer bump
+and update `CHANGELOG.md`, the root product version, the Release Please manifest, and the desktop
+Cargo package and lockfile versions. Creating the tag does not publish the draft or expose its
+installer assets; publishing remains a later explicit operator action.
+
+Preparation only post-processes the pull request returned by that manual Release Please run. It
+confirms the trusted bot identity and branch pair, requires the candidate to contain the exact
+current `main` commit, rejects a non-increasing version, and checks complete product-version
+synchronization before pushing. It does not merge `main` into an older pending release branch. The
+workflow also formats the generated `CHANGELOG.md`, marks the exact candidate commit as current, and
+starts CI for it.
+
+Finalization runs only for a merged pull request that positively matches the expected Release
+Please bot, same-repository branch, `main` base, and `autorelease: pending` label. It additionally
+requires the successful freshness status and refuses finalization if the candidate did not contain
+its final base commit, either required CI job did not pass, or `main` advanced after the merge.
+Arbitrary merged pull requests therefore cannot create a release through this workflow.
+
+The repository ruleset **Require current main for release candidates** requires the
+`release-candidate/current-main` status and enforces an up-to-date branch. A lightweight job grants
+that status to ordinary pull requests. The reserved Release Please branch can receive it only from
+the manual preparation path after the workflow validates the bot identity and exact current
+`main` commit. Keep this ruleset active; without it, the finalizer would still reject a stale merge,
+but GitHub would no longer block that merge in advance.
 
 Do not manually add a dated `0.1.0` heading to `CHANGELOG.md` before the release PR. Release Please
 owns the technical release history. In-app product notes remain curated localization content and
@@ -102,8 +128,9 @@ Workflow: `.github/workflows/desktop-release-assets.yml`
 
 Triggers:
 
-1. Automatic after Release Please creates a draft GitHub Release: the release-please workflow
-   dispatches this workflow with the pending tag name and exact release commit.
+1. Automatic after the approved Release Please PR is merged and finalization creates a draft GitHub
+   Release: the release-please workflow dispatches this workflow with the pending tag name and exact
+   release commit.
 2. Manual: `workflow_dispatch` with an existing draft `tag_name` such as `v0.2.0`; the commit is
    resolved from the draft when `release_sha` is omitted.
 
@@ -190,10 +217,15 @@ Complete before merging a Release Please PR or publishing a draft release:
 11. Operator explicitly approves merging the Release Please PR and later publishing the draft
     release.
 
+If the release PR shows a failing `release-candidate/current-main` status, do not merge it. Run
+**Release Please** manually from `main`, repeat the relevant checks on the updated candidate, and
+then approve the merge.
+
 ## Rollback considerations
 
 | Situation                                             | Response                                                                                                                                       |
 | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Release candidate is stale                            | Do not merge it; run **Release Please** manually from `main`, then repeat review and CI on the refreshed candidate                             |
 | Draft release has a bad installer                     | Rebuild from the tag with `desktop-release-assets` / `workflow_dispatch`, or leave the draft unpublished                                       |
 | Draft release should not be published                 | Keep it draft; delete only with an intentional operator decision                                                                               |
 | Published release must be withdrawn                   | Unpublish or mark the GitHub Release carefully; communicate that installs already performed are unaffected                                     |

@@ -133,7 +133,7 @@ That workflow document is the single source of truth for the autonomous lifecycl
 
 Also read the selected GitHub issue, its comments, the corresponding GitHub Project item, the active specification, relevant architecture decisions, and `docs/code-review.md` as required by that workflow.
 
-The autonomous workflow may read and update GitHub Project status, create or resume branches and pull requests, create commits, push changes, perform review, and merge only according to the permissions and approval rules defined in the workflow.
+Starting or resuming the autonomous workflow grants task-scoped approval to create or resume a branch, create commits, push changes, and open or update a pull request. Do not ask for a separate confirmation for those operations. The workflow may also read and update GitHub Project status and perform review. It may merge only after the user gives `LGTM` in the active conversation, according to the detailed approval rules defined in the workflow.
 
 If required GitHub data cannot be retrieved, report the blocker and stop the autonomous workflow instead of guessing or silently continuing.
 
@@ -197,7 +197,7 @@ Do not:
 - create a nested `nestra` project directory;
 - modify or remove Git remotes;
 - change branches;
-- create commits, tags, pushes, pull requests, or releases without explicit user approval;
+- create commits, tags, pushes, pull requests, or releases without explicit user approval; an autonomous workflow invocation is the required approval for its task-scoped branch, commits, pushes, and pull request, but not for merge, tags, releases, or unrelated changes;
 - delete or overwrite existing work without inspecting it first;
 - work outside the current repository root.
 
@@ -317,8 +317,9 @@ Do not silently ignore caught errors. Handle them, convert them into an expected
 
 ## Conventional Commits
 
-Release Please on `main` bumps the product version from Conventional Commit prefixes. Use English
-messages. Prefer an optional scope when it clarifies the change, for example `feat(auth): ...`.
+When the owner manually prepares a release from `main`, Release Please bumps the product version
+from Conventional Commit prefixes. Use English messages. Prefer an optional scope when it clarifies
+the change, for example `feat(auth): ...`.
 
 | Prefix                                                   | Release Please effect                             |
 | -------------------------------------------------------- | ------------------------------------------------- |
@@ -335,9 +336,11 @@ Guidelines:
   rewarding to read, for example `feat(desktop): Nestra now has automatic updates 🚀`, rather than
   describing the implementation activity.
 - Use `chore:` (or another non-bumping type) for tooling, formatting, workflow, and post-release
-  housekeeping so those commits do not open a needless release PR.
-- Do not commit unless the user explicitly asks for a commit.
-- Release flow details live in `docs/deployment/release.md` and ADR 007.
+  housekeeping so those commits do not force a version bump when the next release is prepared.
+- In the autonomous issue workflow, its explicit invocation authorizes task-scoped commits, pushes,
+  and opening or updating the pull request; do not ask for a second confirmation.
+- Outside that workflow, do not commit unless the user explicitly asks for a commit.
+- Release flow details live in `docs/deployment/release.md`, ADR 007, and ADR 011.
 
 ## Formatting and verification
 

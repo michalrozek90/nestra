@@ -28,6 +28,7 @@
     "build:desktop": "pnpm --filter @nestra/desktop build",
     "check:desktop-production-config": "pnpm --filter @nestra/desktop check:production-config",
     "check:product-version": "node ./scripts/check-product-version-sync.mjs",
+    "check:release-workflow": "node ./scripts/check-release-workflow.mjs",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "lint": "eslint .",
@@ -35,7 +36,7 @@
     "test:api": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/api test",
     "test:client": "pnpm --filter @nestra/client test",
     "typecheck": "pnpm --filter @nestra/contracts build && pnpm --filter @nestra/contracts typecheck && pnpm --filter @nestra/api typecheck && pnpm --filter @nestra/client typecheck",
-    "verify": "pnpm format:check && pnpm lint && pnpm check:product-version && pnpm check:desktop-production-config && pnpm typecheck && pnpm test:client && pnpm build"
+    "verify": "pnpm format:check && pnpm lint && pnpm check:product-version && pnpm check:release-workflow && pnpm check:desktop-production-config && pnpm typecheck && pnpm test:client && pnpm build"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

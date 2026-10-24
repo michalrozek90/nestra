@@ -370,14 +370,18 @@ Their automation is deferred until native build pipelines are introduced.
 Configure Release Please independently of desktop packaging. The `0.1.0` release must not be
 published until the Windows x64 installer has been built and verified.
 
-On pushes to `main`, it must:
+When the repository owner manually starts release preparation from `main`, it must:
 
-1. analyze Conventional Commits;
-2. maintain one release PR;
+1. analyze accumulated Conventional Commits without requiring a version input;
+2. create or update one release PR against the latest `main`;
 3. update root `CHANGELOG.md`;
 4. update the root product version;
-5. create a Git tag when the release PR is merged;
-6. create a GitHub Release.
+5. create a Git tag when the trusted, current release PR is merged;
+6. create a draft GitHub Release and start release-asset preparation automatically after that
+   merge.
+
+Ordinary pushes to `main` must not create or update the release PR. If `main` advances after a
+candidate is prepared, the candidate must be marked stale and prepared again before merge.
 
 Expected first tag:
 
@@ -400,6 +404,7 @@ Before release automation is considered complete:
 - validate current Release Please bootstrap behavior from official docs;
 - use a dry run or another non-destructive check;
 - document the bootstrap in ADR 007;
+- document owner-triggered preparation and guarded finalization in ADR 011;
 - verify the first release will be `0.1.0`, not `1.0.0`.
 
 Do not create a local tag.

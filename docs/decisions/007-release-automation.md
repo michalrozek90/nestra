@@ -2,7 +2,10 @@
 
 ## Status
 
-Accepted
+Superseded in part by [ADR 011](./011-owner-triggered-release-preparation.md), which replaces
+automatic release-PR preparation on every push with an owner-triggered preparation and a guarded
+merge finalization flow. The versioning, changelog, draft-release, tag, and asset decisions below
+remain accepted.
 
 ## Context
 
