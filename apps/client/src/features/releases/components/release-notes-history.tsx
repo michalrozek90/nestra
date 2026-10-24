@@ -1,25 +1,26 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Icon, Text } from 'react-native-paper';
 
+import { getResponsiveLayout } from '@/theme/breakpoints';
 import { radii, spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
 
+import { formatReleaseDate } from '../format-release-date';
 import type { ReleaseNote } from '../release-notes';
+import { splitReleaseHistory } from '../split-release-history';
 import { ReleaseNoteChanges } from './release-note-changes';
 
 type ReleaseNotesHistoryProps = {
-  readonly initiallyExpandedVersion?: string;
   readonly releaseNotes: readonly ReleaseNote[];
 };
 
-export function ReleaseNotesHistory({
-  initiallyExpandedVersion,
-  releaseNotes,
-}: ReleaseNotesHistoryProps) {
+export function ReleaseNotesHistory({ releaseNotes }: ReleaseNotesHistoryProps) {
+  const { t } = useTranslation('releases');
+  const { earlier, latest } = splitReleaseHistory(releaseNotes);
   const [expandedVersions, setExpandedVersions] = useState<ReadonlySet<string>>(
-    () => new Set(initiallyExpandedVersion ? [initiallyExpandedVersion] : []),
+    () => new Set(latest ? [latest.version] : []),
   );
 
   function toggleVersion(version: string): void {
@@ -38,14 +39,30 @@ export function ReleaseNotesHistory({
 
   return (
     <View style={styles.list}>
-      {releaseNotes.map((releaseNote) => (
+      {latest ? (
         <ReleaseNotesHistoryItem
-          isExpanded={expandedVersions.has(releaseNote.version)}
-          key={releaseNote.version}
-          onToggle={() => toggleVersion(releaseNote.version)}
-          releaseNote={releaseNote}
+          isExpanded={expandedVersions.has(latest.version)}
+          onToggle={() => toggleVersion(latest.version)}
+          prominence="latest"
+          releaseNote={latest}
         />
-      ))}
+      ) : null}
+      {earlier.length > 0 ? (
+        <>
+          <Text accessibilityRole="header" style={styles.earlierHeading}>
+            {t('whatsNew.earlier')}
+          </Text>
+          {earlier.map((releaseNote) => (
+            <ReleaseNotesHistoryItem
+              isExpanded={expandedVersions.has(releaseNote.version)}
+              key={releaseNote.version}
+              onToggle={() => toggleVersion(releaseNote.version)}
+              prominence="earlier"
+              releaseNote={releaseNote}
+            />
+          ))}
+        </>
+      ) : null}
     </View>
   );
 }
@@ -53,36 +70,52 @@ export function ReleaseNotesHistory({
 type ReleaseNotesHistoryItemProps = {
   readonly isExpanded: boolean;
   readonly onToggle: () => void;
+  readonly prominence: 'earlier' | 'latest';
   readonly releaseNote: ReleaseNote;
 };
 
 function ReleaseNotesHistoryItem({
   isExpanded,
   onToggle,
+  prominence,
   releaseNote,
 }: ReleaseNotesHistoryItemProps) {
-  const { i18n } = useTranslation('releases');
+  const { i18n, t } = useTranslation('releases');
+  const { width: windowWidth } = useWindowDimensions();
   const theme = useNestraTheme();
+  const isCompact = getResponsiveLayout(windowWidth) === 'compact';
+  const isEarlier = prominence === 'earlier';
   const formattedDate = formatReleaseDate(releaseNote.releaseDate, i18n.language);
+  const accessibilityLabel = formattedDate
+    ? t('whatsNew.versionSummary', { date: formattedDate, version: releaseNote.version })
+    : releaseNote.version;
 
   return (
     <View
       style={[
         styles.item,
         {
-          backgroundColor: theme.colors.surface,
+          backgroundColor: isEarlier ? theme.colors.surfaceVariant : theme.colors.surface,
           borderColor: theme.colors.outlineVariant,
         },
       ]}
     >
       <Pressable
+        accessibilityLabel={accessibilityLabel}
         accessibilityRole="button"
         accessibilityState={{ expanded: isExpanded }}
         onPress={onToggle}
-        style={styles.header}
+        style={[styles.header, isCompact ? styles.compactHeader : null]}
       >
         <View style={styles.headerCopy}>
-          <Text style={styles.version}>{releaseNote.version}</Text>
+          <Text
+            style={[
+              isEarlier ? styles.earlierVersion : styles.version,
+              { color: theme.colors.onSurface },
+            ]}
+          >
+            {releaseNote.version}
+          </Text>
           {formattedDate ? (
             <Text style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}>
               {formattedDate}
@@ -96,31 +129,12 @@ function ReleaseNotesHistoryItem({
         />
       </Pressable>
       {isExpanded ? (
-        <View style={styles.body}>
-          <ReleaseNoteChanges releaseNote={releaseNote} />
+        <View style={[styles.body, isCompact ? styles.compactBody : null]}>
+          <ReleaseNoteChanges isCompact={isCompact || isEarlier} releaseNote={releaseNote} />
         </View>
       ) : null}
     </View>
   );
-}
-
-function formatReleaseDate(releaseDate: string | undefined, language: string): string {
-  if (!releaseDate) {
-    return '';
-  }
-
-  const parsedDate = new Date(`${releaseDate}T00:00:00.000Z`);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return '';
-  }
-
-  return parsedDate.toLocaleDateString(language, {
-    day: 'numeric',
-    month: 'short',
-    timeZone: 'UTC',
-    year: 'numeric',
-  });
 }
 
 const styles = StyleSheet.create({
@@ -129,10 +143,25 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
     paddingHorizontal: spacing.lg,
   },
+  compactBody: {
+    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+  },
+  compactHeader: {
+    padding: spacing.md,
+  },
+  earlierHeading: {
+    ...typography.sectionTitle,
+  },
+  earlierVersion: {
+    ...typography.supporting,
+    fontWeight: '600',
+  },
   header: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.md,
+    minHeight: 48,
     padding: spacing.lg,
   },
   headerCopy: {

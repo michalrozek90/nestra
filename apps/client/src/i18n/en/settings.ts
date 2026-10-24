@@ -4,12 +4,17 @@ export const enSettings = {
     account: 'Account',
     language: 'Language',
     appearance: 'Appearance',
+    whatsNew: 'What’s new',
     about: 'About',
     developer: 'Developer',
   },
+  whatsNew: {
+    entryTitle: 'What’s new',
+    entryDescription: 'Browse the updates included in each released version.',
+  },
   about: {
     entryTitle: 'About Nestra',
-    entryDescription: 'View the current version and product release notes.',
+    entryDescription: 'View the installed version, author, and application updates.',
   },
   account: {
     signOut: 'Sign out',

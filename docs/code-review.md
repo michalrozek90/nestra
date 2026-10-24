@@ -1,8 +1,9 @@
 # Code review guidelines
 
 These guidelines define the internal agent review performed before GitHub Codex Code Review. The
-autonomous workflow in `docs/workflows/agent-task-workflow.md` requires both reviews to complete
-before the pull request is handed to the user.
+autonomous workflow in `docs/workflows/agent-task-workflow.md` requires this review before handoff.
+It also requires GitHub Codex review unless that review cannot run because the Codex account limit
+is exhausted. That workflow defines the evidence and disclosure for the skip.
 
 Review the change as both a defect finder and a maintainability gate. Prioritize correctness,
 clear ownership, and actionable findings over summaries, praise, personal style preferences, or

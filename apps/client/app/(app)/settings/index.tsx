@@ -138,6 +138,15 @@ export default function SettingsScreen() {
       </View>
 
       <View style={styles.section}>
+        <SectionHeader title={t('sections.whatsNew')} />
+        <SettingsRow
+          description={t('whatsNew.entryDescription')}
+          onPress={() => router.push('/settings/whats-new')}
+          title={t('whatsNew.entryTitle')}
+        />
+      </View>
+
+      <View style={styles.section}>
         <SectionHeader title={t('sections.about')} />
         <SettingsRow
           description={t('about.entryDescription')}

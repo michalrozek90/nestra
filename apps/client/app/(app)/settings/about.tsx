@@ -11,8 +11,6 @@ import { SectionHeader } from '@/components/section-header';
 import { runtimeConfig } from '@/config/runtime-config';
 import { useApplicationUpdate } from '@/features/application-update/application-update-provider';
 import type { ApplicationUpdateState } from '@/features/application-update/application-update.types';
-import { ReleaseNotesHistory } from '@/features/releases/components/release-notes-history';
-import { getReleaseNotesNewestFirst } from '@/features/releases/release-notes';
 import { spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
 
@@ -58,7 +56,6 @@ export default function AboutScreen() {
   const router = useRouter();
   const theme = useNestraTheme();
   const applicationVersion = runtimeConfig.applicationVersion;
-  const releaseNotes = getReleaseNotesNewestFirst(applicationVersion);
   const { state, checkForUpdate, installAvailableUpdate } = useApplicationUpdate();
   const isUpdateOperationActive =
     state.status === 'checking' || state.status === 'downloading' || state.status === 'installing';
@@ -100,7 +97,7 @@ export default function AboutScreen() {
       {state.status !== 'unsupported' ? (
         <View style={styles.section}>
           <SectionHeader title={t('update.settingsTitle')} />
-          <Text style={[styles.historyDescription, { color: theme.colors.onSurfaceVariant }]}>
+          <Text style={[styles.supportingCopy, { color: theme.colors.onSurfaceVariant }]}>
             {getUpdateStatusText(state, t)}
           </Text>
           <View style={styles.updateActions}>
@@ -124,17 +121,6 @@ export default function AboutScreen() {
           </View>
         </View>
       ) : null}
-
-      <View style={styles.section}>
-        <SectionHeader title={t('about.historyTitle')} />
-        <Text style={[styles.historyDescription, { color: theme.colors.onSurfaceVariant }]}>
-          {t('about.historyDescription')}
-        </Text>
-        <ReleaseNotesHistory
-          initiallyExpandedVersion={applicationVersion}
-          releaseNotes={releaseNotes}
-        />
-      </View>
     </Screen>
   );
 }
@@ -143,7 +129,7 @@ const styles = StyleSheet.create({
   hero: {
     gap: spacing.sm,
   },
-  historyDescription: {
+  supportingCopy: {
     ...typography.supporting,
   },
   productName: {

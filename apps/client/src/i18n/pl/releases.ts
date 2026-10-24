@@ -6,8 +6,6 @@ export const plReleases = {
     productName: 'Nestra',
     versionLabel: 'Wersja {{version}}',
     creatorCredit: 'Autor: Michał Rożek',
-    historyTitle: 'Historia nowości',
-    historyDescription: 'Przeglądaj wybrane informacje o produkcie dla każdej wydanej wersji.',
     actions: {
       back: 'Wstecz',
     },
@@ -20,6 +18,12 @@ export const plReleases = {
   whatsNew: {
     title: 'Co nowego',
     dismiss: 'Rozumiem',
+    viewAll: 'Zobacz wszystkie aktualizacje',
+    earlier: 'Wcześniejsze wersje',
+    versionSummary: 'Wersja {{version}}, wydana {{date}}',
+    actions: {
+      back: 'Wstecz',
+    },
   },
   update: {
     title: 'Aktualizacja Nestry',
