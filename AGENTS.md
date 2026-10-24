@@ -405,6 +405,9 @@ A work item is ready for the user's review only when:
 - strict type checking passes;
 - required builds pass;
 - relevant documentation and ADRs are updated;
+- the internal agent review defined in `docs/code-review.md` is complete;
+- GitHub Codex Code Review has completed against the exact current pull-request head;
+- every GitHub Codex review comment has an evidence-backed reply and its thread is resolved; and
 - no blocking TODO remains.
 
 Passing these checks does not authorize the agent to close the issue or move it to `Done`.
