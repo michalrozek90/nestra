@@ -456,8 +456,10 @@ export type ReleaseChange = {
 export type ReleaseNote = {
   version: string;
   releaseDate: string;
-  titleTranslationKey: string;
-  changes: readonly ReleaseChange[];
+  changes: {
+    new: readonly ReleaseChange[];
+    fixes: readonly ReleaseChange[];
+  };
 };
 ```
 
