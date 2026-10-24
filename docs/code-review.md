@@ -185,10 +185,11 @@ Before reporting it:
   responsibility to an existing file.
 - Check whether the implementation satisfies the selected work item and active specification without
   adding unrelated functionality.
-- For a user-facing feature, improvement, or bug fix, verify that the same change updates the
-  curated in-app release notes in English and Polish under the anticipated Release Please version.
-  Report a missing, duplicated, misleading, or incorrectly versioned entry. Internal-only changes
-  do not require an in-app note.
+- Verify the explicit in-app release-note decision. Clearly notable user-facing outcomes must add
+  concise paired English and Polish copy to `Unreleased`; borderline outcomes must be proposed but
+  not committed without owner acceptance; minor polish and internal-only changes normally need no
+  entry. Report missing, duplicated, misleading, unpaired, or prematurely versioned copy, and any
+  modification or reassignment of released history.
 - Review user-facing release notes and `feat:` / `fix:` subjects as public product copy. They should
   state the visible outcome directly, read naturally and satisfyingly, avoid implementation-led
   wording, and use celebratory emphasis only when the feature is substantial enough to earn it.

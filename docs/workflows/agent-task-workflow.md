@@ -167,35 +167,36 @@ Use an existing task branch instead when resuming the same issue.
 
 ### Maintain the in-app release notes
 
-Before quality verification, decide whether the completed issue changes behavior that an application
-user can observe. A user-facing feature, improvement, or bug fix must update the curated in-app
-release notes in the same task branch and pull request. Documentation, CI, workflow, refactoring,
-and other internal-only changes do not require an in-app entry.
+Before quality verification, make exactly one explicit in-app release-note decision:
 
-For a required entry:
+- **Clearly notable:** add concise English and Polish copy to `Unreleased` in the same task branch
+  and pull request. This includes meaningful new capabilities, substantial improvements to common
+  workflows, visible data-safety, authentication, synchronization, privacy or reliability
+  improvements, noticeable performance improvements, and important broadly affecting fixes.
+- **Borderline:** do not commit an entry. Present exact proposed English and Polish copy to the
+  owner while the pull request is open.
+- **Not needed:** do not add an entry and state the short reason. Refactoring, tests, CI, build and
+  documentation work, minor visual or interaction polish, and unlikely internal edge cases normally
+  belong here.
 
-1. Read `.release-please-manifest.json`, `release-please-config.json`, and the Conventional Commits
-   since the latest release tag. Include the intended commit type for the current task when
-   anticipating the next Release Please version.
-2. Reuse the single pending release entry in
-   `apps/client/src/features/releases/release-notes.ts`. If the accumulated commits change the
-   anticipated target, for example from a patch to a minor release, move the pending notes to the
-   newly anticipated version instead of creating competing pending entries.
-3. Add a concise, user-oriented description of the outcome. Describe what became possible or what
-   was fixed, not implementation details, issue numbers, commit messages, or internal tooling.
-4. Classify every entry in exactly one group:
+For a clearly notable entry:
+
+1. Add one stable, descriptive change identifier to `unreleased` in
+   `apps/client/src/features/releases/release-notes-data.json`.
+2. Add the same identifier with concise copy to both
+   `apps/client/src/i18n/en/release-note-changes.json` and
+   `apps/client/src/i18n/pl/release-note-changes.json`.
+3. Describe the user outcome, not implementation details, issue numbers, commit messages, or
+   internal tooling. Most descriptions should be one sentence.
+4. Classify the entry in exactly one group:
    - `new` for a new user capability or a visible improvement;
    - `fixes` for behavior that was broken, unreliable, or visually incorrect.
 
-   Keep every version as a separate entry. The application always renders `new` entries before
-   `fixes` and shows every unseen version after an update, so never move older notes into the newest
-   version or remove released history.
-
-5. Update both `apps/client/src/i18n/en/releases.ts` and
-   `apps/client/src/i18n/pl/releases.ts`. Keep existing pending notes and avoid duplicate entries for
-   the same behavior.
-6. Use an explicitly planned publication date when one exists. Do not invent a release date merely
-   to complete the task; flag the missing date in the handoff so it can be set before publication.
+5. Preserve every existing `unreleased` item and all released history. Ordinary implementation work
+   must not guess the next version, add a publication date, or move entries into `released`.
+6. Run `pnpm check:release-notes` through `pnpm verify`. The check requires paired translations,
+   unique resolvable identifiers, valid newest-first released versions and dates, and unchanged
+   published history.
 
 Write both curated notes and release-ready `feat:` / `fix:` commit subjects in direct, satisfying
 language:
@@ -338,7 +339,11 @@ complete on the exact current pull-request head:
    - the exact reviewed head SHA;
    - verification result;
    - whether the internal or GitHub Codex review produced findings or additional commits;
-   - the main manual checks the user should perform.
+   - the main manual checks the user should perform; and
+   - a separate **In-app release notes** section in exactly one form:
+     - `Added` — list the exact English and Polish sentences committed in the pull request;
+     - `Proposed for your decision` — list the exact English and Polish sentences not committed;
+     - `Not needed` — give a short reason.
 
 The ready pull request is the user's review gate. The user may verify the application manually,
 inspect the code, or do both before approving the exact reviewed pull-request head with `LGTM`.

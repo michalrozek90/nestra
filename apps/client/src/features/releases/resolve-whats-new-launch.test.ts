@@ -63,6 +63,15 @@ describe('resolveWhatsNewLaunch', () => {
     expect(launchState.isVisible).toBe(true);
   });
 
+  it('does not expose Unreleased notes before release preparation promotes them', async () => {
+    const { dependencies } = createMemoryDependencies('0.3.0');
+
+    const launchState = await resolveWhatsNewLaunch('0.4.0', dependencies);
+
+    expect(launchState.isVisible).toBe(false);
+    expect(launchState.releaseNotes).toEqual([]);
+  });
+
   it('keeps the dialog hidden when the first-launch baseline cannot be stored', async () => {
     const storageError = new Error('storage unavailable');
     const onPreferenceStorageError = vi.fn();

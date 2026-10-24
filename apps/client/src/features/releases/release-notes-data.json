@@ -1,0 +1,56 @@
+{
+  "unreleased": {
+    "new": ["quietFirstLaunch"],
+    "fixes": [
+      "desktopGoogleAuthentication",
+      "slowStartupAuthentication",
+      "stableNotesActions",
+      "noteEditorBackTarget"
+    ]
+  },
+  "released": [
+    {
+      "version": "0.3.0",
+      "releaseDate": "2026-08-27",
+      "changes": {
+        "new": [
+          "googleAuthentication",
+          "completeReleaseHistory",
+          "creatorCredit",
+          "developerDiagnosticsHealth"
+        ],
+        "fixes": [
+          "serviceOutageErrors",
+          "sessionRequestIsolation",
+          "signOutRefreshRace",
+          "googleAccountLinking",
+          "androidGoogleReturn",
+          "googleFirstSignInReliability",
+          "newNoteDraftMigration",
+          "updatePromptCoordination"
+        ]
+      }
+    },
+    {
+      "version": "0.2.0",
+      "releaseDate": "2026-07-31",
+      "changes": {
+        "new": ["desktopUpdates", "diagnosticsBack", "releaseHistory"],
+        "fixes": ["narrowLayout", "centeredNavigation"]
+      }
+    },
+    {
+      "version": "0.1.0",
+      "releaseDate": "2026-07-29",
+      "changes": {
+        "new": ["titleOnlyNotes"],
+        "fixes": [
+          "responsiveDialogs",
+          "editorFocus",
+          "patientSessionRestore",
+          "packagedDesktopAssets"
+        ]
+      }
+    }
+  ]
+}

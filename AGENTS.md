@@ -350,10 +350,13 @@ Do not silently ignore caught errors. Handle them, convert them into an expected
 
 - Write code, comments, technical documentation, commit messages, and ADRs in English.
 - Comments should explain why, not restate what the code does.
-- Include every user-facing feature, improvement, or bug fix in the curated in-app release notes as
-  part of the same change. Update both English and Polish content under the anticipated Release
-  Please version. Internal-only changes do not require an in-app note. The autonomous workflow in
-  `docs/workflows/agent-task-workflow.md` defines the detailed procedure.
+- Make an explicit curated in-app release-note decision for every implementation change. Clearly
+  notable user-facing outcomes belong in the shared `Unreleased` collection with concise English
+  and Polish copy in the same pull request. Borderline outcomes must be proposed to the owner with
+  exact copy but not committed without acceptance. Minor polish, unlikely internal edge cases,
+  refactoring, tests, CI, build work, and documentation normally do not need an entry. The
+  autonomous workflow in `docs/workflows/agent-task-workflow.md` defines the thresholds, files, and
+  mandatory handoff disclosure.
 - Write user-facing release copy in direct, satisfying language that names the outcome immediately.
   Prefer natural statements such as `Nestra now has automatic updates` or `You can now...` over
   implementation-led phrases such as `add`, `implement`, `introduce`, or `launch`. Keep claims

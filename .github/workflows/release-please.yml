@@ -205,12 +205,27 @@ jobs:
             exit 1
           fi
 
-          pnpm exec prettier CHANGELOG.md --write
+          release_date="$(date -u +%F)"
+          node scripts/promote-release-notes.mjs \
+            --version="${release_version}" \
+            --base-version="${base_version}" \
+            --date="${release_date}"
+          pnpm exec prettier \
+            CHANGELOG.md \
+            apps/client/src/features/releases/release-notes-data.json \
+            --write
           pnpm check:product-version
+          pnpm check:release-notes -- \
+            --candidate-version="${release_version}" \
+            --baseline-ref="${MAIN_SHA}"
 
-          if ! git diff --quiet -- CHANGELOG.md; then
-            git add CHANGELOG.md
-            git commit -m "chore: format generated changelog"
+          if ! git diff --quiet -- \
+            CHANGELOG.md \
+            apps/client/src/features/releases/release-notes-data.json; then
+            git add \
+              CHANGELOG.md \
+              apps/client/src/features/releases/release-notes-data.json
+            git commit -m "chore(release): prepare curated notes for ${release_version}"
           fi
 
           if [ "$(git rev-parse HEAD)" != "$(git rev-parse "origin/${RELEASE_PR_BRANCH}")" ]; then
