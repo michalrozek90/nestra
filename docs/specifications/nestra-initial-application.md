@@ -1684,8 +1684,10 @@ Main Settings screen:
 
 - authenticated email;
 - Sign out;
-- a separate red Danger Zone with a Delete account action that requires confirmation, then deletes
-  the account before clearing local tokens, note drafts, and cached user state.
+- a separate red Danger Zone at the bottom of Settings. Delete account continues only after the
+  person types the confirmation phrase shown in the dialog. The client does not start deletion when
+  that phrase does not match. After the server confirms success, the client clears local tokens,
+  note drafts, and cached user state.
 
 Sign out attempts API logout, then always clears local tokens and auth state and navigates to login.
 

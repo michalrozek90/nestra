@@ -93,8 +93,6 @@ export default function SettingsScreen() {
         />
       </View>
 
-      <DeleteAccountSection />
-
       <View style={styles.section}>
         <SectionHeader title={t('sections.language')} />
         <SettingsRadioGroup
@@ -168,6 +166,8 @@ export default function SettingsScreen() {
           />
         </View>
       ) : null}
+
+      <DeleteAccountSection />
     </Screen>
   );
 }

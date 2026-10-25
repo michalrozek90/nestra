@@ -14,9 +14,11 @@ shopping data, server-side preferences, and queued notifications do not exist ye
 
 ## Decision
 
-Settings shows a separate Danger Zone. Delete account asks for confirmation and does not require a
-second sign-in. The API deletes the user id from the verified access token and never accepts a
-client-supplied user id.
+Settings shows a separate Danger Zone at the bottom of the screen. Delete account asks the person
+to type the confirmation phrase shown in the dialog. The deletion does not start unless that phrase
+matches, including when the confirm control is invoked directly, and it does not require a second
+sign-in. Later Danger Zone actions use the same typed confirmation. The API deletes the user id
+from the verified access token and never accepts a client-supplied user id.
 
 The client calls deletion before clearing local state. After the server confirms success, it removes
 auth tokens, that user's note drafts, and the in-memory query cache, then returns to the login
