@@ -4,7 +4,7 @@ import { Text } from 'react-native-paper';
 import { z } from 'zod';
 
 import { Button } from '@/components/button';
-import { Loader } from '@/components/loader';
+import { LoadingScreen } from '@/components/loading-screen';
 import { Screen } from '@/components/screen';
 import { getNoteErrorTranslationKey } from '@/features/notes/api/note-error';
 import { useNoteQuery } from '@/features/notes/api/note-queries';
@@ -32,11 +32,7 @@ export default function ExistingNoteScreen() {
   }
 
   if (noteQuery.isPending) {
-    return (
-      <Screen>
-        <Loader accessibilityLabel={t('editor.loading')} />
-      </Screen>
-    );
+    return <LoadingScreen accessibilityLabel={t('editor.loading')} />;
   }
 
   if (noteQuery.isError) {

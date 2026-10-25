@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
@@ -21,6 +21,19 @@ import { useNestraTheme } from '@/theme/themes';
 
 type InitializationStatus = 'loading' | 'ready' | 'failed';
 
+function RootStackNavigator() {
+  const theme = useNestraTheme();
+
+  return (
+    <Stack
+      screenOptions={{
+        contentStyle: { backgroundColor: theme.colors.background },
+        headerShown: false,
+      }}
+    />
+  );
+}
+
 function AuthenticatedRootNavigator() {
   const theme = useNestraTheme();
   const { isInitialized: isAppearanceInitialized } = useAppearance();
@@ -38,18 +51,12 @@ function AuthenticatedRootNavigator() {
     );
   }
 
-  return (
-    <Stack
-      screenOptions={{
-        contentStyle: { backgroundColor: theme.colors.background },
-        headerShown: false,
-      }}
-    />
-  );
+  return <RootStackNavigator />;
 }
 
 function ClientBootstrap() {
   const theme = useNestraTheme();
+  const pathname = usePathname();
   const [bootstrapStatus, setBootstrapStatus] = useState<InitializationStatus>('loading');
   const [initializationAttempt, setInitializationAttempt] = useState(0);
 
@@ -103,6 +110,10 @@ function ClientBootstrap() {
         />
       </View>
     );
+  }
+
+  if (pathname === '/playground') {
+    return <RootStackNavigator />;
   }
 
   return (

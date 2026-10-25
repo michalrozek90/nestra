@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Button as PaperButton, Icon, Text } from 'react-native-paper';
 
 import { ActionDialog } from '@/components/action-dialog';
-import { Loader } from '@/components/loader';
+import { LoadingScreen } from '@/components/loading-screen';
 import { Screen } from '@/components/screen';
 import { useAuth } from '@/infrastructure/auth/auth-provider';
 import { radii, sizes, spacing, typography } from '@/theme/tokens';
@@ -44,11 +44,7 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
   const validationErrors = useMemo(() => validateNoteEditorValue(editor.value), [editor.value]);
 
   if (!user || !editor.isInitialized) {
-    return (
-      <Screen contentStyle={styles.centered} isScrollable={false}>
-        <Loader accessibilityLabel={t('editor.loading')} />
-      </Screen>
-    );
+    return <LoadingScreen accessibilityLabel={t('editor.loading')} />;
   }
 
   const documentError = hasEditedDocument ? validationErrors.document : undefined;
@@ -140,11 +136,6 @@ export function NoteEditorScreen({ mode, note }: NoteEditorScreenProps) {
 }
 
 const styles = StyleSheet.create({
-  centered: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-  },
   documentSurface: {
     alignSelf: 'center',
     flex: 1,
