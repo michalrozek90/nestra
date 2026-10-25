@@ -53,6 +53,9 @@ export function getNoteErrorTranslationKey(error: unknown): NoteErrorTranslation
       case 'AUTH_REAUTHENTICATION_FAILED':
       case 'INTERNAL_SERVER_ERROR':
       case 'ROUTE_NOT_FOUND':
+      case 'SHOPPING_CATEGORY_BUILT_IN':
+      case 'SHOPPING_CATEGORY_NAME_ALREADY_EXISTS':
+      case 'SHOPPING_CATEGORY_NOT_FOUND':
         return 'errors.unexpected';
     }
   }
