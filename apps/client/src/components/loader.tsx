@@ -254,6 +254,7 @@ export function Loader({
 
   return (
     <View
+      accessible
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="progressbar"
       accessibilityState={{ busy: animating }}
