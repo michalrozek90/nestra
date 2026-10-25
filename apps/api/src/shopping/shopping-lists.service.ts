@@ -7,6 +7,7 @@ import {
   type AddShoppingListItem,
   type ShoppingList,
   type ShoppingListSummaryList,
+  type UpdateShoppingList,
 } from '@nestra/contracts';
 import { DataSource, In, QueryFailedError, type Repository } from 'typeorm';
 
@@ -17,6 +18,7 @@ import { ShoppingListItemEntity } from './entities/shopping-list-item.entity';
 import { ShoppingListEntity } from './entities/shopping-list.entity';
 import { ShoppingProductEntity } from './entities/shopping-product.entity';
 import { ShoppingProductsService } from './shopping-products.service';
+import { ShoppingStoreProfilesService } from './shopping-store-profiles.service';
 
 @Injectable()
 export class ShoppingListsService {
@@ -28,6 +30,7 @@ export class ShoppingListsService {
     @InjectRepository(ShoppingProductEntity)
     private readonly shoppingProductRepository: Repository<ShoppingProductEntity>,
     private readonly shoppingProductsService: ShoppingProductsService,
+    private readonly shoppingStoreProfilesService: ShoppingStoreProfilesService,
     private readonly databaseConnectionService: DatabaseConnectionService,
     private readonly dataSource: DataSource,
   ) {}
@@ -57,6 +60,7 @@ export class ShoppingListsService {
     return lists.map((list) => ({
       id: list.id,
       name: list.name,
+      storeProfileId: list.storeProfileId,
       itemCount: Number(itemCountByListId.get(list.id) ?? 0),
       createdAt: toIsoDateTimeString(list.createdAt),
       updatedAt: toIsoDateTimeString(list.updatedAt),
@@ -69,6 +73,7 @@ export class ShoppingListsService {
       this.shoppingListRepository.create({
         userId,
         name: this.parseListName(name),
+        storeProfileId: null,
       }),
     );
 
@@ -88,13 +93,40 @@ export class ShoppingListsService {
   }
 
   async renameList(userId: string, listId: string, name: string): Promise<ShoppingList> {
+    return this.updateList(userId, listId, { name });
+  }
+
+  async updateList(
+    userId: string,
+    listId: string,
+    listInput: UpdateShoppingList,
+  ): Promise<ShoppingList> {
     await this.databaseConnectionService.verifyConnection();
-    const normalizedName = this.parseListName(name);
+    const normalizedName =
+      listInput.name === undefined ? undefined : this.parseListName(listInput.name);
 
     return this.dataSource.transaction(async (entityManager) => {
+      if (typeof listInput.storeProfileId === 'string') {
+        await this.shoppingStoreProfilesService.rememberOwnedProfileSelection(
+          entityManager,
+          userId,
+          listInput.storeProfileId,
+        );
+      }
+
       const listRepository = entityManager.getRepository(ShoppingListEntity);
       const list = await this.lockOwnedList(listRepository, userId, listId);
-      list.name = normalizedName;
+
+      if (normalizedName !== undefined) {
+        list.name = normalizedName;
+      }
+
+      if (listInput.storeProfileId === null) {
+        list.storeProfileId = null;
+      } else if (listInput.storeProfileId !== undefined) {
+        list.storeProfileId = listInput.storeProfileId;
+      }
+
       await listRepository.save(list);
 
       return this.readOwnedList(
@@ -327,6 +359,7 @@ export class ShoppingListsService {
     return {
       id: list.id,
       name: list.name,
+      storeProfileId: list.storeProfileId,
       items,
       createdAt: toIsoDateTimeString(list.createdAt),
       updatedAt: toIsoDateTimeString(list.updatedAt),

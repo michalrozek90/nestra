@@ -110,10 +110,10 @@ export class ShoppingListsController {
     @Param() parameters: ShoppingListRouteParametersDto,
     @Body() listInput: UpdateShoppingListDto,
   ): Promise<ShoppingList> {
-    return this.shoppingListsService.renameList(
+    return this.shoppingListsService.updateList(
       this.getAuthenticatedUserId(request),
       parameters.listId,
-      listInput.name,
+      listInput,
     );
   }
 

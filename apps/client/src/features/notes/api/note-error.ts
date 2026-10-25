@@ -61,6 +61,7 @@ export function getNoteErrorTranslationKey(error: unknown): NoteErrorTranslation
       case 'SHOPPING_LIST_ITEM_LIMIT_REACHED':
       case 'SHOPPING_LIST_NOT_FOUND':
       case 'SHOPPING_LIST_QUANTITY_EXCEEDED':
+      case 'SHOPPING_STORE_PROFILE_NOT_FOUND':
         return 'errors.unexpected';
     }
   }

@@ -18,6 +18,10 @@ import { DatabaseConnectionService } from '../database/database-connection.servi
 import { ShoppingCategoryEntity } from './entities/shopping-category.entity';
 import { ShoppingProductEntity } from './entities/shopping-product.entity';
 import { isShoppingCategoryNameConflict } from './shopping-category-name-conflict';
+import {
+  appendCategoryToOwnedStoreProfiles,
+  removeCategoryFromStoreProfiles,
+} from './shopping-store-profile-order';
 
 @Injectable()
 export class ShoppingCategoriesService {
@@ -51,18 +55,22 @@ export class ShoppingCategoriesService {
     const nameKey = this.parseCategoryNameKey(normalizedName);
 
     try {
-      const savedCategory = await this.shoppingCategoryRepository.save(
-        this.shoppingCategoryRepository.create({
-          userId,
-          kind: 'custom',
-          builtInKey: null,
-          name: normalizedName,
-          nameKey,
-          builtInPosition: null,
-        }),
-      );
+      return await this.dataSource.transaction(async (entityManager) => {
+        const categoryRepository = entityManager.getRepository(ShoppingCategoryEntity);
+        const savedCategory = await categoryRepository.save(
+          categoryRepository.create({
+            userId,
+            kind: 'custom',
+            builtInKey: null,
+            name: normalizedName,
+            nameKey,
+            builtInPosition: null,
+          }),
+        );
+        await appendCategoryToOwnedStoreProfiles(entityManager, userId, savedCategory.id);
 
-      return this.toShoppingCategory(savedCategory);
+        return this.toShoppingCategory(savedCategory);
+      });
     } catch (error: unknown) {
       if (isShoppingCategoryNameConflict(error)) {
         throw this.createNameConflictException();
@@ -116,8 +124,9 @@ export class ShoppingCategoriesService {
         categoryId,
       );
 
-      // Store-profile cleanup must join this transaction once those rows exist.
-      // Remembered products move to Other before the category row is removed.
+      // Remembered products move to Other and store-profile rows drop this category
+      // before the category row is removed.
+      await removeCategoryFromStoreProfiles(entityManager, userId, ownedCategory.id);
       await entityManager
         .createQueryBuilder()
         .update(ShoppingProductEntity)

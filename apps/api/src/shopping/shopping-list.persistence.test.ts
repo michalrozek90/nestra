@@ -13,8 +13,12 @@ import { ShoppingCategoryEntity } from './entities/shopping-category.entity';
 import { ShoppingListItemEntity } from './entities/shopping-list-item.entity';
 import { ShoppingListEntity } from './entities/shopping-list.entity';
 import { ShoppingProductEntity } from './entities/shopping-product.entity';
+import { ShoppingStorePreferenceEntity } from './entities/shopping-store-preference.entity';
+import { ShoppingStoreProfileCategoryEntity } from './entities/shopping-store-profile-category.entity';
+import { ShoppingStoreProfileEntity } from './entities/shopping-store-profile.entity';
 import { ShoppingListsService } from './shopping-lists.service';
 import { ShoppingProductsService } from './shopping-products.service';
+import { ShoppingStoreProfilesService } from './shopping-store-profiles.service';
 
 const DEFAULT_ADMIN_DATABASE_URL = 'postgresql://nestra:nestra_dev_password@localhost:5432/nestra';
 const TEST_DATABASE_NAME = 'nestra_shopping_list_test';
@@ -110,11 +114,19 @@ describe('shopping list persistence', { concurrency: false }, () => {
       databaseConnectionService,
       dataSource,
     );
+    const shoppingStoreProfilesService = new ShoppingStoreProfilesService(
+      dataSource.getRepository(ShoppingStoreProfileEntity),
+      dataSource.getRepository(ShoppingStoreProfileCategoryEntity),
+      dataSource.getRepository(ShoppingStorePreferenceEntity),
+      databaseConnectionService,
+      dataSource,
+    );
     shoppingListsService = new ShoppingListsService(
       dataSource.getRepository(ShoppingListEntity),
       dataSource.getRepository(ShoppingListItemEntity),
       dataSource.getRepository(ShoppingProductEntity),
       shoppingProductsService,
+      shoppingStoreProfilesService,
       databaseConnectionService,
       dataSource,
     );
