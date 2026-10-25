@@ -26,6 +26,7 @@ export interface NoteDraftStorage {
   remove(userId: string, identity: NoteDraftIdentity): Promise<void>;
   move(userId: string, from: NoteDraftIdentity, to: NoteDraftIdentity): Promise<void>;
   listExistingNoteIds(userId: string): Promise<readonly string[]>;
+  clearForUser(userId: string): Promise<void>;
   probeAvailability(): Promise<boolean>;
 }
 
@@ -61,6 +62,16 @@ function toCurrentNoteDraft(storedDraft: z.infer<typeof storedNoteDraftSchema>):
 }
 
 class AsyncStorageNoteDraftStorage implements NoteDraftStorage {
+  private readonly closedUserIds = new Set<string>();
+  private readonly operationTails = new Map<string, Promise<void>>();
+
+  private enqueue(userId: string, operation: () => Promise<void>): Promise<void> {
+    const previousOperation = this.operationTails.get(userId) ?? Promise.resolve();
+    const nextOperation = previousOperation.then(operation, operation);
+    this.operationTails.set(userId, nextOperation);
+    return nextOperation;
+  }
+
   public async read(userId: string, identity: NoteDraftIdentity): Promise<NoteDraft | null> {
     const serializedDraft = await AsyncStorage.getItem(getDraftKey(userId, identity));
     if (!serializedDraft) {
@@ -76,10 +87,15 @@ class AsyncStorageNoteDraftStorage implements NoteDraftStorage {
   }
 
   public async write(userId: string, identity: NoteDraftIdentity, draft: NoteDraft): Promise<void> {
-    await AsyncStorage.setItem(
-      getDraftKey(userId, identity),
-      JSON.stringify(noteDraftSchema.parse(draft)),
-    );
+    const serializedDraft = JSON.stringify(noteDraftSchema.parse(draft));
+
+    await this.enqueue(userId, async () => {
+      if (this.closedUserIds.has(userId)) {
+        return;
+      }
+
+      await AsyncStorage.setItem(getDraftKey(userId, identity), serializedDraft);
+    });
   }
 
   public async remove(userId: string, identity: NoteDraftIdentity): Promise<void> {
@@ -87,14 +103,20 @@ class AsyncStorageNoteDraftStorage implements NoteDraftStorage {
   }
 
   public async move(userId: string, from: NoteDraftIdentity, to: NoteDraftIdentity): Promise<void> {
-    const sourceKey = getDraftKey(userId, from);
-    const targetKey = getDraftKey(userId, to);
-    const serializedDraft = await AsyncStorage.getItem(sourceKey);
+    await this.enqueue(userId, async () => {
+      if (this.closedUserIds.has(userId)) {
+        return;
+      }
 
-    if (serializedDraft) {
-      await AsyncStorage.setItem(targetKey, serializedDraft);
-    }
-    await AsyncStorage.removeItem(sourceKey);
+      const sourceKey = getDraftKey(userId, from);
+      const targetKey = getDraftKey(userId, to);
+      const serializedDraft = await AsyncStorage.getItem(sourceKey);
+
+      if (serializedDraft) {
+        await AsyncStorage.setItem(targetKey, serializedDraft);
+      }
+      await AsyncStorage.removeItem(sourceKey);
+    });
   }
 
   public async listExistingNoteIds(userId: string): Promise<readonly string[]> {
@@ -108,6 +130,24 @@ class AsyncStorageNoteDraftStorage implements NoteDraftStorage {
 
       const parsedNoteId = noteIdSchema.safeParse(storageKey.slice(draftKeyPrefix.length));
       return parsedNoteId.success ? [parsedNoteId.data] : [];
+    });
+  }
+
+  public async clearForUser(userId: string): Promise<void> {
+    this.closedUserIds.add(userId);
+
+    await this.enqueue(userId, async () => {
+      const draftKeyPrefix = `nestra.notes.drafts.${userId}.`;
+      const storageKeys = await AsyncStorage.getAllKeys();
+      const userDraftKeys = storageKeys.filter((storageKey) =>
+        storageKey.startsWith(draftKeyPrefix),
+      );
+
+      if (userDraftKeys.length === 0) {
+        return;
+      }
+
+      await AsyncStorage.multiRemove(userDraftKeys);
     });
   }
 

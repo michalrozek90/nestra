@@ -6,7 +6,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { registerAuthenticationFailureHandler } from '@/infrastructure/api/api-client';
 import { verifyApiReadiness } from '@/infrastructure/api/api-health';
 import { logger } from '@/infrastructure/logging/logger';
-import { logout, refreshSession } from './auth-api';
+import { deleteAccount as deleteAccountRequest, logout, refreshSession } from './auth-api';
 import { isRecoverableConnectionError } from './auth-error';
 import {
   clearAuthenticationSessionTokens,
@@ -25,6 +25,7 @@ type AuthContextValue = {
   readonly activateAuthentication: (user: PublicUser) => void;
   readonly discardAuthentication: () => Promise<void>;
   readonly completeAuthentication: (session: AuthenticationSessionResponse) => Promise<void>;
+  readonly deleteAccount: () => Promise<void>;
   readonly signOut: () => Promise<void>;
 };
 
@@ -45,6 +46,10 @@ function wait(durationMs: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, durationMs);
   });
+}
+
+function isAuthSessionQueryKey(queryKey: readonly unknown[]): boolean {
+  return queryKey[0] === AUTH_SESSION_QUERY_KEY[0] && queryKey[1] === AUTH_SESSION_QUERY_KEY[1];
 }
 
 async function restoreAuthenticationSession(): Promise<PublicUser | null> {
@@ -172,6 +177,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
     clearSessionState();
   }, [clearSessionState]);
 
+  const deleteAccount = useCallback(async () => {
+    await deleteAccountRequest();
+    await clearStoredTokensSafely();
+    // Null the observed session before dropping other queries. `clear()` detaches that
+    // observer, which then keeps the previous user and leaves protected screens mounted.
+    // The yield lets React commit the redirect so those screens unmount before removal;
+    // removing an observed query refetches it.
+    client.setQueryData<PublicUser | null>(AUTH_SESSION_QUERY_KEY, null);
+    await client.cancelQueries();
+    await wait(0);
+    client.removeQueries({
+      predicate: (query) => !isAuthSessionQueryKey(query.queryKey),
+    });
+  }, [client]);
+
   const signOut = useCallback(async () => {
     if (isSigningOut) {
       return;
@@ -203,11 +223,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
       activateAuthentication,
       discardAuthentication,
       completeAuthentication,
+      deleteAccount,
       signOut,
     }),
     [
       activateAuthentication,
       completeAuthentication,
+      deleteAccount,
       discardAuthentication,
       isSigningOut,
       signOut,

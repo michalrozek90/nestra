@@ -63,6 +63,10 @@ export async function logout(request: LogoutRequest): Promise<void> {
   await apiClient.post('/auth/logout', logoutRequestSchema.parse(request), authRequestConfig);
 }
 
+export async function deleteAccount(): Promise<void> {
+  await apiClient.delete('/auth/account', authRequestConfig);
+}
+
 export async function startGoogleSignIn(
   request: GoogleAuthStartRequest,
 ): Promise<GoogleAuthStartResponse> {

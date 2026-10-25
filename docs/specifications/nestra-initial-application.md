@@ -646,7 +646,9 @@ notes
 Use a local TypeORM naming strategy or explicit mappings. Do not add an unmaintained naming-strategy package merely to avoid small local code.
 
 Deleting a user cascades to refresh sessions, external identities, bound external-auth transactions,
-and notes even though account deletion is not yet exposed.
+and notes. Authenticated account deletion is available from Settings and deletes only the user
+identified by the access token. An access token is accepted only while its refresh session still
+exists and has not been revoked.
 
 Docker Compose must provide a named volume, health check, documented port, and development-only credentials.
 
@@ -1681,7 +1683,11 @@ Main Settings screen:
 ### Account
 
 - authenticated email;
-- Sign out.
+- Sign out;
+- a separate red Danger Zone at the bottom of Settings. Delete account continues only after the
+  person types the confirmation phrase shown in the dialog. The client does not start deletion when
+  that phrase does not match. After the server confirms success, the client clears local tokens,
+  note drafts, and cached user state.
 
 Sign out attempts API logout, then always clears local tokens and auth state and navigates to login.
 
@@ -1730,7 +1736,7 @@ Future milestone:
 - dependency scanning;
 - automated secret rotation and advanced production secret-management controls;
 - cookie-based production web auth;
-- account deletion and session management;
+- session management beyond revoking sessions during account deletion;
 - external security review.
 
 `0.1.0` must still include a CORS allow-list, strong JWT secret validation, managed deployment

@@ -1,6 +1,7 @@
 {
   "quietFirstLaunch": "Zobaczysz tylko aktualizacje, które Cię ominęły.",
   "whatsNewHistory": "Starsze aktualizacje są w \"Co nowego\" w Ustawieniach.",
+  "deleteAccount": "W \"Ustawieniach\" możesz trwale usunąć konto.",
   "desktopGoogleAuthentication": "Teraz możesz logować się za pomocą Google!",
   "slowStartupAuthentication": "Jak start chwilę trwa, logowanie poczeka.",
   "googleAuthentication": "Możesz teraz logować się lub utworzyć konto Nestra przez Google na każdej obsługiwanej platformie, w tym w aplikacji Windows, nadal zachowując dostęp za pomocą hasła.",

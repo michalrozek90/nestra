@@ -17,6 +17,7 @@ import { ExternalAuthTransactionMaintenanceService } from './external-auth-trans
 import { GoogleAuthService } from './google-auth.service';
 import { GOOGLE_OAUTH_CLIENT, GoogleOAuthClientService } from './google-oauth.client';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { RefreshSessionAccessService } from './refresh-session-access.service';
 import { PasswordService } from './password.service';
 
 @Module({
@@ -41,12 +42,18 @@ import { PasswordService } from './password.service';
     PasswordService,
     AccessTokenService,
     JwtAuthGuard,
+    RefreshSessionAccessService,
     ExternalAuthIdentityService,
     ExternalAuthTransactionMaintenanceService,
     GoogleAuthService,
     GoogleOAuthClientService,
     { provide: GOOGLE_OAUTH_CLIENT, useExisting: GoogleOAuthClientService },
   ],
-  exports: [AccessTokenService, JwtAuthGuard, ExternalAuthIdentityService],
+  exports: [
+    AccessTokenService,
+    JwtAuthGuard,
+    ExternalAuthIdentityService,
+    RefreshSessionAccessService,
+  ],
 })
 export class AuthModule {}
