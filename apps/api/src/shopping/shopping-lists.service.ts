@@ -5,19 +5,23 @@ import {
   SHOPPING_LIST_QUANTITY_MAX,
   shoppingListNameSchema,
   type AddShoppingListItem,
+  type ApplyShoppingListPresets,
   type ShoppingList,
   type ShoppingListSummaryList,
   type UpdateShoppingList,
   type UpdateShoppingListItem,
 } from '@nestra/contracts';
-import { DataSource, In, QueryFailedError, type Repository } from 'typeorm';
+import { DataSource, In, QueryFailedError, type EntityManager, type Repository } from 'typeorm';
 
 import { ApiException } from '../common/api.exception';
 import { toIsoDateTimeString } from '../common/date-time';
 import { DatabaseConnectionService } from '../database/database-connection.service';
 import { ShoppingListItemEntity } from './entities/shopping-list-item.entity';
 import { ShoppingListEntity } from './entities/shopping-list.entity';
+import { ShoppingPresetEntryEntity } from './entities/shopping-preset-entry.entity';
+import { ShoppingPresetEntity } from './entities/shopping-preset.entity';
 import { ShoppingProductEntity } from './entities/shopping-product.entity';
+import { ShoppingStoreProfileCategoryEntity } from './entities/shopping-store-profile-category.entity';
 import { ShoppingProductsService } from './shopping-products.service';
 import { ShoppingStoreProfilesService } from './shopping-store-profiles.service';
 
@@ -261,6 +265,143 @@ export class ShoppingListsService {
     });
   }
 
+  async applyPresets(
+    userId: string,
+    listId: string,
+    presetInput: ApplyShoppingListPresets,
+  ): Promise<ShoppingList> {
+    await this.databaseConnectionService.verifyConnection();
+
+    return this.dataSource.transaction(async (entityManager) => {
+      const listRepository = entityManager.getRepository(ShoppingListEntity);
+      const itemRepository = entityManager.getRepository(ShoppingListItemEntity);
+      const list = await this.lockOwnedList(listRepository, userId, listId);
+      const items = await itemRepository.find({
+        where: { listId: list.id },
+        lock: { mode: 'pessimistic_write' },
+        order: { position: 'ASC', id: 'ASC' },
+      });
+      const applications = await this.readPresetApplications(
+        entityManager,
+        userId,
+        presetInput.presetIds,
+      );
+      const productIds = [
+        ...new Set([
+          ...items.map((item) => item.productId),
+          ...applications.map((application) => application.productId),
+        ]),
+      ];
+      const products =
+        productIds.length === 0
+          ? []
+          : await entityManager.getRepository(ShoppingProductEntity).find({
+              where: { userId, id: In(productIds) },
+            });
+      const productsById = new Map(products.map((product) => [product.id, product]));
+      const quantityByProductId = new Map(items.map((item) => [item.productId, item.quantity]));
+
+      for (const application of applications) {
+        if (!productsById.has(application.productId)) {
+          throw new ApiException(
+            'SHOPPING_PRODUCT_NOT_FOUND',
+            'The remembered product is missing or is not owned by the authenticated user.',
+            HttpStatus.NOT_FOUND,
+          );
+        }
+
+        const nextQuantity =
+          (quantityByProductId.get(application.productId) ?? 0) + application.quantity;
+
+        if (nextQuantity > SHOPPING_LIST_QUANTITY_MAX) {
+          throw new ApiException(
+            'SHOPPING_LIST_QUANTITY_EXCEEDED',
+            'The shopping-list quantity cannot exceed 999.',
+            HttpStatus.CONFLICT,
+          );
+        }
+
+        quantityByProductId.set(application.productId, nextQuantity);
+      }
+
+      const newProductIds = applications
+        .map((application) => application.productId)
+        .filter(
+          (productId, index, productIdsInOrder) =>
+            !items.some((item) => item.productId === productId) &&
+            productIdsInOrder.indexOf(productId) === index,
+        );
+
+      if (items.length + newProductIds.length > SHOPPING_LIST_ITEM_LIMIT) {
+        throw this.createItemLimitException();
+      }
+
+      if (newProductIds.length > 0 && list.storeProfileId !== null) {
+        await this.insertProductsInProfileOrder(
+          entityManager,
+          itemRepository,
+          list.id,
+          list.storeProfileId,
+          items,
+          newProductIds,
+          quantityByProductId,
+          productsById,
+        );
+      } else {
+        for (const item of items) {
+          const nextQuantity = quantityByProductId.get(item.productId);
+
+          if (nextQuantity !== undefined && nextQuantity !== item.quantity) {
+            item.quantity = nextQuantity;
+            await itemRepository.save(item);
+          }
+        }
+
+        const maxPosition = items.reduce((highest, item) => Math.max(highest, item.position), -1);
+
+        for (const [index, productId] of newProductIds.entries()) {
+          const quantity = quantityByProductId.get(productId);
+
+          if (quantity === undefined) {
+            throw new Error('A preset application is missing its merged quantity.');
+          }
+
+          await itemRepository.save(
+            itemRepository.create({
+              listId: list.id,
+              productId,
+              quantity,
+              position: maxPosition + index + 1,
+            }),
+          );
+        }
+      }
+
+      const usedAt = new Date();
+
+      for (const application of applications) {
+        await this.shoppingProductsService.recordShoppingListUsageWithManager(
+          entityManager,
+          userId,
+          application.productId,
+          usedAt,
+        );
+      }
+
+      if (applications.length > 0) {
+        await this.touchOwnedList(listRepository, userId, list.id);
+      }
+
+      return this.readOwnedList(
+        listRepository,
+        itemRepository,
+        entityManager.getRepository(ShoppingProductEntity),
+        userId,
+        list.id,
+      );
+    });
+  }
+
   async removeItem(userId: string, listId: string, itemId: string): Promise<void> {
     await this.databaseConnectionService.verifyConnection();
 
@@ -335,6 +476,123 @@ export class ShoppingListsService {
     }
 
     existingItem.quantity = nextQuantity;
+  }
+
+  private async readPresetApplications(
+    entityManager: EntityManager,
+    userId: string,
+    presetIds: readonly string[],
+  ): Promise<readonly { productId: string; quantity: number }[]> {
+    const presetRepository = entityManager.getRepository(ShoppingPresetEntity);
+    const uniquePresetIds = [...new Set(presetIds)].sort();
+
+    for (const presetId of uniquePresetIds) {
+      const preset = await presetRepository.findOne({
+        where: { id: presetId, userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (preset === null) {
+        throw new ApiException(
+          'SHOPPING_PRESET_NOT_FOUND',
+          'The shopping preset is missing or is not owned by the authenticated user.',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+    }
+
+    const entries = await entityManager.getRepository(ShoppingPresetEntryEntity).find({
+      where: { presetId: In(uniquePresetIds) },
+      order: { position: 'ASC', id: 'ASC' },
+    });
+    const entriesByPresetId = new Map<string, ShoppingPresetEntryEntity[]>();
+
+    for (const entry of entries) {
+      const presetEntries = entriesByPresetId.get(entry.presetId) ?? [];
+      presetEntries.push(entry);
+      entriesByPresetId.set(entry.presetId, presetEntries);
+    }
+
+    return presetIds.flatMap((presetId) =>
+      (entriesByPresetId.get(presetId) ?? []).map((entry) => ({
+        productId: entry.productId,
+        quantity: entry.quantity,
+      })),
+    );
+  }
+
+  private async insertProductsInProfileOrder(
+    entityManager: EntityManager,
+    itemRepository: Repository<ShoppingListItemEntity>,
+    listId: string,
+    storeProfileId: string,
+    items: readonly ShoppingListItemEntity[],
+    newProductIds: readonly string[],
+    quantityByProductId: ReadonlyMap<string, number>,
+    productsById: ReadonlyMap<string, ShoppingProductEntity>,
+  ): Promise<void> {
+    const categoryRows = await entityManager
+      .getRepository(ShoppingStoreProfileCategoryEntity)
+      .find({
+        where: { profileId: storeProfileId },
+        order: { position: 'ASC', id: 'ASC' },
+      });
+    const categoryRank = new Map(categoryRows.map((row) => [row.categoryId, row.position]));
+    const orderedProductIds = placeNewProductsByCategory(
+      items.map((item) => ({
+        productId: item.productId,
+        categoryId: requiredProduct(productsById, item.productId).categoryId,
+      })),
+      newProductIds.map((productId) => ({
+        productId,
+        categoryId: requiredProduct(productsById, productId).categoryId,
+      })),
+      categoryRank,
+    );
+    const positionByProductId = new Map(
+      orderedProductIds.map((productId, index) => [productId, index]),
+    );
+
+    await itemRepository.query(
+      `
+        UPDATE shopping_list_items
+        SET position = position + 1000000
+        WHERE list_id = $1
+      `,
+      [listId],
+    );
+
+    for (const item of items) {
+      const nextQuantity = quantityByProductId.get(item.productId);
+      const nextPosition = positionByProductId.get(item.productId);
+
+      if (nextQuantity === undefined || nextPosition === undefined) {
+        throw new Error('A preset application is missing an existing list row.');
+      }
+
+      await itemRepository.update(
+        { id: item.id, listId },
+        { quantity: nextQuantity, position: nextPosition },
+      );
+    }
+
+    for (const productId of newProductIds) {
+      const quantity = quantityByProductId.get(productId);
+      const position = positionByProductId.get(productId);
+
+      if (quantity === undefined || position === undefined) {
+        throw new Error('A preset application is missing its merged quantity.');
+      }
+
+      await itemRepository.save(
+        itemRepository.create({
+          listId,
+          productId,
+          quantity,
+          position,
+        }),
+      );
+    }
   }
 
   private async lockListItem(
@@ -479,6 +737,49 @@ export class ShoppingListsService {
       updatedAt: toIsoDateTimeString(list.updatedAt),
     };
   }
+}
+
+function requiredProduct(
+  productsById: ReadonlyMap<string, ShoppingProductEntity>,
+  productId: string,
+): ShoppingProductEntity {
+  const product = productsById.get(productId);
+
+  if (product === undefined) {
+    throw new Error('A shopping-list row is missing its remembered product.');
+  }
+
+  return product;
+}
+
+function placeNewProductsByCategory(
+  existingItems: readonly { productId: string; categoryId: string }[],
+  newProducts: readonly { productId: string; categoryId: string }[],
+  categoryRank: ReadonlyMap<string, number>,
+): string[] {
+  const unknownRank = categoryRank.size === 0 ? 0 : Math.max(...categoryRank.values()) + 1;
+  const rankFor = (categoryId: string): number => categoryRank.get(categoryId) ?? unknownRank;
+  const ordered = existingItems.map((item) => item.productId);
+  const categoryByProductId = new Map(
+    [...existingItems, ...newProducts].map((item) => [item.productId, item.categoryId]),
+  );
+
+  for (const product of newProducts) {
+    const rank = rankFor(product.categoryId);
+    let insertAt = 0;
+
+    for (const [index, productId] of ordered.entries()) {
+      const categoryId = categoryByProductId.get(productId);
+
+      if (categoryId !== undefined && rankFor(categoryId) <= rank) {
+        insertAt = index + 1;
+      }
+    }
+
+    ordered.splice(insertAt, 0, product.productId);
+  }
+
+  return ordered;
 }
 
 function isShoppingListItemLimit(error: unknown): boolean {

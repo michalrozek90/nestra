@@ -7,6 +7,7 @@ export const SHOPPING_LIST_NAME_MAX_LENGTH = 40;
 export const SHOPPING_LIST_ITEM_LIMIT = 250;
 export const SHOPPING_LIST_QUANTITY_MIN = 1;
 export const SHOPPING_LIST_QUANTITY_MAX = 999;
+export const SHOPPING_LIST_PRESET_APPLICATION_LIMIT = 20;
 
 export const shoppingListNameSchema = z
   .string()
@@ -64,6 +65,10 @@ export const updateShoppingListItemSchema = z
       });
     }
   });
+
+export const applyShoppingListPresetsSchema = z.strictObject({
+  presetIds: z.array(z.uuid()).min(1).max(SHOPPING_LIST_PRESET_APPLICATION_LIMIT),
+});
 
 export const addShoppingListItemSchema = z
   .strictObject({
@@ -127,6 +132,7 @@ export type ShoppingListRouteParameters = z.infer<typeof shoppingListRouteParame
 export type ShoppingListItemRouteParameters = z.infer<typeof shoppingListItemRouteParametersSchema>;
 export type AddShoppingListItem = z.infer<typeof addShoppingListItemSchema>;
 export type UpdateShoppingListItem = z.infer<typeof updateShoppingListItemSchema>;
+export type ApplyShoppingListPresets = z.infer<typeof applyShoppingListPresetsSchema>;
 export type ShoppingListItem = z.infer<typeof shoppingListItemSchema>;
 export type ShoppingList = z.infer<typeof shoppingListSchema>;
 export type ShoppingListSummary = z.infer<typeof shoppingListSummarySchema>;
