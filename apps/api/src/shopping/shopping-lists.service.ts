@@ -8,6 +8,7 @@ import {
   type ShoppingList,
   type ShoppingListSummaryList,
   type UpdateShoppingList,
+  type UpdateShoppingListItem,
 } from '@nestra/contracts';
 import { DataSource, In, QueryFailedError, type Repository } from 'typeorm';
 
@@ -187,13 +188,7 @@ export class ShoppingListsService {
         product.id,
         new Date(),
       );
-      await listRepository
-        .createQueryBuilder()
-        .update(ShoppingListEntity)
-        .set({ updatedAt: () => 'now()' })
-        .where('id = :listId', { listId: list.id })
-        .andWhere('user_id = :userId', { userId })
-        .execute();
+      await this.touchOwnedList(listRepository, userId, list.id);
 
       return this.readOwnedList(
         listRepository,
@@ -202,6 +197,86 @@ export class ShoppingListsService {
         userId,
         list.id,
       );
+    });
+  }
+
+  async updateItem(
+    userId: string,
+    listId: string,
+    itemId: string,
+    itemInput: UpdateShoppingListItem,
+  ): Promise<ShoppingList> {
+    await this.databaseConnectionService.verifyConnection();
+
+    return this.dataSource.transaction(async (entityManager) => {
+      const listRepository = entityManager.getRepository(ShoppingListEntity);
+      const itemRepository = entityManager.getRepository(ShoppingListItemEntity);
+      const list = await this.lockOwnedList(listRepository, userId, listId);
+      const item = await this.lockListItem(itemRepository, list.id, itemId);
+      const nextQuantity = itemInput.quantity ?? item.quantity;
+
+      if (itemInput.name === undefined) {
+        item.quantity = nextQuantity;
+        await itemRepository.save(item);
+      } else {
+        const product = await this.shoppingProductsService.findOrRememberProduct(
+          entityManager,
+          userId,
+          {
+            name: itemInput.name,
+            ...(itemInput.categoryId === undefined ? {} : { categoryId: itemInput.categoryId }),
+          },
+        );
+
+        if (product.id === item.productId) {
+          item.quantity = nextQuantity;
+          await itemRepository.save(item);
+        } else {
+          const destinationItem = await itemRepository.findOne({
+            where: { listId: list.id, productId: product.id },
+            lock: { mode: 'pessimistic_write' },
+          });
+
+          if (destinationItem === null) {
+            item.productId = product.id;
+            item.quantity = nextQuantity;
+            await itemRepository.save(item);
+          } else {
+            this.applyQuantityMerge(destinationItem, nextQuantity);
+            await itemRepository.save(destinationItem);
+            await itemRepository.delete({ id: item.id, listId: list.id });
+          }
+        }
+      }
+
+      await this.touchOwnedList(listRepository, userId, list.id);
+
+      return this.readOwnedList(
+        listRepository,
+        itemRepository,
+        entityManager.getRepository(ShoppingProductEntity),
+        userId,
+        list.id,
+      );
+    });
+  }
+
+  async removeItem(userId: string, listId: string, itemId: string): Promise<void> {
+    await this.databaseConnectionService.verifyConnection();
+
+    await this.dataSource.transaction(async (entityManager) => {
+      const listRepository = entityManager.getRepository(ShoppingListEntity);
+      const list = await this.lockOwnedList(listRepository, userId, listId);
+      const deleteResult = await entityManager.getRepository(ShoppingListItemEntity).delete({
+        id: itemId,
+        listId: list.id,
+      });
+
+      if (deleteResult.affected !== 1) {
+        throw this.createItemNotFoundException();
+      }
+
+      await this.touchOwnedList(listRepository, userId, list.id);
     });
   }
 
@@ -260,6 +335,37 @@ export class ShoppingListsService {
     }
 
     existingItem.quantity = nextQuantity;
+  }
+
+  private async lockListItem(
+    repository: Repository<ShoppingListItemEntity>,
+    listId: string,
+    itemId: string,
+  ): Promise<ShoppingListItemEntity> {
+    const item = await repository.findOne({
+      where: { id: itemId, listId },
+      lock: { mode: 'pessimistic_write' },
+    });
+
+    if (item === null) {
+      throw this.createItemNotFoundException();
+    }
+
+    return item;
+  }
+
+  private async touchOwnedList(
+    listRepository: Repository<ShoppingListEntity>,
+    userId: string,
+    listId: string,
+  ): Promise<void> {
+    await listRepository
+      .createQueryBuilder()
+      .update(ShoppingListEntity)
+      .set({ updatedAt: () => 'now()' })
+      .where('id = :listId', { listId })
+      .andWhere('user_id = :userId', { userId })
+      .execute();
   }
 
   private async lockOwnedList(
@@ -343,6 +449,14 @@ export class ShoppingListsService {
     return new ApiException(
       'SHOPPING_LIST_NOT_FOUND',
       'The shopping list is missing or is not owned by the authenticated user.',
+      HttpStatus.NOT_FOUND,
+    );
+  }
+
+  private createItemNotFoundException(): ApiException {
+    return new ApiException(
+      'SHOPPING_LIST_ITEM_NOT_FOUND',
+      'The shopping-list item is missing or is not on a list owned by the authenticated user.',
       HttpStatus.NOT_FOUND,
     );
   }
