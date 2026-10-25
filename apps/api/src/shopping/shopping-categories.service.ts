@@ -4,6 +4,7 @@ import {
   getShoppingBuiltInCategoryLabels,
   shoppingBuiltInCategoryKeySchema,
   SHOPPING_CATEGORY_NAME_KEY_MAX_LENGTH,
+  SHOPPING_OTHER_CATEGORY_ID,
   shoppingCategoryNameSchema,
   toShoppingComparisonKey,
   type ShoppingCategory,
@@ -15,6 +16,7 @@ import { ApiException } from '../common/api.exception';
 import { toIsoDateTimeString } from '../common/date-time';
 import { DatabaseConnectionService } from '../database/database-connection.service';
 import { ShoppingCategoryEntity } from './entities/shopping-category.entity';
+import { ShoppingProductEntity } from './entities/shopping-product.entity';
 import { isShoppingCategoryNameConflict } from './shopping-category-name-conflict';
 
 @Injectable()
@@ -114,8 +116,19 @@ export class ShoppingCategoriesService {
         categoryId,
       );
 
-      // Product reassignment and store-profile cleanup must join this transaction
-      // once those tables exist. Removing the category row stays the last step.
+      // Store-profile cleanup must join this transaction once those rows exist.
+      // Remembered products move to Other before the category row is removed.
+      await entityManager
+        .createQueryBuilder()
+        .update(ShoppingProductEntity)
+        .set({
+          categoryId: SHOPPING_OTHER_CATEGORY_ID,
+          updatedAt: () => 'now()',
+        })
+        .where('user_id = :userId', { userId })
+        .andWhere('category_id = :categoryId', { categoryId: ownedCategory.id })
+        .execute();
+
       const deleteResult = await transactionalRepository.delete({
         id: ownedCategory.id,
         userId,

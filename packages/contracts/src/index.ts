@@ -85,4 +85,20 @@ export {
   type ShoppingCategoryRouteParameters,
   type UpdateShoppingCategory,
 } from './shopping/shopping-category.schema';
+export {
+  createShoppingProductSchema,
+  nextShoppingListUsage,
+  SHOPPING_PRODUCT_NAME_KEY_MAX_LENGTH,
+  SHOPPING_PRODUCT_NAME_MAX_LENGTH,
+  shoppingProductListSchema,
+  shoppingProductNameSchema,
+  shoppingProductRouteParametersSchema,
+  shoppingProductSchema,
+  updateShoppingProductSchema,
+  type CreateShoppingProduct,
+  type ShoppingProduct,
+  type ShoppingProductList,
+  type ShoppingProductRouteParameters,
+  type UpdateShoppingProduct,
+} from './shopping/shopping-product.schema';
 export { normalizeShoppingDisplayText, toShoppingComparisonKey } from './shopping/shopping-text';
