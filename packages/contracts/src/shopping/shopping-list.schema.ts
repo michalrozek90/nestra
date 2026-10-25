@@ -24,9 +24,14 @@ export const createShoppingListSchema = z.strictObject({
   name: shoppingListNameSchema,
 });
 
-export const updateShoppingListSchema = z.strictObject({
-  name: shoppingListNameSchema,
-});
+export const updateShoppingListSchema = z
+  .strictObject({
+    name: shoppingListNameSchema.optional(),
+    storeProfileId: z.uuid().nullable().optional(),
+  })
+  .refine((list) => list.name !== undefined || list.storeProfileId !== undefined, {
+    message: 'A shopping list update must change the name or the store profile.',
+  });
 
 export const shoppingListRouteParametersSchema = z.strictObject({
   listId: z.uuid(),
@@ -71,6 +76,7 @@ export const shoppingListItemSchema = z.strictObject({
 export const shoppingListSchema = z.strictObject({
   id: z.uuid(),
   name: shoppingListNameSchema,
+  storeProfileId: z.uuid().nullable(),
   items: z.array(shoppingListItemSchema),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
@@ -79,6 +85,7 @@ export const shoppingListSchema = z.strictObject({
 export const shoppingListSummarySchema = z.strictObject({
   id: z.uuid(),
   name: shoppingListNameSchema,
+  storeProfileId: z.uuid().nullable(),
   itemCount: z.number().int().min(0).max(SHOPPING_LIST_ITEM_LIMIT),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),

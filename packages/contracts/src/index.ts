@@ -125,4 +125,22 @@ export {
   type ShoppingListSummaryList,
   type UpdateShoppingList,
 } from './shopping/shopping-list.schema';
+export {
+  createShoppingStoreProfileSchema,
+  replaceShoppingStoreProfileOrderSchema,
+  SHOPPING_STORE_PROFILE_NAME_MAX_LENGTH,
+  shoppingStoreProfileCollectionSchema,
+  shoppingStoreProfileNameSchema,
+  shoppingStoreProfileRouteParametersSchema,
+  shoppingStoreProfileSchema,
+  shoppingStoreProfileSelectionSchema,
+  updateShoppingStoreProfileSchema,
+  type CreateShoppingStoreProfile,
+  type ReplaceShoppingStoreProfileOrder,
+  type ShoppingStoreProfile,
+  type ShoppingStoreProfileCollection,
+  type ShoppingStoreProfileRouteParameters,
+  type ShoppingStoreProfileSelection,
+  type UpdateShoppingStoreProfile,
+} from './shopping/shopping-store-profile.schema';
 export { normalizeShoppingDisplayText, toShoppingComparisonKey } from './shopping/shopping-text';

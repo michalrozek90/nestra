@@ -27,6 +27,13 @@ export class ShoppingListEntity {
   @Column({ type: 'varchar', length: SHOPPING_LIST_NAME_MAX_LENGTH })
   name!: string;
 
+  @Column({ name: 'store_profile_id', type: 'uuid', nullable: true })
+  @ForeignKey('shopping_store_profiles', {
+    name: 'shopping_lists_store_profile_id_fkey',
+    onDelete: 'SET NULL',
+  })
+  storeProfileId!: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
