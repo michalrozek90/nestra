@@ -34,9 +34,11 @@ import { ApiErrorResponseDto } from '../common/api-error-response.dto';
 import { ApiException } from '../common/api.exception';
 import { AddShoppingListItemDto } from './dto/add-shopping-list-item.dto';
 import { CreateShoppingListDto } from './dto/create-shopping-list.dto';
+import { ShoppingListItemRouteParametersDto } from './dto/shopping-list-item-route-parameters.dto';
 import { ShoppingListRouteParametersDto } from './dto/shopping-list-route-parameters.dto';
 import { ShoppingListSummaryListDto } from './dto/shopping-list-summary-list.dto';
 import { ShoppingListDto } from './dto/shopping-list.dto';
+import { UpdateShoppingListItemDto } from './dto/update-shopping-list-item.dto';
 import { UpdateShoppingListDto } from './dto/update-shopping-list.dto';
 import { ShoppingListsService } from './shopping-lists.service';
 
@@ -157,6 +159,52 @@ export class ShoppingListsController {
       this.getAuthenticatedUserId(request),
       parameters.listId,
       itemInput,
+    );
+  }
+
+  @Patch(':listId/items/:itemId')
+  @ApiOperation({
+    summary: 'Change an owned list row quantity or point it at another remembered product',
+  })
+  @ApiParam({ name: 'listId', required: true, schema: { type: 'string', format: 'uuid' } })
+  @ApiParam({ name: 'itemId', required: true, schema: { type: 'string', format: 'uuid' } })
+  @ApiBody({ type: UpdateShoppingListItemDto })
+  @ZodResponse({ status: HttpStatus.OK, type: ShoppingListDto })
+  @ApiOkResponse({ type: ShoppingListDto })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  @ApiConflictResponse({ type: ApiErrorResponseDto })
+  async updateItem(
+    @Req() request: RequestWithAccessToken,
+    @Param() parameters: ShoppingListItemRouteParametersDto,
+    @Body() itemInput: UpdateShoppingListItemDto,
+  ): Promise<ShoppingList> {
+    return this.shoppingListsService.updateItem(
+      this.getAuthenticatedUserId(request),
+      parameters.listId,
+      parameters.itemId,
+      itemInput,
+    );
+  }
+
+  @Delete(':listId/items/:itemId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remove one product row from an owned shopping list' })
+  @ApiParam({ name: 'listId', required: true, schema: { type: 'string', format: 'uuid' } })
+  @ApiParam({ name: 'itemId', required: true, schema: { type: 'string', format: 'uuid' } })
+  @ApiNoContentResponse({ description: 'The shopping-list item was removed.' })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  async removeItem(
+    @Req() request: RequestWithAccessToken,
+    @Param() parameters: ShoppingListItemRouteParametersDto,
+  ): Promise<void> {
+    await this.shoppingListsService.removeItem(
+      this.getAuthenticatedUserId(request),
+      parameters.listId,
+      parameters.itemId,
     );
   }
 

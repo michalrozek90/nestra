@@ -6,6 +6,7 @@ import {
   SHOPPING_LIST_ITEM_LIMIT,
   SHOPPING_LIST_NAME_MAX_LENGTH,
   shoppingListNameSchema,
+  updateShoppingListItemSchema,
 } from '@nestra/contracts';
 
 describe('shopping list contracts', () => {
@@ -36,5 +37,19 @@ describe('shopping list contracts', () => {
       false,
     );
     assert.equal(SHOPPING_LIST_ITEM_LIMIT, 250);
+  });
+
+  it('accepts a list-row quantity or name change and rejects an empty edit', () => {
+    assert.equal(updateShoppingListItemSchema.safeParse({ quantity: 1 }).success, true);
+    assert.equal(updateShoppingListItemSchema.safeParse({ quantity: 999 }).success, true);
+    assert.equal(updateShoppingListItemSchema.safeParse({ name: 'Oat milk' }).success, true);
+    assert.equal(updateShoppingListItemSchema.safeParse({ quantity: 0 }).success, false);
+    assert.equal(updateShoppingListItemSchema.safeParse({}).success, false);
+    assert.equal(
+      updateShoppingListItemSchema.safeParse({
+        categoryId: '7a1e9c42-0d58-4b63-a2f4-6c8d1e5b9037',
+      }).success,
+      false,
+    );
   });
 });

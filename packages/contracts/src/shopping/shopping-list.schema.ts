@@ -37,6 +37,34 @@ export const shoppingListRouteParametersSchema = z.strictObject({
   listId: z.uuid(),
 });
 
+export const shoppingListItemRouteParametersSchema = z.strictObject({
+  listId: z.uuid(),
+  itemId: z.uuid(),
+});
+
+export const updateShoppingListItemSchema = z
+  .strictObject({
+    quantity: shoppingListQuantitySchema.optional(),
+    name: shoppingProductNameSchema.optional(),
+    categoryId: z.uuid().optional(),
+  })
+  .superRefine((item, context) => {
+    if (item.quantity === undefined && item.name === undefined) {
+      context.addIssue({
+        code: 'custom',
+        message: 'A shopping-list item update must change the quantity or the product name.',
+      });
+    }
+
+    if (item.categoryId !== undefined && item.name === undefined) {
+      context.addIssue({
+        code: 'custom',
+        path: ['categoryId'],
+        message: 'A category can only be chosen when changing the product name.',
+      });
+    }
+  });
+
 export const addShoppingListItemSchema = z
   .strictObject({
     productId: z.uuid().optional(),
@@ -96,7 +124,9 @@ export const shoppingListSummaryListSchema = z.array(shoppingListSummarySchema);
 export type CreateShoppingList = z.infer<typeof createShoppingListSchema>;
 export type UpdateShoppingList = z.infer<typeof updateShoppingListSchema>;
 export type ShoppingListRouteParameters = z.infer<typeof shoppingListRouteParametersSchema>;
+export type ShoppingListItemRouteParameters = z.infer<typeof shoppingListItemRouteParametersSchema>;
 export type AddShoppingListItem = z.infer<typeof addShoppingListItemSchema>;
+export type UpdateShoppingListItem = z.infer<typeof updateShoppingListItemSchema>;
 export type ShoppingListItem = z.infer<typeof shoppingListItemSchema>;
 export type ShoppingList = z.infer<typeof shoppingListSchema>;
 export type ShoppingListSummary = z.infer<typeof shoppingListSummarySchema>;
