@@ -30,16 +30,12 @@ type LoaderProps = {
 
 type LeafDefinition = {
   readonly id: string;
+  readonly angleDegrees: number;
   readonly colorRole: 'primary' | 'secondary' | 'tertiary';
-  readonly leftRatio: number;
-  readonly topRatio: number;
-  readonly restingRotationDegrees: number;
-  readonly entryRotationOffsetDegrees: number;
-  readonly entryOffsetRatio: number;
-  readonly startDelayMs: number;
-  readonly weaveDurationMs: number;
-  readonly holdDurationMs: number;
-  readonly releaseDurationMs: number;
+  readonly direction: 1 | -1;
+  readonly opacity: number;
+  readonly radiusRatio: number;
+  readonly scale: number;
 };
 
 const LOADER_SIZE_PX = {
@@ -47,61 +43,56 @@ const LOADER_SIZE_PX = {
   large: 56,
 } as const;
 
-const LEAF_WIDTH_RATIO = 0.57;
+const ANIMATION_DURATION_MS = 3_200;
+const LEAF_WIDTH_RATIO = 0.33;
 const LEAF_HEIGHT_RATIO = 0.19;
+const ORBIT_INPUT_RANGE = [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1] as const;
 
 const LEAVES: readonly LeafDefinition[] = [
   {
-    id: 'upper-left',
+    id: 'outer-primary',
+    angleDegrees: -88,
     colorRole: 'primary',
-    leftRatio: 0.08,
-    topRatio: 0.2,
-    restingRotationDegrees: -24,
-    entryRotationOffsetDegrees: -10,
-    entryOffsetRatio: -0.09,
-    startDelayMs: 0,
-    weaveDurationMs: 480,
-    holdDurationMs: 520,
-    releaseDurationMs: 430,
+    direction: -1,
+    opacity: 1,
+    radiusRatio: 0.33,
+    scale: 1,
   },
   {
-    id: 'upper-right',
+    id: 'outer-tertiary',
+    angleDegrees: 1,
     colorRole: 'tertiary',
-    leftRatio: 0.35,
-    topRatio: 0.16,
-    restingRotationDegrees: 29,
-    entryRotationOffsetDegrees: 12,
-    entryOffsetRatio: -0.07,
-    startDelayMs: 230,
-    weaveDurationMs: 560,
-    holdDurationMs: 470,
-    releaseDurationMs: 520,
+    direction: -1,
+    opacity: 0.94,
+    radiusRatio: 0.27,
+    scale: 0.94,
   },
   {
-    id: 'lower-left',
+    id: 'outer-secondary',
+    angleDegrees: 94,
     colorRole: 'secondary',
-    leftRatio: 0.06,
-    topRatio: 0.51,
-    restingRotationDegrees: 20,
-    entryRotationOffsetDegrees: -13,
-    entryOffsetRatio: 0.08,
-    startDelayMs: 410,
-    weaveDurationMs: 510,
-    holdDurationMs: 610,
-    releaseDurationMs: 470,
+    direction: -1,
+    opacity: 0.9,
+    radiusRatio: 0.21,
+    scale: 0.88,
   },
   {
-    id: 'lower-right',
+    id: 'inner-primary',
+    angleDegrees: 181,
     colorRole: 'primary',
-    leftRatio: 0.36,
-    topRatio: 0.54,
-    restingRotationDegrees: -27,
-    entryRotationOffsetDegrees: 11,
-    entryOffsetRatio: 0.09,
-    startDelayMs: 640,
-    weaveDurationMs: 600,
-    holdDurationMs: 440,
-    releaseDurationMs: 560,
+    direction: 1,
+    opacity: 0.86,
+    radiusRatio: 0.16,
+    scale: 0.84,
+  },
+  {
+    id: 'inner-tertiary',
+    angleDegrees: 252,
+    colorRole: 'tertiary',
+    direction: 1,
+    opacity: 0.82,
+    radiusRatio: 0.1,
+    scale: 0.78,
   },
 ] as const;
 
@@ -142,24 +133,12 @@ function useShouldReduceMotion(forceReduceMotion: boolean): boolean {
   return forceReduceMotion || isSystemReducedMotionEnabled !== false;
 }
 
-function NestLeaf({
-  color,
-  definition,
-  shouldAnimate,
-  sizePx,
-}: {
-  readonly color: string;
-  readonly definition: LeafDefinition;
-  readonly shouldAnimate: boolean;
-  readonly sizePx: number;
-}) {
+function useCyclingProgress(shouldAnimate: boolean): Animated.Value {
   const progress = useRef(new Animated.Value(1)).current;
-  const leafWidthPx = sizePx * LEAF_WIDTH_RATIO;
-  const leafHeightPx = sizePx * LEAF_HEIGHT_RATIO;
-  const restingRotationDegrees = definition.restingRotationDegrees;
 
   useEffect(() => {
     if (!shouldAnimate) {
+      progress.stopAnimation();
       progress.setValue(1);
       return;
     }
@@ -167,17 +146,16 @@ function NestLeaf({
     progress.setValue(0);
     const animation = Animated.loop(
       Animated.sequence([
-        Animated.delay(definition.startDelayMs),
+        // A neutral first step prevents loop resets from restoring `progress` to its initial 1.
+        Animated.delay(0),
         Animated.timing(progress, {
-          duration: definition.weaveDurationMs,
-          easing: Easing.out(Easing.cubic),
+          duration: ANIMATION_DURATION_MS,
+          easing: Easing.linear,
           toValue: 1,
           useNativeDriver: false,
         }),
-        Animated.delay(definition.holdDurationMs),
         Animated.timing(progress, {
-          duration: definition.releaseDurationMs,
-          easing: Easing.inOut(Easing.quad),
+          duration: 0,
           toValue: 0,
           useNativeDriver: false,
         }),
@@ -186,7 +164,37 @@ function NestLeaf({
 
     animation.start();
     return () => animation.stop();
-  }, [definition, progress, shouldAnimate]);
+  }, [progress, shouldAnimate]);
+
+  return progress;
+}
+
+function OrbitingLeaf({
+  color,
+  definition,
+  progress,
+  sizePx,
+}: {
+  readonly color: string;
+  readonly definition: LeafDefinition;
+  readonly progress: Animated.Value;
+  readonly sizePx: number;
+}) {
+  const leafWidthPx = sizePx * LEAF_WIDTH_RATIO;
+  const leafHeightPx = sizePx * LEAF_HEIGHT_RATIO;
+  const leftOutputRangePx = ORBIT_INPUT_RANGE.map((keyframe) => {
+    const angleRadians =
+      ((definition.angleDegrees + definition.direction * keyframe * 360) * Math.PI) / 180;
+    return sizePx / 2 + Math.cos(angleRadians) * sizePx * definition.radiusRatio - leafWidthPx / 2;
+  });
+  const topOutputRangePx = ORBIT_INPUT_RANGE.map((keyframe) => {
+    const angleRadians =
+      ((definition.angleDegrees + definition.direction * keyframe * 360) * Math.PI) / 180;
+    return sizePx / 2 + Math.sin(angleRadians) * sizePx * definition.radiusRatio - leafHeightPx / 2;
+  });
+  const rotationOutputRange = ORBIT_INPUT_RANGE.map(
+    (keyframe) => `${definition.angleDegrees + 68 + definition.direction * keyframe * 360}deg`,
+  );
 
   return (
     <Animated.View
@@ -194,51 +202,53 @@ function NestLeaf({
         styles.leaf,
         {
           backgroundColor: color,
-          borderBottomLeftRadius: leafHeightPx * 0.35,
+          borderBottomLeftRadius: leafHeightPx * 0.08,
           borderBottomRightRadius: leafHeightPx,
           borderTopLeftRadius: leafHeightPx,
-          borderTopRightRadius: leafHeightPx * 0.35,
+          borderTopRightRadius: leafHeightPx * 0.08,
           height: leafHeightPx,
-          left: sizePx * definition.leftRatio,
-          opacity: progress.interpolate({
-            inputRange: [0, 0.72, 1],
-            outputRange: [0.42, 0.9, 1],
+          left: progress.interpolate({
+            inputRange: [...ORBIT_INPUT_RANGE],
+            outputRange: leftOutputRangePx,
           }),
-          top: sizePx * definition.topRatio,
+          opacity: definition.opacity,
+          top: progress.interpolate({
+            inputRange: [...ORBIT_INPUT_RANGE],
+            outputRange: topOutputRangePx,
+          }),
           transform: [
             {
-              translateY: progress.interpolate({
-                inputRange: [0, 0.76, 1],
-                outputRange: [sizePx * definition.entryOffsetRatio, -sizePx * 0.02, 0],
-              }),
-            },
-            {
               rotate: progress.interpolate({
-                inputRange: [0, 0.76, 1],
-                outputRange: [
-                  `${restingRotationDegrees + definition.entryRotationOffsetDegrees}deg`,
-                  `${restingRotationDegrees - definition.entryRotationOffsetDegrees * 0.2}deg`,
-                  `${restingRotationDegrees}deg`,
-                ],
+                inputRange: [...ORBIT_INPUT_RANGE],
+                outputRange: rotationOutputRange,
               }),
             },
-            {
-              scale: progress.interpolate({
-                inputRange: [0, 0.76, 1],
-                outputRange: [0.88, 1.03, 1],
-              }),
-            },
+            { scale: definition.scale },
           ],
           width: leafWidthPx,
         },
       ]}
-    />
+    >
+      <View
+        style={[
+          styles.petiole,
+          {
+            backgroundColor: color,
+            borderRadius: leafHeightPx,
+            height: Math.max(1, leafHeightPx * 0.16),
+            right: -leafWidthPx * 0.1,
+            top: leafHeightPx * 0.46,
+            width: leafWidthPx * 0.2,
+          },
+        ]}
+      />
+    </Animated.View>
   );
 }
 
 /**
  * Shared Nestra loading mark for full-screen and inline busy states.
- * Four independently moving leaves settle into a small nest without rotating the mark itself.
+ * Five leaves form a spiral whose inner and outer layers rotate in opposite directions.
  */
 export function Loader({
   size = 'large',
@@ -250,6 +260,7 @@ export function Loader({
 }: LoaderProps) {
   const theme = useNestraTheme();
   const shouldReduceMotion = useShouldReduceMotion(reduceMotion);
+  const progress = useCyclingProgress(animating && !shouldReduceMotion);
   const sizePx = resolveLoaderSizePx(size);
 
   return (
@@ -261,11 +272,11 @@ export function Loader({
       style={[styles.mark, { height: sizePx, width: sizePx }, style]}
     >
       {LEAVES.map((leaf) => (
-        <NestLeaf
+        <OrbitingLeaf
           color={color ?? theme.colors[leaf.colorRole]}
           definition={leaf}
           key={leaf.id}
-          shouldAnimate={animating && !shouldReduceMotion}
+          progress={progress}
           sizePx={sizePx}
         />
       ))}
@@ -279,5 +290,8 @@ const styles = StyleSheet.create({
   },
   mark: {
     position: 'relative',
+  },
+  petiole: {
+    position: 'absolute',
   },
 });

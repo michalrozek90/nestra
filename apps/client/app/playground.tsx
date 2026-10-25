@@ -48,9 +48,14 @@ export default function PlaygroundScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text accessibilityRole="header" style={styles.sectionTitle}>
-            Nest loader
-          </Text>
+          <View style={styles.heading}>
+            <Text accessibilityRole="header" style={styles.sectionTitle}>
+              Counter leaf spiral loader
+            </Text>
+            <Text style={[styles.description, { color: theme.colors.onSurfaceVariant }]}>
+              The selected Nestra loading mark in its supported sizes and appearances.
+            </Text>
+          </View>
 
           <View style={styles.gallery}>
             <LoaderExample
@@ -58,7 +63,7 @@ export default function PlaygroundScreen() {
               label="Large · animated"
               textColor={theme.colors.onSurface}
             >
-              <Loader accessibilityLabel="Large animated nest loader" size="large" />
+              <Loader accessibilityLabel="Large animated leaf spiral loader" size="large" />
             </LoaderExample>
 
             <LoaderExample
@@ -66,7 +71,7 @@ export default function PlaygroundScreen() {
               label="Small · animated"
               textColor={theme.colors.onSurface}
             >
-              <Loader accessibilityLabel="Small animated nest loader" size="small" />
+              <Loader accessibilityLabel="Small animated leaf spiral loader" size="small" />
             </LoaderExample>
 
             <LoaderExample
@@ -75,7 +80,7 @@ export default function PlaygroundScreen() {
               textColor={theme.colors.onSurface}
             >
               <Loader
-                accessibilityLabel="Static reduced-motion nest loader"
+                accessibilityLabel="Static reduced-motion leaf spiral loader"
                 reduceMotion
                 size="large"
               />
@@ -87,7 +92,7 @@ export default function PlaygroundScreen() {
               textColor={lightColorScheme.onBackground}
             >
               <Loader
-                accessibilityLabel="Nest loader on a light background"
+                accessibilityLabel="Leaf spiral loader on a light background"
                 color={lightColorScheme.primary}
                 size="large"
               />
@@ -99,7 +104,7 @@ export default function PlaygroundScreen() {
               textColor={darkColorScheme.onBackground}
             >
               <Loader
-                accessibilityLabel="Nest loader on a dark background"
+                accessibilityLabel="Leaf spiral loader on a dark background"
                 color={darkColorScheme.primary}
                 size="large"
               />
