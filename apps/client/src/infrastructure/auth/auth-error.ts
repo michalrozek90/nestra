@@ -61,6 +61,9 @@ function mapApiErrorCode(errorCode: ApiErrorCode): AuthErrorTranslationKey {
     case 'SHOPPING_CATEGORY_NOT_FOUND':
     case 'SHOPPING_PRODUCT_NAME_ALREADY_EXISTS':
     case 'SHOPPING_PRODUCT_NOT_FOUND':
+    case 'SHOPPING_LIST_ITEM_LIMIT_REACHED':
+    case 'SHOPPING_LIST_NOT_FOUND':
+    case 'SHOPPING_LIST_QUANTITY_EXCEEDED':
     case 'ROUTE_NOT_FOUND':
     case 'AUTH_GOOGLE_CANCELLED':
     case 'AUTH_ACCOUNT_LINK_REQUIRED':
