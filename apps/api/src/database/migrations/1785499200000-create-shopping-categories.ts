@@ -11,7 +11,7 @@ export class CreateShoppingCategories1785499200000 implements MigrationInterface
         kind varchar(16) NOT NULL,
         built_in_key varchar(64) NULL,
         name varchar(40) NULL,
-        name_key varchar(40) NULL,
+        name_key varchar(80) NULL,
         built_in_position smallint NULL,
         created_at timestamptz NOT NULL DEFAULT now(),
         updated_at timestamptz NOT NULL DEFAULT now(),
@@ -38,7 +38,7 @@ export class CreateShoppingCategories1785499200000 implements MigrationInterface
               AND name IS NOT NULL
               AND name_key IS NOT NULL
               AND char_length(name) BETWEEN 1 AND 40
-              AND char_length(name_key) BETWEEN 1 AND 40
+              AND char_length(name_key) BETWEEN 1 AND 80
               AND name = btrim(name)
               AND name !~ '[[:space:]]{2,}'
               AND name_key = btrim(name_key)

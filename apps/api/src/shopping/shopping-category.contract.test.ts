@@ -5,6 +5,7 @@ import {
   SHOPPING_BUILT_IN_CATEGORY_IDS,
   SHOPPING_BUILT_IN_CATEGORY_KEYS,
   SHOPPING_BUILT_IN_CATEGORY_LABELS,
+  SHOPPING_CATEGORY_NAME_KEY_MAX_LENGTH,
   SHOPPING_CATEGORY_NAME_MAX_LENGTH,
   SHOPPING_OTHER_CATEGORY_ID,
   getShoppingBuiltInCategoryPosition,
@@ -29,6 +30,19 @@ describe('shopping category contracts', () => {
       shoppingCategoryNameSchema.safeParse('a'.repeat(SHOPPING_CATEGORY_NAME_MAX_LENGTH + 1))
         .success,
       false,
+    );
+  });
+
+  it('keeps an expanded lowercase key inside the stored key limit', () => {
+    const dottedCapitalI = '\u0130';
+    const displayName = dottedCapitalI + 'a'.repeat(SHOPPING_CATEGORY_NAME_MAX_LENGTH - 1);
+    const fullyExpandedName = dottedCapitalI.repeat(SHOPPING_CATEGORY_NAME_MAX_LENGTH);
+
+    assert.equal(shoppingCategoryNameSchema.parse(displayName), displayName);
+    assert.equal(toShoppingComparisonKey(displayName).length, 41);
+    assert.equal(
+      toShoppingComparisonKey(fullyExpandedName).length,
+      SHOPPING_CATEGORY_NAME_KEY_MAX_LENGTH,
     );
   });
 

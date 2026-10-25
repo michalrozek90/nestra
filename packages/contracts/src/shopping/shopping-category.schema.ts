@@ -4,6 +4,9 @@ import { normalizeShoppingDisplayText } from './shopping-text';
 
 export const SHOPPING_CATEGORY_NAME_MAX_LENGTH = 40;
 
+// Unicode lowercase can expand one character into two, as with İ.
+export const SHOPPING_CATEGORY_NAME_KEY_MAX_LENGTH = SHOPPING_CATEGORY_NAME_MAX_LENGTH * 2;
+
 export const SHOPPING_BUILT_IN_CATEGORY_KEYS = [
   'fruit_and_vegetables',
   'bakery',

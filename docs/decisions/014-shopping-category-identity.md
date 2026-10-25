@@ -23,8 +23,10 @@ row. `other` is one of those built-in rows. Its id is `SHOPPING_OTHER_CATEGORY_I
 Custom categories belong to the authenticated user. The access token supplies that user id. A
 custom name is stored as display text: trim the ends, collapse internal whitespace to a single
 space, and keep the typed case. The comparison key is `String.prototype.toLowerCase()` of that
-display text, which uses Unicode default case mapping rather than the database collation. A user
-can have only one custom category per comparison key. The display name contains 1–40 characters.
+display text, which uses Unicode default case mapping rather than the database collation. That
+mapping can expand one character into two, so the stored comparison key allows 80 characters while
+the display name still contains 1–40 characters. A user
+can have only one custom category per comparison key.
 Deleting the user cascades that user's custom categories and leaves the built-in rows in place.
 
 Built-in rows cannot be renamed or deleted. The service rejects those mutations, and a database

@@ -6,6 +6,7 @@ import {
   SHOPPING_BUILT_IN_CATEGORY_IDS,
   SHOPPING_BUILT_IN_CATEGORY_KEYS,
   SHOPPING_BUILT_IN_CATEGORY_LABELS,
+  SHOPPING_CATEGORY_NAME_MAX_LENGTH,
   SHOPPING_OTHER_CATEGORY_ID,
   type ShoppingBuiltInCategoryKey,
 } from '@nestra/contracts';
@@ -255,6 +256,13 @@ describe('shopping category persistence', { concurrency: false }, () => {
     const otherCategory = await shoppingCategoriesService.createCategory(otherUserId, 'rice');
     assert.equal(otherCategory.name, 'rice');
     assert.equal(otherCategory.kind, 'custom');
+
+    const expandedDisplayName = `\u0130${'a'.repeat(SHOPPING_CATEGORY_NAME_MAX_LENGTH - 1)}`;
+    const expandedCategory = await shoppingCategoriesService.createCategory(
+      ownerId,
+      expandedDisplayName,
+    );
+    assert.equal(expandedCategory.name, expandedDisplayName);
   });
 
   it('renames a custom category without changing its id and rejects built-in changes', async (testContext) => {

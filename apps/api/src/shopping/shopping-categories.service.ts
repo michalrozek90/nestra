@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import {
   getShoppingBuiltInCategoryLabels,
   shoppingBuiltInCategoryKeySchema,
+  SHOPPING_CATEGORY_NAME_KEY_MAX_LENGTH,
   shoppingCategoryNameSchema,
   toShoppingComparisonKey,
   type ShoppingCategory,
@@ -45,6 +46,7 @@ export class ShoppingCategoriesService {
   async createCategory(userId: string, name: string): Promise<ShoppingCategory> {
     await this.databaseConnectionService.verifyConnection();
     const normalizedName = this.parseCategoryName(name);
+    const nameKey = this.parseCategoryNameKey(normalizedName);
 
     try {
       const savedCategory = await this.shoppingCategoryRepository.save(
@@ -53,7 +55,7 @@ export class ShoppingCategoriesService {
           kind: 'custom',
           builtInKey: null,
           name: normalizedName,
-          nameKey: toShoppingComparisonKey(normalizedName),
+          nameKey,
           builtInPosition: null,
         }),
       );
@@ -75,6 +77,7 @@ export class ShoppingCategoriesService {
   ): Promise<ShoppingCategory> {
     await this.databaseConnectionService.verifyConnection();
     const normalizedName = this.parseCategoryName(name);
+    const nameKey = this.parseCategoryNameKey(normalizedName);
 
     return this.dataSource.transaction(async (entityManager) => {
       const transactionalRepository = entityManager.getRepository(ShoppingCategoryEntity);
@@ -85,7 +88,7 @@ export class ShoppingCategoriesService {
       );
 
       ownedCategory.name = normalizedName;
-      ownedCategory.nameKey = toShoppingComparisonKey(normalizedName);
+      ownedCategory.nameKey = nameKey;
 
       try {
         const savedCategory = await transactionalRepository.save(ownedCategory);
@@ -155,6 +158,20 @@ export class ShoppingCategoriesService {
     }
 
     return parsedName.data;
+  }
+
+  private parseCategoryNameKey(normalizedName: string): string {
+    const nameKey = toShoppingComparisonKey(normalizedName);
+
+    if (nameKey.length > SHOPPING_CATEGORY_NAME_KEY_MAX_LENGTH) {
+      throw new ApiException(
+        'VALIDATION_FAILED',
+        'The shopping category name is invalid.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return nameKey;
   }
 
   private async rejectUnavailableCategory(

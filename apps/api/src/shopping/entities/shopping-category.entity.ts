@@ -1,4 +1,5 @@
 import {
+  SHOPPING_CATEGORY_NAME_KEY_MAX_LENGTH,
   SHOPPING_CATEGORY_NAME_MAX_LENGTH,
   type ShoppingBuiltInCategoryKey,
   type ShoppingCategoryKind,
@@ -32,7 +33,7 @@ import {
     AND name IS NOT NULL
     AND name_key IS NOT NULL
     AND char_length(name) BETWEEN 1 AND ${SHOPPING_CATEGORY_NAME_MAX_LENGTH}
-    AND char_length(name_key) BETWEEN 1 AND ${SHOPPING_CATEGORY_NAME_MAX_LENGTH}
+    AND char_length(name_key) BETWEEN 1 AND ${SHOPPING_CATEGORY_NAME_KEY_MAX_LENGTH}
     AND name = btrim(name)
     AND name !~ '[[:space:]]{2,}'
     AND name_key = btrim(name_key)
@@ -59,7 +60,7 @@ export class ShoppingCategoryEntity {
   @Column({
     name: 'name_key',
     type: 'varchar',
-    length: SHOPPING_CATEGORY_NAME_MAX_LENGTH,
+    length: SHOPPING_CATEGORY_NAME_KEY_MAX_LENGTH,
     nullable: true,
   })
   nameKey!: string | null;
