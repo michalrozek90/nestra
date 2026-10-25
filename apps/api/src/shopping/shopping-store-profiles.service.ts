@@ -217,7 +217,15 @@ export class ShoppingStoreProfilesService {
         `,
         [userId, profile.id],
       );
-      // Preset profile references join this transaction when that table exists.
+      await entityManager.query(
+        `
+          UPDATE shopping_presets
+          SET store_profile_id = NULL,
+              updated_at = now()
+          WHERE user_id = $1 AND store_profile_id = $2
+        `,
+        [userId, profile.id],
+      );
       const deleteResult = await entityManager.getRepository(ShoppingStoreProfileEntity).delete({
         id: profile.id,
         userId,
@@ -227,6 +235,18 @@ export class ShoppingStoreProfilesService {
         throw this.createProfileNotFoundException();
       }
     });
+  }
+
+  async assertOwnedStoreProfile(
+    entityManager: EntityManager,
+    userId: string,
+    profileId: string,
+  ): Promise<void> {
+    await this.lockOwnedProfile(
+      entityManager.getRepository(ShoppingStoreProfileEntity),
+      userId,
+      profileId,
+    );
   }
 
   async rememberOwnedProfileSelection(

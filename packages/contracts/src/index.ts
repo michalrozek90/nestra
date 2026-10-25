@@ -143,4 +143,26 @@ export {
   type ShoppingStoreProfileSelection,
   type UpdateShoppingStoreProfile,
 } from './shopping/shopping-store-profile.schema';
+export {
+  createShoppingPresetSchema,
+  replaceShoppingPresetEntriesSchema,
+  SHOPPING_PRESET_ENTRY_LIMIT,
+  SHOPPING_PRESET_LIMIT,
+  SHOPPING_PRESET_NAME_MAX_LENGTH,
+  shoppingPresetEntrySchema,
+  shoppingPresetNameSchema,
+  shoppingPresetRouteParametersSchema,
+  shoppingPresetSchema,
+  shoppingPresetSummaryListSchema,
+  shoppingPresetSummarySchema,
+  updateShoppingPresetSchema,
+  type CreateShoppingPreset,
+  type ReplaceShoppingPresetEntries,
+  type ShoppingPreset,
+  type ShoppingPresetEntry,
+  type ShoppingPresetRouteParameters,
+  type ShoppingPresetSummary,
+  type ShoppingPresetSummaryList,
+  type UpdateShoppingPreset,
+} from './shopping/shopping-preset.schema';
 export { normalizeShoppingDisplayText, toShoppingComparisonKey } from './shopping/shopping-text';

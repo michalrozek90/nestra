@@ -163,7 +163,7 @@ export class ShoppingStoreProfilesController {
   @Delete(':profileId')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'Delete an owned store profile and clear list and last-selection references',
+    summary: 'Delete an owned store profile and clear list, preset, and last-selection references',
   })
   @ApiParam({ name: 'profileId', required: true, schema: { type: 'string', format: 'uuid' } })
   @ApiNoContentResponse({ description: 'The store profile was deleted.' })
