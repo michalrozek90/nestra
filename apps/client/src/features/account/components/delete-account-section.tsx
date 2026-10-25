@@ -11,8 +11,8 @@ import { useAuth } from '@/infrastructure/auth/auth-provider';
 import { radii, spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
 
-const VERTICAL_GRID_LINE_COUNT = 6;
-const HORIZONTAL_GRID_LINE_COUNT = 4;
+const VERTICAL_GRID_LINE_COUNT = 18;
+const HORIZONTAL_GRID_LINE_COUNT = 10;
 
 export function DeleteAccountSection() {
   const { t } = useTranslation('settings');
@@ -24,7 +24,8 @@ export function DeleteAccountSection() {
   const requiredPhrase = t('dangerZone.confirmationPhrase');
   const isConfirmationAccepted = matchesDangerZoneConfirmation(typedConfirmation, requiredPhrase);
   const panelFill = theme.dark ? 'rgba(92, 18, 22, 0.55)' : 'rgba(161, 61, 61, 0.1)';
-  const gridLine = theme.dark ? 'rgba(255, 180, 171, 0.16)' : 'rgba(161, 61, 61, 0.16)';
+  const gridLine = theme.dark ? 'rgba(0, 0, 0, 0.14)' : 'rgba(120, 32, 32, 0.06)';
+  const phraseFill = theme.dark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(29, 39, 35, 0.04)';
   const panelBorder = theme.dark ? 'rgba(255, 180, 171, 0.45)' : 'rgba(161, 61, 61, 0.4)';
 
   function closeConfirmation(): void {
@@ -99,12 +100,13 @@ export function DeleteAccountSection() {
               <Text style={styles.description}>{t('dangerZone.confirmationInstruction')}</Text>
               <View
                 accessibilityLabel={requiredPhrase}
-                style={[styles.phrase, { backgroundColor: theme.colors.errorContainer }]}
+                style={[
+                  styles.phrase,
+                  { backgroundColor: phraseFill, borderColor: theme.colors.outlineVariant },
+                ]}
               >
-                <Text
-                  selectable
-                  style={[styles.phraseText, { color: theme.colors.onErrorContainer }]}
-                >
+                <View style={[styles.phraseAccent, { backgroundColor: theme.colors.error }]} />
+                <Text selectable style={[styles.phraseText, { color: theme.colors.onSurface }]}>
                   {requiredPhrase}
                 </Text>
               </View>
@@ -182,14 +184,22 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   phrase: {
-    alignSelf: 'flex-start',
-    borderRadius: radii.sm,
+    alignItems: 'center',
+    borderRadius: radii.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: spacing.md,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
+  },
+  phraseAccent: {
+    borderRadius: radii.pill,
+    height: 18,
+    opacity: 0.85,
+    width: 3,
   },
   phraseText: {
-    ...typography.sectionTitle,
-    textTransform: 'none',
+    ...typography.settingsTitle,
   },
   title: {
     ...typography.sectionTitle,
