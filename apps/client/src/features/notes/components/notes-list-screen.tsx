@@ -7,7 +7,7 @@ import { SegmentedButtons, Text } from 'react-native-paper';
 import { Button } from '@/components/button';
 import { EmptyState } from '@/components/empty-state';
 import { Header } from '@/components/header';
-import { Loader } from '@/components/loader';
+import { LoadingScreen } from '@/components/loading-screen';
 import { Screen } from '@/components/screen';
 import { spacing, typography } from '@/theme/tokens';
 import { useNestraTheme } from '@/theme/themes';
@@ -70,6 +70,10 @@ export function NotesListScreen({
     setIsHeaderStacked((currentIsHeaderStacked) =>
       currentIsHeaderStacked === nextIsHeaderStacked ? currentIsHeaderStacked : nextIsHeaderStacked,
     );
+  }
+
+  if (notesQuery.isPending) {
+    return <LoadingScreen accessibilityLabel={t('list.loading')} />;
   }
 
   return (
@@ -138,12 +142,7 @@ export function NotesListScreen({
         value={isTrashed ? 'trash' : 'active'}
       />
 
-      {notesQuery.isPending ? (
-        <View accessibilityState={{ busy: true }} style={styles.centered}>
-          <Loader accessibilityLabel={t('list.loading')} />
-          <Text>{t('list.loading')}</Text>
-        </View>
-      ) : notesQuery.isError ? (
+      {notesQuery.isError ? (
         <View style={styles.centered}>
           <Text accessibilityRole="alert" style={[styles.error, { color: theme.colors.error }]}>
             {t(getNoteErrorTranslationKey(notesQuery.error))}
