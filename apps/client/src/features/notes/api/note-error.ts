@@ -56,6 +56,8 @@ export function getNoteErrorTranslationKey(error: unknown): NoteErrorTranslation
       case 'SHOPPING_CATEGORY_BUILT_IN':
       case 'SHOPPING_CATEGORY_NAME_ALREADY_EXISTS':
       case 'SHOPPING_CATEGORY_NOT_FOUND':
+      case 'SHOPPING_PRODUCT_NAME_ALREADY_EXISTS':
+      case 'SHOPPING_PRODUCT_NOT_FOUND':
         return 'errors.unexpected';
     }
   }
