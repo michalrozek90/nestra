@@ -3,11 +3,13 @@ import { enCommon } from './en/common';
 import { enNotes } from './en/notes';
 import { enReleases } from './en/releases';
 import { enSettings } from './en/settings';
+import { enShopping } from './en/shopping';
 import { plAuth } from './pl/auth';
 import { plCommon } from './pl/common';
 import { plNotes } from './pl/notes';
 import { plReleases } from './pl/releases';
 import { plSettings } from './pl/settings';
+import { plShopping } from './pl/shopping';
 
 export const resources = {
   en: {
@@ -16,6 +18,7 @@ export const resources = {
     notes: enNotes,
     releases: enReleases,
     settings: enSettings,
+    shopping: enShopping,
   },
   pl: {
     auth: plAuth,
@@ -23,5 +26,6 @@ export const resources = {
     notes: plNotes,
     releases: plReleases,
     settings: plSettings,
+    shopping: plShopping,
   },
 } as const;

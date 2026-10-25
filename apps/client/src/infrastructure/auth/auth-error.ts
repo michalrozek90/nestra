@@ -56,6 +56,9 @@ function mapApiErrorCode(errorCode: ApiErrorCode): AuthErrorTranslationKey {
     case 'INTERNAL_SERVER_ERROR':
     case 'NOTE_NOT_FOUND':
     case 'NOTE_NOT_TRASHED':
+    case 'SHOPPING_CATEGORY_BUILT_IN':
+    case 'SHOPPING_CATEGORY_NAME_ALREADY_EXISTS':
+    case 'SHOPPING_CATEGORY_NOT_FOUND':
     case 'ROUTE_NOT_FOUND':
     case 'AUTH_GOOGLE_CANCELLED':
     case 'AUTH_ACCOUNT_LINK_REQUIRED':

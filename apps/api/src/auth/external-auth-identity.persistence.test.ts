@@ -110,14 +110,22 @@ describe('external auth identity migration retention', () => {
       return;
     }
 
-    const identityMigration = dataSource.migrations.find(
+    const identityMigrationIndex = dataSource.migrations.findIndex(
       (migration) => migration.name === 'AddExternalAuthIdentities1785326400000',
     );
-    assert.ok(identityMigration !== undefined);
+    assert.ok(identityMigrationIndex >= 0);
 
     await dataSource.runMigrations();
-    await dataSource.undoLastMigration();
-    await dataSource.undoLastMigration();
+
+    const migrationsThroughIdentityCount = dataSource.migrations.length - identityMigrationIndex;
+
+    for (
+      let undoneMigrationCount = 0;
+      undoneMigrationCount < migrationsThroughIdentityCount;
+      undoneMigrationCount += 1
+    ) {
+      await dataSource.undoLastMigration();
+    }
 
     const passwordHash = await passwordService.hashPassword('password-1');
     const userId = randomUUID();

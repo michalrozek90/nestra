@@ -10,6 +10,7 @@ import { AuthModule } from './auth';
 import { HealthModule } from './health/health.module';
 import { MobileAppLinksModule } from './mobile-app-links/mobile-app-links.module';
 import { NotesModule } from './notes/notes.module';
+import { ShoppingModule } from './shopping/shopping.module';
 
 const StrictZodValidationPipe = createZodValidationPipe({
   strictSchemaDeclaration: true,
@@ -26,6 +27,7 @@ const StrictZodValidationPipe = createZodValidationPipe({
     MobileAppLinksModule,
     AuthModule,
     NotesModule,
+    ShoppingModule,
   ],
   providers: [
     {

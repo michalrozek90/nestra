@@ -59,3 +59,29 @@ export {
 export { noteSchema, type Note } from './notes/note.schema';
 export { notesQuerySchema, type NotesQuery } from './notes/notes-query.schema';
 export { updateNoteSchema, type UpdateNote } from './notes/update-note.schema';
+export {
+  createShoppingCategorySchema,
+  getShoppingBuiltInCategoryLabels,
+  getShoppingBuiltInCategoryPosition,
+  SHOPPING_BUILT_IN_CATEGORY_IDS,
+  SHOPPING_BUILT_IN_CATEGORY_KEYS,
+  SHOPPING_BUILT_IN_CATEGORY_LABELS,
+  SHOPPING_CATEGORY_KINDS,
+  SHOPPING_CATEGORY_NAME_MAX_LENGTH,
+  SHOPPING_OTHER_CATEGORY_ID,
+  shoppingBuiltInCategoryKeySchema,
+  shoppingCategoryKindSchema,
+  shoppingCategoryListSchema,
+  shoppingCategoryNameSchema,
+  shoppingCategoryRouteParametersSchema,
+  shoppingCategorySchema,
+  updateShoppingCategorySchema,
+  type CreateShoppingCategory,
+  type ShoppingBuiltInCategoryKey,
+  type ShoppingCategory,
+  type ShoppingCategoryKind,
+  type ShoppingCategoryList,
+  type ShoppingCategoryRouteParameters,
+  type UpdateShoppingCategory,
+} from './shopping/shopping-category.schema';
+export { normalizeShoppingDisplayText, toShoppingComparisonKey } from './shopping/shopping-text';
