@@ -103,8 +103,10 @@ export {
 } from './shopping/shopping-product.schema';
 export {
   addShoppingListItemSchema,
+  applyShoppingListPresetsSchema,
   createShoppingListSchema,
   SHOPPING_LIST_ITEM_LIMIT,
+  SHOPPING_LIST_PRESET_APPLICATION_LIMIT,
   SHOPPING_LIST_NAME_MAX_LENGTH,
   SHOPPING_LIST_QUANTITY_MAX,
   SHOPPING_LIST_QUANTITY_MIN,
@@ -119,6 +121,7 @@ export {
   updateShoppingListItemSchema,
   updateShoppingListSchema,
   type AddShoppingListItem,
+  type ApplyShoppingListPresets,
   type CreateShoppingList,
   type ShoppingList,
   type ShoppingListItem,

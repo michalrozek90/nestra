@@ -3,8 +3,10 @@ import { describe, it } from 'node:test';
 
 import {
   addShoppingListItemSchema,
+  applyShoppingListPresetsSchema,
   SHOPPING_LIST_ITEM_LIMIT,
   SHOPPING_LIST_NAME_MAX_LENGTH,
+  SHOPPING_LIST_PRESET_APPLICATION_LIMIT,
   shoppingListNameSchema,
   updateShoppingListItemSchema,
 } from '@nestra/contracts';
@@ -37,6 +39,23 @@ describe('shopping list contracts', () => {
       false,
     );
     assert.equal(SHOPPING_LIST_ITEM_LIMIT, 250);
+    assert.equal(SHOPPING_LIST_PRESET_APPLICATION_LIMIT, 20);
+  });
+
+  it('accepts repeated presets and rejects an empty application', () => {
+    const presetId = '7a1e9c42-0d58-4b63-a2f4-6c8d1e5b9037';
+    assert.equal(applyShoppingListPresetsSchema.safeParse({ presetIds: [presetId] }).success, true);
+    assert.equal(
+      applyShoppingListPresetsSchema.safeParse({ presetIds: [presetId, presetId] }).success,
+      true,
+    );
+    assert.equal(applyShoppingListPresetsSchema.safeParse({ presetIds: [] }).success, false);
+    assert.equal(
+      applyShoppingListPresetsSchema.safeParse({
+        presetIds: Array.from({ length: 21 }, () => presetId),
+      }).success,
+      false,
+    );
   });
 
   it('accepts a list-row quantity or name change and rejects an empty edit', () => {
