@@ -39,6 +39,7 @@ export function useDeleteAccount(): {
 
     try {
       await deleteAuthenticatedAccount();
+      router.replace('/login');
 
       if (userId !== undefined) {
         try {
@@ -47,8 +48,6 @@ export function useDeleteAccount(): {
           logger.error('Note drafts could not be cleared after account deletion', error);
         }
       }
-
-      router.replace('/login');
     } catch (error: unknown) {
       logger.error('Account deletion failed', error);
       setFailure(classifyAccountDeletionFailure(error));

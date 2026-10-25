@@ -48,6 +48,10 @@ function wait(durationMs: number): Promise<void> {
   });
 }
 
+function isAuthSessionQueryKey(queryKey: readonly unknown[]): boolean {
+  return queryKey[0] === AUTH_SESSION_QUERY_KEY[0] && queryKey[1] === AUTH_SESSION_QUERY_KEY[1];
+}
+
 async function restoreAuthenticationSession(): Promise<PublicUser | null> {
   const restorationStartedAt = Date.now();
   const [accessToken, refreshToken] = await Promise.all([
@@ -176,8 +180,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const deleteAccount = useCallback(async () => {
     await deleteAccountRequest();
     await clearStoredTokensSafely();
-    client.clear();
+    // Null the observed session before dropping other queries. `clear()` detaches that
+    // observer, which then keeps the previous user and leaves protected screens mounted.
+    // The yield lets React commit the redirect so those screens unmount before removal;
+    // removing an observed query refetches it.
     client.setQueryData<PublicUser | null>(AUTH_SESSION_QUERY_KEY, null);
+    await client.cancelQueries();
+    await wait(0);
+    client.removeQueries({
+      predicate: (query) => !isAuthSessionQueryKey(query.queryKey),
+    });
   }, [client]);
 
   const signOut = useCallback(async () => {

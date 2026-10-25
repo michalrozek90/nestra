@@ -20,9 +20,11 @@ matches, including when the confirm control is invoked directly, and it does not
 sign-in. Later Danger Zone actions use the same typed confirmation. The API deletes the user id
 from the verified access token and never accepts a client-supplied user id.
 
-The client calls deletion before clearing local state. After the server confirms success, it removes
-auth tokens, that user's note drafts, and the in-memory query cache, then returns to the login
-screen. A failed or unreachable request leaves the account and the local session in place. Device
+The client calls deletion before clearing local state. After the server confirms success, it clears
+auth tokens and marks the observed session signed out before removing the rest of the query cache.
+It then returns to the login screen and removes that user's note drafts. Removing the whole cache
+first detaches the session observer, which keeps the previous user and leaves protected screens
+mounted. A failed or unreachable request leaves the account and the local session in place. Device
 language, appearance, and the last-seen What's New version stay, because they are device preferences
 rather than account data.
 
