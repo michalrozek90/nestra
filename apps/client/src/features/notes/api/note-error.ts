@@ -58,6 +58,9 @@ export function getNoteErrorTranslationKey(error: unknown): NoteErrorTranslation
       case 'SHOPPING_CATEGORY_NOT_FOUND':
       case 'SHOPPING_PRODUCT_NAME_ALREADY_EXISTS':
       case 'SHOPPING_PRODUCT_NOT_FOUND':
+      case 'SHOPPING_LIST_ITEM_LIMIT_REACHED':
+      case 'SHOPPING_LIST_NOT_FOUND':
+      case 'SHOPPING_LIST_QUANTITY_EXCEEDED':
         return 'errors.unexpected';
     }
   }

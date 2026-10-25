@@ -101,4 +101,28 @@ export {
   type ShoppingProductRouteParameters,
   type UpdateShoppingProduct,
 } from './shopping/shopping-product.schema';
+export {
+  addShoppingListItemSchema,
+  createShoppingListSchema,
+  SHOPPING_LIST_ITEM_LIMIT,
+  SHOPPING_LIST_NAME_MAX_LENGTH,
+  SHOPPING_LIST_QUANTITY_MAX,
+  SHOPPING_LIST_QUANTITY_MIN,
+  shoppingListItemSchema,
+  shoppingListNameSchema,
+  shoppingListQuantitySchema,
+  shoppingListRouteParametersSchema,
+  shoppingListSchema,
+  shoppingListSummaryListSchema,
+  shoppingListSummarySchema,
+  updateShoppingListSchema,
+  type AddShoppingListItem,
+  type CreateShoppingList,
+  type ShoppingList,
+  type ShoppingListItem,
+  type ShoppingListRouteParameters,
+  type ShoppingListSummary,
+  type ShoppingListSummaryList,
+  type UpdateShoppingList,
+} from './shopping/shopping-list.schema';
 export { normalizeShoppingDisplayText, toShoppingComparisonKey } from './shopping/shopping-text';

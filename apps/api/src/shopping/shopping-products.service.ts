@@ -10,7 +10,7 @@ import {
   type ShoppingProductList,
   type UpdateShoppingProduct,
 } from '@nestra/contracts';
-import { DataSource, QueryFailedError, type Repository } from 'typeorm';
+import { DataSource, QueryFailedError, type EntityManager, type Repository } from 'typeorm';
 
 import { ApiException } from '../common/api.exception';
 import { toIsoDateTimeString } from '../common/date-time';
@@ -119,23 +119,111 @@ export class ShoppingProductsService {
   ): Promise<ShoppingProduct> {
     await this.databaseConnectionService.verifyConnection();
 
-    return this.dataSource.transaction(async (entityManager) => {
-      const productRepository = entityManager.getRepository(ShoppingProductEntity);
-      const product = await productRepository.findOne({
-        where: { id: productId, userId },
+    return this.dataSource.transaction((entityManager) =>
+      this.recordShoppingListUsageWithManager(entityManager, userId, productId, usedAt),
+    );
+  }
+
+  async findOrRememberProduct(
+    entityManager: EntityManager,
+    userId: string,
+    productInput: {
+      readonly productId?: string;
+      readonly name?: string;
+      readonly categoryId?: string;
+    },
+  ): Promise<ShoppingProductEntity> {
+    const productRepository = entityManager.getRepository(ShoppingProductEntity);
+
+    if (productInput.productId !== undefined) {
+      const ownedProduct = await productRepository.findOne({
+        where: { id: productInput.productId, userId },
         lock: { mode: 'pessimistic_write' },
       });
 
-      if (product === null) {
+      if (ownedProduct === null) {
         throw this.createProductNotFoundException();
       }
 
-      const nextUsage = nextShoppingListUsage(product.usageCount, usedAt);
-      product.usageCount = nextUsage.usageCount;
-      product.lastUsedAt = nextUsage.lastUsedAt;
-      const savedProduct = await productRepository.save(product);
-      return this.toShoppingProduct(savedProduct);
+      return ownedProduct;
+    }
+
+    if (productInput.name === undefined) {
+      throw new ApiException(
+        'VALIDATION_FAILED',
+        'A shopping-list product needs a remembered product id or a name.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const normalizedName = this.parseProductName(productInput.name);
+    const nameKey = this.parseProductNameKey(normalizedName);
+    const existingProduct = await productRepository.findOne({
+      where: { userId, nameKey },
+      lock: { mode: 'pessimistic_write' },
     });
+
+    if (existingProduct !== null) {
+      return existingProduct;
+    }
+
+    const categoryId = productInput.categoryId ?? SHOPPING_OTHER_CATEGORY_ID;
+    await this.findAssignableCategory(
+      entityManager.getRepository(ShoppingCategoryEntity),
+      userId,
+      categoryId,
+    );
+
+    // A unique violation aborts the surrounding list transaction, so conflict
+    // handling has to stay inside this statement.
+    const insertedProducts = await entityManager.query<Array<{ id: string }>>(
+      `
+        INSERT INTO shopping_products (user_id, category_id, name, name_key, usage_count, last_used_at)
+        VALUES ($1, $2, $3, $4, 0, NULL)
+        ON CONFLICT (user_id, name_key) DO NOTHING
+        RETURNING id
+      `,
+      [userId, categoryId, normalizedName, nameKey],
+    );
+    const insertedProductId = insertedProducts[0]?.id;
+    const rememberedProduct = await productRepository.findOne({
+      where:
+        insertedProductId === undefined ? { userId, nameKey } : { id: insertedProductId, userId },
+      lock: { mode: 'pessimistic_write' },
+    });
+
+    if (rememberedProduct === null) {
+      throw new ApiException(
+        'SHOPPING_PRODUCT_NAME_ALREADY_EXISTS',
+        'A remembered product with this name already exists.',
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    return rememberedProduct;
+  }
+
+  async recordShoppingListUsageWithManager(
+    entityManager: EntityManager,
+    userId: string,
+    productId: string,
+    usedAt: Date,
+  ): Promise<ShoppingProduct> {
+    const productRepository = entityManager.getRepository(ShoppingProductEntity);
+    const product = await productRepository.findOne({
+      where: { id: productId, userId },
+      lock: { mode: 'pessimistic_write' },
+    });
+
+    if (product === null) {
+      throw this.createProductNotFoundException();
+    }
+
+    const nextUsage = nextShoppingListUsage(product.usageCount, usedAt);
+    product.usageCount = nextUsage.usageCount;
+    product.lastUsedAt = nextUsage.lastUsedAt;
+    const savedProduct = await productRepository.save(product);
+    return this.toShoppingProduct(savedProduct);
   }
 
   private async findAssignableCategory(
