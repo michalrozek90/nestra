@@ -155,7 +155,13 @@ export class ShoppingListsService {
         product.id,
         new Date(),
       );
-      await listRepository.save(list);
+      await listRepository
+        .createQueryBuilder()
+        .update(ShoppingListEntity)
+        .set({ updatedAt: () => 'now()' })
+        .where('id = :listId', { listId: list.id })
+        .andWhere('user_id = :userId', { userId })
+        .execute();
 
       return this.readOwnedList(
         listRepository,

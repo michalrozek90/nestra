@@ -217,6 +217,16 @@ describe('shopping list persistence', { concurrency: false }, () => {
     const unchangedList = await shoppingListsService.getList(ownerId, createdList.id);
     assert.equal(unchangedList.items[0]?.quantity, 6);
     assert.equal((await shoppingProductsService.listProducts(ownerId))[0]?.usageCount, 2);
+
+    await dataSource.query(
+      `UPDATE shopping_lists SET updated_at = created_at - interval '1 day' WHERE id = $1`,
+      [createdList.id],
+    );
+    const staleList = await shoppingListsService.getList(ownerId, createdList.id);
+    const touchedList = await shoppingListsService.addItem(ownerId, createdList.id, {
+      name: 'Mleko',
+    });
+    assert.notEqual(touchedList.updatedAt, staleList.updatedAt);
   });
 
   it('rejects a 251st product and still allows a quantity merge at the limit', async (testContext) => {
@@ -295,5 +305,32 @@ describe('shopping list persistence', { concurrency: false }, () => {
       [ownerId],
     );
     assert.deepEqual(remainingLists, []);
+  });
+
+  it('remembers one product when the same new name is added to two lists at once', async (testContext) => {
+    if (
+      dataSource === undefined ||
+      shoppingListsService === undefined ||
+      shoppingProductsService === undefined
+    ) {
+      testContext.skip('Postgres is unavailable for persistence tests');
+      return;
+    }
+
+    const ownerId = randomUUID();
+    await insertUser(dataSource, ownerId);
+    const firstList = await shoppingListsService.createList(ownerId, 'First');
+    const secondList = await shoppingListsService.createList(ownerId, 'Second');
+
+    await Promise.all([
+      shoppingListsService.addItem(ownerId, firstList.id, { name: 'Shared product' }),
+      shoppingListsService.addItem(ownerId, secondList.id, { name: 'shared   product' }),
+    ]);
+
+    const products = await shoppingProductsService.listProducts(ownerId);
+    assert.equal(products.length, 1);
+    assert.equal(products[0]?.usageCount, 2);
+    assert.equal((await shoppingListsService.getList(ownerId, firstList.id)).items.length, 1);
+    assert.equal((await shoppingListsService.getList(ownerId, secondList.id)).items.length, 1);
   });
 });

@@ -174,29 +174,25 @@ export class ShoppingProductsService {
       categoryId,
     );
 
-    try {
-      return await productRepository.save(
-        productRepository.create({
-          userId,
-          categoryId,
-          name: normalizedName,
-          nameKey,
-          usageCount: 0,
-          lastUsedAt: null,
-        }),
-      );
-    } catch (error: unknown) {
-      if (!isShoppingProductNameConflict(error)) {
-        this.rethrowProductWriteError(error);
-      }
-    }
-
-    const racedProduct = await productRepository.findOne({
-      where: { userId, nameKey },
+    // A unique violation aborts the surrounding list transaction, so conflict
+    // handling has to stay inside this statement.
+    const insertedProducts = await entityManager.query<Array<{ id: string }>>(
+      `
+        INSERT INTO shopping_products (user_id, category_id, name, name_key, usage_count, last_used_at)
+        VALUES ($1, $2, $3, $4, 0, NULL)
+        ON CONFLICT (user_id, name_key) DO NOTHING
+        RETURNING id
+      `,
+      [userId, categoryId, normalizedName, nameKey],
+    );
+    const insertedProductId = insertedProducts[0]?.id;
+    const rememberedProduct = await productRepository.findOne({
+      where:
+        insertedProductId === undefined ? { userId, nameKey } : { id: insertedProductId, userId },
       lock: { mode: 'pessimistic_write' },
     });
 
-    if (racedProduct === null) {
+    if (rememberedProduct === null) {
       throw new ApiException(
         'SHOPPING_PRODUCT_NAME_ALREADY_EXISTS',
         'A remembered product with this name already exists.',
@@ -204,7 +200,7 @@ export class ShoppingProductsService {
       );
     }
 
-    return racedProduct;
+    return rememberedProduct;
   }
 
   async recordShoppingListUsageWithManager(
