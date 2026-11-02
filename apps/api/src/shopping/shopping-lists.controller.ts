@@ -34,6 +34,7 @@ import { ApiErrorResponseDto } from '../common/api-error-response.dto';
 import { ApiException } from '../common/api.exception';
 import { AddShoppingListItemDto } from './dto/add-shopping-list-item.dto';
 import { ApplyShoppingListPresetsDto } from './dto/apply-shopping-list-presets.dto';
+import { CreateShoppingListFromPresetDto } from './dto/create-shopping-list-from-preset.dto';
 import { CreateShoppingListDto } from './dto/create-shopping-list.dto';
 import { ShoppingListItemRouteParametersDto } from './dto/shopping-list-item-route-parameters.dto';
 import { ShoppingListRouteParametersDto } from './dto/shopping-list-route-parameters.dto';
@@ -78,6 +79,25 @@ export class ShoppingListsController {
     return this.shoppingListsService.createList(
       this.getAuthenticatedUserId(request),
       listInput.name,
+    );
+  }
+
+  @Post('from-preset')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Start an owned shopping list from an owned preset' })
+  @ApiBody({ type: CreateShoppingListFromPresetDto })
+  @ZodResponse({ status: HttpStatus.CREATED, type: ShoppingListDto })
+  @ApiCreatedResponse({ type: ShoppingListDto })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  async createListFromPreset(
+    @Req() request: RequestWithAccessToken,
+    @Body() listInput: CreateShoppingListFromPresetDto,
+  ): Promise<ShoppingList> {
+    return this.shoppingListsService.createListFromPreset(
+      this.getAuthenticatedUserId(request),
+      listInput,
     );
   }
 

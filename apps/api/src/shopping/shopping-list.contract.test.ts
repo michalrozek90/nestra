@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import {
   addShoppingListItemSchema,
   applyShoppingListPresetsSchema,
+  createShoppingListFromPresetSchema,
   SHOPPING_LIST_ITEM_LIMIT,
   SHOPPING_LIST_NAME_MAX_LENGTH,
   SHOPPING_LIST_PRESET_APPLICATION_LIMIT,
@@ -50,6 +51,14 @@ describe('shopping list contracts', () => {
       true,
     );
     assert.equal(applyShoppingListPresetsSchema.safeParse({ presetIds: [] }).success, false);
+    assert.equal(
+      createShoppingListFromPresetSchema.safeParse({ presetIds: [presetId] }).success,
+      false,
+    );
+    assert.equal(
+      createShoppingListFromPresetSchema.safeParse({ presetId, name: 'Saturday' }).success,
+      true,
+    );
     assert.equal(
       applyShoppingListPresetsSchema.safeParse({
         presetIds: Array.from({ length: 21 }, () => presetId),

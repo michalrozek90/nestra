@@ -25,6 +25,11 @@ export const createShoppingListSchema = z.strictObject({
   name: shoppingListNameSchema,
 });
 
+export const createShoppingListFromPresetSchema = z.strictObject({
+  presetId: z.uuid(),
+  name: shoppingListNameSchema.optional(),
+});
+
 export const updateShoppingListSchema = z
   .strictObject({
     name: shoppingListNameSchema.optional(),
@@ -127,6 +132,7 @@ export const shoppingListSummarySchema = z.strictObject({
 export const shoppingListSummaryListSchema = z.array(shoppingListSummarySchema);
 
 export type CreateShoppingList = z.infer<typeof createShoppingListSchema>;
+export type CreateShoppingListFromPreset = z.infer<typeof createShoppingListFromPresetSchema>;
 export type UpdateShoppingList = z.infer<typeof updateShoppingListSchema>;
 export type ShoppingListRouteParameters = z.infer<typeof shoppingListRouteParametersSchema>;
 export type ShoppingListItemRouteParameters = z.infer<typeof shoppingListItemRouteParametersSchema>;
