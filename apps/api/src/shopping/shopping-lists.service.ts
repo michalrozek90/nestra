@@ -6,6 +6,7 @@ import {
   shoppingListNameSchema,
   type AddShoppingListItem,
   type ApplyShoppingListPresets,
+  type CreateShoppingListFromPreset,
   type ShoppingList,
   type ShoppingListSummaryList,
   type UpdateShoppingList,
@@ -21,8 +22,10 @@ import { ShoppingListEntity } from './entities/shopping-list.entity';
 import { ShoppingPresetEntryEntity } from './entities/shopping-preset-entry.entity';
 import { ShoppingPresetEntity } from './entities/shopping-preset.entity';
 import { ShoppingProductEntity } from './entities/shopping-product.entity';
+import { ShoppingStorePreferenceEntity } from './entities/shopping-store-preference.entity';
 import { ShoppingStoreProfileCategoryEntity } from './entities/shopping-store-profile-category.entity';
 import { ShoppingProductsService } from './shopping-products.service';
+import { rememberSelectedStoreProfile } from './shopping-store-profile-order';
 import { ShoppingStoreProfilesService } from './shopping-store-profiles.service';
 
 @Injectable()
@@ -83,6 +86,133 @@ export class ShoppingListsService {
     );
 
     return this.toShoppingList(savedList, []);
+  }
+
+  async createListFromPreset(
+    userId: string,
+    listInput: CreateShoppingListFromPreset,
+  ): Promise<ShoppingList> {
+    await this.databaseConnectionService.verifyConnection();
+
+    return this.dataSource.transaction(async (entityManager) => {
+      const presetRepository = entityManager.getRepository(ShoppingPresetEntity);
+      const preview = await presetRepository.findOne({
+        where: { id: listInput.presetId, userId },
+      });
+
+      if (preview === null) {
+        throw this.createPresetNotFoundException();
+      }
+
+      const preference = await entityManager
+        .getRepository(ShoppingStorePreferenceEntity)
+        .findOne({ where: { userId } });
+      const previewProfileId = preview.storeProfileId ?? preference?.lastSelectedProfileId ?? null;
+
+      if (previewProfileId !== null) {
+        await this.shoppingStoreProfilesService.assertOwnedStoreProfile(
+          entityManager,
+          userId,
+          previewProfileId,
+        );
+      }
+
+      const preset = await presetRepository.findOne({
+        where: { id: listInput.presetId, userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (preset === null) {
+        throw this.createPresetNotFoundException();
+      }
+
+      const resolvedProfileId = preset.storeProfileId ?? preference?.lastSelectedProfileId ?? null;
+
+      if (resolvedProfileId !== null && resolvedProfileId !== previewProfileId) {
+        await this.shoppingStoreProfilesService.assertOwnedStoreProfile(
+          entityManager,
+          userId,
+          resolvedProfileId,
+        );
+      }
+
+      if (resolvedProfileId !== null) {
+        await rememberSelectedStoreProfile(entityManager, userId, resolvedProfileId);
+      }
+
+      const entries = await entityManager.getRepository(ShoppingPresetEntryEntity).find({
+        where: { presetId: preset.id },
+        order: { position: 'ASC', id: 'ASC' },
+      });
+
+      if (entries.length > SHOPPING_LIST_ITEM_LIMIT) {
+        throw this.createItemLimitException();
+      }
+
+      const listRepository = entityManager.getRepository(ShoppingListEntity);
+      const itemRepository = entityManager.getRepository(ShoppingListItemEntity);
+      const savedList = await listRepository.save(
+        listRepository.create({
+          userId,
+          name: this.parseListName(listInput.name ?? preset.name),
+          storeProfileId: resolvedProfileId,
+        }),
+      );
+      const productIds = entries.map((entry) => entry.productId);
+      const products =
+        productIds.length === 0
+          ? []
+          : await entityManager.getRepository(ShoppingProductEntity).find({
+              where: { userId, id: In(productIds) },
+            });
+      const productsById = new Map(products.map((product) => [product.id, product]));
+      const quantityByProductId = new Map(
+        entries.map((entry) => [entry.productId, entry.quantity]),
+      );
+
+      if (resolvedProfileId !== null && productIds.length > 0) {
+        await this.insertProductsInProfileOrder(
+          entityManager,
+          itemRepository,
+          savedList.id,
+          resolvedProfileId,
+          [],
+          productIds,
+          quantityByProductId,
+          productsById,
+        );
+      } else {
+        for (const [index, entry] of entries.entries()) {
+          await itemRepository.save(
+            itemRepository.create({
+              listId: savedList.id,
+              productId: entry.productId,
+              quantity: entry.quantity,
+              position: index,
+            }),
+          );
+        }
+      }
+
+      const usedAt = new Date();
+
+      for (const entry of entries) {
+        await this.shoppingProductsService.recordShoppingListUsageWithManager(
+          entityManager,
+          userId,
+          entry.productId,
+          usedAt,
+        );
+      }
+
+      return this.readOwnedList(
+        listRepository,
+        itemRepository,
+        entityManager.getRepository(ShoppingProductEntity),
+        userId,
+        savedList.id,
+      );
+    });
   }
 
   async getList(userId: string, listId: string): Promise<ShoppingList> {
@@ -493,11 +623,7 @@ export class ShoppingListsService {
       });
 
       if (preset === null) {
-        throw new ApiException(
-          'SHOPPING_PRESET_NOT_FOUND',
-          'The shopping preset is missing or is not owned by the authenticated user.',
-          HttpStatus.NOT_FOUND,
-        );
+        throw this.createPresetNotFoundException();
       }
     }
 
@@ -707,6 +833,14 @@ export class ShoppingListsService {
     return new ApiException(
       'SHOPPING_LIST_NOT_FOUND',
       'The shopping list is missing or is not owned by the authenticated user.',
+      HttpStatus.NOT_FOUND,
+    );
+  }
+
+  private createPresetNotFoundException(): ApiException {
+    return new ApiException(
+      'SHOPPING_PRESET_NOT_FOUND',
+      'The shopping preset is missing or is not owned by the authenticated user.',
       HttpStatus.NOT_FOUND,
     );
   }

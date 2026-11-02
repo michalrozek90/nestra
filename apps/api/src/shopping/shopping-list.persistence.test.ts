@@ -767,4 +767,93 @@ describe('shopping list persistence', { concurrency: false }, () => {
     assert.equal(merged.items.length, 250);
     assert.equal(merged.items.find((item) => item.productId === milk.id)?.quantity, 5);
   });
+
+  it('starts a list from a preset and records one usage per product', async (testContext) => {
+    if (
+      dataSource === undefined ||
+      shoppingListsService === undefined ||
+      shoppingPresetsService === undefined ||
+      shoppingProductsService === undefined ||
+      shoppingStoreProfilesService === undefined
+    ) {
+      testContext.skip('Postgres is unavailable for persistence tests');
+      return;
+    }
+
+    const ownerId = randomUUID();
+    const otherUserId = randomUUID();
+    await insertUser(dataSource, ownerId);
+    await insertUser(dataSource, otherUserId);
+    const milk = await shoppingProductsService.createProduct(
+      ownerId,
+      'Milk',
+      SHOPPING_BUILT_IN_CATEGORY_IDS.dairy,
+    );
+    const bread = await shoppingProductsService.createProduct(
+      ownerId,
+      'Bread',
+      SHOPPING_BUILT_IN_CATEGORY_IDS.bakery,
+    );
+    const presetProfile = await shoppingStoreProfilesService.createProfile(ownerId, 'Preset store');
+    const weekly = await shoppingPresetsService.createPreset(ownerId, {
+      name: 'Weekly',
+      storeProfileId: presetProfile.id,
+      entries: [
+        { productId: milk.id, quantity: 2 },
+        { productId: bread.id, quantity: 1 },
+      ],
+    });
+    const presetBefore = await shoppingPresetsService.getPreset(ownerId, weekly.id);
+    const created = await shoppingListsService.createListFromPreset(ownerId, {
+      presetId: weekly.id,
+    });
+
+    assert.equal(created.name, 'Weekly');
+    assert.equal(created.storeProfileId, presetProfile.id);
+    assert.deepEqual(
+      created.items.map((item) => [item.productId, item.quantity]),
+      [
+        [bread.id, 1],
+        [milk.id, 2],
+      ],
+    );
+    const usage = await shoppingProductsService.listProducts(ownerId);
+    assert.equal(usage.find((product) => product.id === milk.id)?.usageCount, 1);
+    assert.equal(usage.find((product) => product.id === bread.id)?.usageCount, 1);
+    const presetAfter = await shoppingPresetsService.getPreset(ownerId, weekly.id);
+    assert.equal(presetAfter.updatedAt, presetBefore.updatedAt);
+    assert.equal(presetAfter.storeProfileId, presetProfile.id);
+
+    const renamed = await shoppingListsService.createListFromPreset(ownerId, {
+      presetId: weekly.id,
+      name: 'Saturday',
+    });
+    assert.equal(renamed.name, 'Saturday');
+    assert.equal(
+      (await shoppingProductsService.listProducts(ownerId)).find(
+        (product) => product.id === milk.id,
+      )?.usageCount,
+      2,
+    );
+
+    const plain = await shoppingPresetsService.createPreset(ownerId, {
+      name: 'Plain',
+      entries: [{ productId: milk.id, quantity: 1 }],
+    });
+    const fromLastUsed = await shoppingListsService.createListFromPreset(ownerId, {
+      presetId: plain.id,
+    });
+    assert.equal(fromLastUsed.storeProfileId, presetProfile.id);
+
+    const foreignPreset = await shoppingPresetsService.createPreset(otherUserId, {
+      name: 'Foreign',
+    });
+    await assert.rejects(
+      shoppingListsService.createListFromPreset(ownerId, { presetId: foreignPreset.id }),
+      (error: unknown) => {
+        assertApiException(error, 'SHOPPING_PRESET_NOT_FOUND', 404);
+        return true;
+      },
+    );
+  });
 });

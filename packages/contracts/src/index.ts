@@ -104,6 +104,7 @@ export {
 export {
   addShoppingListItemSchema,
   applyShoppingListPresetsSchema,
+  createShoppingListFromPresetSchema,
   createShoppingListSchema,
   SHOPPING_LIST_ITEM_LIMIT,
   SHOPPING_LIST_PRESET_APPLICATION_LIMIT,
@@ -123,6 +124,7 @@ export {
   type AddShoppingListItem,
   type ApplyShoppingListPresets,
   type CreateShoppingList,
+  type CreateShoppingListFromPreset,
   type ShoppingList,
   type ShoppingListItem,
   type ShoppingListItemRouteParameters,

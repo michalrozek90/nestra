@@ -37,7 +37,8 @@ A later addition of the same product calls it again.
 - Equivalent names such as `Milk` and `milk` cannot both exist for one user.
 - `Jajka 12 sztuk` stays one product name.
 - Shopping-list and preset application code must call `nextShoppingListUsage` inside the same
-  transaction as the list write. Quantity controls must not call it.
+  transaction as the list write. Starting a list from a preset records one event per copied
+  product. Quantity controls must not call it.
 - Store-profile rows still have to drop a deleted category in that same category-deletion
   transaction when those rows exist.
 - Archiving a product is a later management behavior and is not part of this table yet.
