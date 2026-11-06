@@ -9,7 +9,6 @@ import { DataSource } from 'typeorm';
 import { ApiException } from '../common/api.exception';
 import { DatabaseConnectionService } from '../database/database-connection.service';
 import { createDatabaseOptions } from '../database/database-options';
-import { ShoppingCategoryEntity } from './entities/shopping-category.entity';
 import { ShoppingListItemEntity } from './entities/shopping-list-item.entity';
 import { ShoppingListEntity } from './entities/shopping-list.entity';
 import { ShoppingPresetEntryEntity } from './entities/shopping-preset-entry.entity';
@@ -115,7 +114,6 @@ describe('shopping list persistence', { concurrency: false }, () => {
     const databaseConnectionService = new DatabaseConnectionService(dataSource);
     shoppingProductsService = new ShoppingProductsService(
       dataSource.getRepository(ShoppingProductEntity),
-      dataSource.getRepository(ShoppingCategoryEntity),
       databaseConnectionService,
       dataSource,
     );
@@ -855,5 +853,97 @@ describe('shopping list persistence', { concurrency: false }, () => {
         return true;
       },
     );
+  });
+
+  it('keeps an archived product on lists and presets and restores it on the next list add', async (testContext) => {
+    if (
+      dataSource === undefined ||
+      shoppingListsService === undefined ||
+      shoppingPresetsService === undefined ||
+      shoppingProductsService === undefined
+    ) {
+      testContext.skip('Postgres is unavailable for persistence tests');
+      return;
+    }
+
+    const ownerId = randomUUID();
+    await insertUser(dataSource, ownerId);
+    const milk = await shoppingProductsService.createProduct(ownerId, 'Milk', undefined);
+    const list = await shoppingListsService.createList(ownerId, 'Weekly');
+    await shoppingListsService.addItem(ownerId, list.id, { name: 'Milk', quantity: 2 });
+    const preset = await shoppingPresetsService.createPreset(ownerId, {
+      name: 'Weekly',
+      entries: [{ productId: milk.id, quantity: 2 }],
+    });
+
+    await shoppingProductsService.updateProduct(ownerId, milk.id, {
+      name: 'Fresh milk',
+      categoryId: SHOPPING_BUILT_IN_CATEGORY_IDS.dairy,
+    });
+    const renamedList = await shoppingListsService.getList(ownerId, list.id);
+    const renamedItem = renamedList.items[0];
+    assert.ok(renamedItem !== undefined);
+    assert.equal(renamedItem.productId, milk.id);
+    assert.equal(renamedItem.name, 'Fresh milk');
+    assert.equal(renamedItem.categoryId, SHOPPING_BUILT_IN_CATEGORY_IDS.dairy);
+    assert.equal(renamedItem.quantity, 2);
+    const renamedPreset = await shoppingPresetsService.getPreset(ownerId, preset.id);
+    const renamedEntry = renamedPreset.entries[0];
+    assert.ok(renamedEntry !== undefined);
+    assert.equal(renamedEntry.productId, milk.id);
+    assert.equal(renamedEntry.name, 'Fresh milk');
+    assert.equal(renamedEntry.categoryId, SHOPPING_BUILT_IN_CATEGORY_IDS.dairy);
+    assert.equal(renamedPreset.updatedAt, preset.updatedAt);
+
+    await shoppingProductsService.archiveProduct(ownerId, milk.id);
+    const archivedList = await shoppingListsService.getList(ownerId, list.id);
+    const archivedItem = archivedList.items[0];
+    assert.ok(archivedItem !== undefined);
+    assert.equal(archivedItem.productId, milk.id);
+    assert.equal(archivedItem.name, 'Fresh milk');
+    assert.equal(archivedItem.quantity, 2);
+    const archivedPreset = await shoppingPresetsService.getPreset(ownerId, preset.id);
+    const archivedEntry = archivedPreset.entries[0];
+    assert.ok(archivedEntry !== undefined);
+    assert.equal(archivedEntry.name, 'Fresh milk');
+    assert.equal(archivedEntry.quantity, 2);
+    assert.equal(archivedPreset.updatedAt, preset.updatedAt);
+    assert.equal(
+      (await shoppingProductsService.listProducts(ownerId)).some(
+        (product) => product.id === milk.id,
+      ),
+      false,
+    );
+
+    const mergedList = await shoppingListsService.addItem(ownerId, list.id, {
+      productId: milk.id,
+      quantity: 1,
+    });
+    const mergedItem = mergedList.items[0];
+    assert.equal(mergedList.items.length, 1);
+    assert.ok(mergedItem !== undefined);
+    assert.equal(mergedItem.quantity, 3);
+    const restored = (await shoppingProductsService.listProducts(ownerId)).find(
+      (product) => product.id === milk.id,
+    );
+    assert.ok(restored !== undefined);
+    assert.equal(restored.archivedAt, null);
+    assert.equal(restored.usageCount, 2);
+
+    await shoppingProductsService.archiveProduct(ownerId, milk.id);
+    const startedList = await shoppingListsService.createListFromPreset(ownerId, {
+      presetId: preset.id,
+    });
+    const startedItem = startedList.items[0];
+    assert.ok(startedItem !== undefined);
+    assert.equal(startedItem.productId, milk.id);
+    assert.equal(startedItem.name, 'Fresh milk');
+    assert.equal(startedItem.quantity, 2);
+    const restoredByPreset = (await shoppingProductsService.listProducts(ownerId)).find(
+      (product) => product.id === milk.id,
+    );
+    assert.ok(restoredByPreset !== undefined);
+    assert.equal(restoredByPreset.archivedAt, null);
+    assert.equal(restoredByPreset.usageCount, 3);
   });
 });

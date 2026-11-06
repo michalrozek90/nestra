@@ -37,6 +37,7 @@ export const shoppingProductSchema = z.strictObject({
   categoryId: z.uuid(),
   usageCount: z.number().int().min(0),
   lastUsedAt: z.iso.datetime().nullable(),
+  archivedAt: z.iso.datetime().nullable(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });

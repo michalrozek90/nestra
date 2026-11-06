@@ -10,7 +10,7 @@ import {
   type ShoppingProductList,
   type UpdateShoppingProduct,
 } from '@nestra/contracts';
-import { DataSource, QueryFailedError, type EntityManager, type Repository } from 'typeorm';
+import { DataSource, IsNull, QueryFailedError, type EntityManager, type Repository } from 'typeorm';
 
 import { ApiException } from '../common/api.exception';
 import { toIsoDateTimeString } from '../common/date-time';
@@ -24,8 +24,6 @@ export class ShoppingProductsService {
   constructor(
     @InjectRepository(ShoppingProductEntity)
     private readonly shoppingProductRepository: Repository<ShoppingProductEntity>,
-    @InjectRepository(ShoppingCategoryEntity)
-    private readonly shoppingCategoryRepository: Repository<ShoppingCategoryEntity>,
     private readonly databaseConnectionService: DatabaseConnectionService,
     private readonly dataSource: DataSource,
   ) {}
@@ -33,7 +31,7 @@ export class ShoppingProductsService {
   async listProducts(userId: string): Promise<ShoppingProductList> {
     await this.databaseConnectionService.verifyConnection();
     const products = await this.shoppingProductRepository.find({
-      where: { userId },
+      where: { userId, archivedAt: IsNull() },
       order: { nameKey: 'ASC', id: 'ASC' },
     });
 
@@ -50,21 +48,50 @@ export class ShoppingProductsService {
     const nameKey = this.parseProductNameKey(normalizedName);
     const resolvedCategoryId = categoryId ?? SHOPPING_OTHER_CATEGORY_ID;
 
-    await this.findAssignableCategory(this.shoppingCategoryRepository, userId, resolvedCategoryId);
-
     try {
-      const savedProduct = await this.shoppingProductRepository.save(
-        this.shoppingProductRepository.create({
-          userId,
-          categoryId: resolvedCategoryId,
-          name: normalizedName,
-          nameKey,
-          usageCount: 0,
-          lastUsedAt: null,
-        }),
-      );
+      return await this.dataSource.transaction(async (entityManager) => {
+        const productRepository = entityManager.getRepository(ShoppingProductEntity);
+        const existingProduct = await productRepository.findOne({
+          where: { userId, nameKey },
+          lock: { mode: 'pessimistic_write' },
+        });
 
-      return this.toShoppingProduct(savedProduct);
+        if (existingProduct !== null) {
+          if (existingProduct.archivedAt === null) {
+            throw new ApiException(
+              'SHOPPING_PRODUCT_NAME_ALREADY_EXISTS',
+              'A remembered product with this name already exists.',
+              HttpStatus.CONFLICT,
+            );
+          }
+
+          // The normalized name stays unique while archived, so remembering it again restores that row.
+          const restoredProduct = await this.restoreArchivedProduct(
+            productRepository,
+            existingProduct,
+          );
+          return this.toShoppingProduct(restoredProduct);
+        }
+
+        await this.findAssignableCategory(
+          entityManager.getRepository(ShoppingCategoryEntity),
+          userId,
+          resolvedCategoryId,
+        );
+        const savedProduct = await productRepository.save(
+          productRepository.create({
+            userId,
+            categoryId: resolvedCategoryId,
+            name: normalizedName,
+            nameKey,
+            usageCount: 0,
+            lastUsedAt: null,
+            archivedAt: null,
+          }),
+        );
+
+        return this.toShoppingProduct(savedProduct);
+      });
     } catch (error: unknown) {
       this.rethrowProductWriteError(error);
     }
@@ -112,6 +139,30 @@ export class ShoppingProductsService {
     });
   }
 
+  async archiveProduct(userId: string, productId: string): Promise<ShoppingProduct> {
+    await this.databaseConnectionService.verifyConnection();
+
+    return this.dataSource.transaction(async (entityManager) => {
+      const productRepository = entityManager.getRepository(ShoppingProductEntity);
+      const product = await productRepository.findOne({
+        where: { id: productId, userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (product === null) {
+        throw this.createProductNotFoundException();
+      }
+
+      if (product.archivedAt !== null) {
+        return this.toShoppingProduct(product);
+      }
+
+      product.archivedAt = new Date();
+      const savedProduct = await productRepository.save(product);
+      return this.toShoppingProduct(savedProduct);
+    });
+  }
+
   async recordShoppingListUsage(
     userId: string,
     productId: string,
@@ -145,7 +196,7 @@ export class ShoppingProductsService {
         throw this.createProductNotFoundException();
       }
 
-      return ownedProduct;
+      return this.restoreArchivedProduct(productRepository, ownedProduct);
     }
 
     if (productInput.name === undefined) {
@@ -164,7 +215,7 @@ export class ShoppingProductsService {
     });
 
     if (existingProduct !== null) {
-      return existingProduct;
+      return this.restoreArchivedProduct(productRepository, existingProduct);
     }
 
     const categoryId = productInput.categoryId ?? SHOPPING_OTHER_CATEGORY_ID;
@@ -222,8 +273,21 @@ export class ShoppingProductsService {
     const nextUsage = nextShoppingListUsage(product.usageCount, usedAt);
     product.usageCount = nextUsage.usageCount;
     product.lastUsedAt = nextUsage.lastUsedAt;
+    product.archivedAt = null;
     const savedProduct = await productRepository.save(product);
     return this.toShoppingProduct(savedProduct);
+  }
+
+  private async restoreArchivedProduct(
+    productRepository: Repository<ShoppingProductEntity>,
+    product: ShoppingProductEntity,
+  ): Promise<ShoppingProductEntity> {
+    if (product.archivedAt === null) {
+      return product;
+    }
+
+    product.archivedAt = null;
+    return productRepository.save(product);
   }
 
   private async findAssignableCategory(
@@ -307,6 +371,7 @@ export class ShoppingProductsService {
       categoryId: product.categoryId,
       usageCount: product.usageCount,
       lastUsedAt: product.lastUsedAt === null ? null : toIsoDateTimeString(product.lastUsedAt),
+      archivedAt: product.archivedAt === null ? null : toIsoDateTimeString(product.archivedAt),
       createdAt: toIsoDateTimeString(product.createdAt),
       updatedAt: toIsoDateTimeString(product.updatedAt),
     };
