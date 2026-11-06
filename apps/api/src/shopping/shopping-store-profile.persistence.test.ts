@@ -125,7 +125,6 @@ describe('shopping store profile persistence', { concurrency: false }, () => {
     );
     const shoppingProductsService = new ShoppingProductsService(
       dataSource.getRepository(ShoppingProductEntity),
-      dataSource.getRepository(ShoppingCategoryEntity),
       databaseConnectionService,
       dataSource,
     );

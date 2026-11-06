@@ -119,7 +119,6 @@ describe('shopping product persistence', { concurrency: false }, () => {
     const databaseConnectionService = new DatabaseConnectionService(dataSource);
     shoppingProductsService = new ShoppingProductsService(
       dataSource.getRepository(ShoppingProductEntity),
-      dataSource.getRepository(ShoppingCategoryEntity),
       databaseConnectionService,
       dataSource,
     );
@@ -297,5 +296,93 @@ describe('shopping product persistence', { concurrency: false }, () => {
       [createdProduct.id],
     );
     assert.deepEqual(remainingProducts, []);
+  });
+
+  it('archives a remembered product without releasing its normalized name', async (testContext) => {
+    if (dataSource === undefined || shoppingProductsService === undefined) {
+      testContext.skip('Postgres is unavailable for persistence tests');
+      return;
+    }
+
+    const ownerId = randomUUID();
+    const otherUserId = randomUUID();
+    await insertUser(dataSource, ownerId);
+    await insertUser(dataSource, otherUserId);
+    const milk = await shoppingProductsService.createProduct(ownerId, 'Milk', undefined);
+    const bread = await shoppingProductsService.createProduct(ownerId, 'Bread', undefined);
+    assert.equal(milk.archivedAt, null);
+
+    const archivedMilk = await shoppingProductsService.archiveProduct(ownerId, milk.id);
+    assert.notEqual(archivedMilk.archivedAt, null);
+    assert.equal(archivedMilk.usageCount, 0);
+    assert.equal(archivedMilk.lastUsedAt, null);
+    const hiddenProducts = await shoppingProductsService.listProducts(ownerId);
+    assert.equal(
+      hiddenProducts.some((product) => product.id === milk.id),
+      false,
+    );
+    assert.equal(
+      hiddenProducts.some((product) => product.id === bread.id),
+      true,
+    );
+
+    const archivedAgain = await shoppingProductsService.archiveProduct(ownerId, milk.id);
+    assert.notEqual(archivedAgain.archivedAt, null);
+
+    await assert.rejects(
+      shoppingProductsService.archiveProduct(otherUserId, milk.id),
+      (error: unknown) => {
+        assertApiException(error, 'SHOPPING_PRODUCT_NOT_FOUND', 404);
+        return true;
+      },
+    );
+    await assert.rejects(
+      shoppingProductsService.archiveProduct(ownerId, randomUUID()),
+      (error: unknown) => {
+        assertApiException(error, 'SHOPPING_PRODUCT_NOT_FOUND', 404);
+        return true;
+      },
+    );
+    await assert.rejects(
+      shoppingProductsService.updateProduct(ownerId, bread.id, { name: 'Milk' }),
+      (error: unknown) => {
+        assertApiException(error, 'SHOPPING_PRODUCT_NAME_ALREADY_EXISTS', 409);
+        return true;
+      },
+    );
+    const breadAfterConflict = await shoppingProductsService.listProducts(ownerId);
+    assert.equal(requireProduct(breadAfterConflict, bread.id).name, 'Bread');
+
+    const renamedWhileArchived = await shoppingProductsService.updateProduct(ownerId, milk.id, {
+      name: 'Fresh milk',
+      categoryId: SHOPPING_BUILT_IN_CATEGORY_IDS.dairy,
+    });
+    assert.equal(renamedWhileArchived.name, 'Fresh milk');
+    assert.equal(renamedWhileArchived.categoryId, SHOPPING_BUILT_IN_CATEGORY_IDS.dairy);
+    assert.equal(renamedWhileArchived.archivedAt, archivedMilk.archivedAt);
+    assert.equal(
+      (await shoppingProductsService.listProducts(ownerId)).some(
+        (product) => product.id === milk.id,
+      ),
+      false,
+    );
+
+    const restoredMilk = await shoppingProductsService.createProduct(
+      ownerId,
+      '  fresh   milk ',
+      undefined,
+    );
+    assert.equal(restoredMilk.id, milk.id);
+    assert.equal(restoredMilk.name, 'Fresh milk');
+    assert.equal(restoredMilk.categoryId, SHOPPING_BUILT_IN_CATEGORY_IDS.dairy);
+    assert.equal(restoredMilk.archivedAt, null);
+    assert.equal(restoredMilk.usageCount, 0);
+    await assert.rejects(
+      shoppingProductsService.createProduct(ownerId, 'Fresh milk', undefined),
+      (error: unknown) => {
+        assertApiException(error, 'SHOPPING_PRODUCT_NAME_ALREADY_EXISTS', 409);
+        return true;
+      },
+    );
   });
 });

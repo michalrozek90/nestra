@@ -41,7 +41,8 @@ A later addition of the same product calls it again.
   product. Quantity controls must not call it.
 - Store-profile rows still have to drop a deleted category in that same category-deletion
   transaction when those rows exist.
-- Archiving a product is a later management behavior and is not part of this table yet.
+- Removing a remembered product from suggestions is decided in ADR 021. The product row stays,
+  so lists and presets that already reference it keep working.
 
 ## Alternatives considered
 

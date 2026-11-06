@@ -5,7 +5,9 @@ import {
   nextShoppingListUsage,
   SHOPPING_PRODUCT_NAME_KEY_MAX_LENGTH,
   SHOPPING_PRODUCT_NAME_MAX_LENGTH,
+  SHOPPING_OTHER_CATEGORY_ID,
   shoppingProductNameSchema,
+  shoppingProductSchema,
   toShoppingComparisonKey,
   updateShoppingProductSchema,
 } from '@nestra/contracts';
@@ -44,5 +46,23 @@ describe('shopping product contracts', () => {
     assert.equal(nextUsage.usageCount, 3);
     assert.equal(nextUsage.lastUsedAt, usedAt);
     assert.equal(updateShoppingProductSchema.safeParse({}).success, false);
+  });
+
+  it('requires an explicit archive timestamp on a remembered product', () => {
+    const product = {
+      id: '7a1e9c42-0d58-4b63-a2f4-6c8d1e5b9037',
+      name: 'Milk',
+      categoryId: SHOPPING_OTHER_CATEGORY_ID,
+      usageCount: 0,
+      lastUsedAt: null,
+      archivedAt: null,
+      createdAt: '2026-11-06T00:00:00.000Z',
+      updatedAt: '2026-11-06T00:00:00.000Z',
+    };
+
+    assert.equal(shoppingProductSchema.safeParse(product).success, true);
+    const { archivedAt, ...withoutArchive } = product;
+    assert.equal(archivedAt, null);
+    assert.equal(shoppingProductSchema.safeParse(withoutArchive).success, false);
   });
 });

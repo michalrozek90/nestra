@@ -122,7 +122,6 @@ describe('shopping preset persistence', { concurrency: false }, () => {
     );
     shoppingProductsService = new ShoppingProductsService(
       dataSource.getRepository(ShoppingProductEntity),
-      dataSource.getRepository(ShoppingCategoryEntity),
       databaseConnectionService,
       dataSource,
     );

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -49,14 +50,16 @@ export class ShoppingProductsController {
   constructor(private readonly shoppingProductsService: ShoppingProductsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List remembered products owned by the authenticated user' })
+  @ApiOperation({ summary: 'List active remembered products owned by the authenticated user' })
   @ZodResponse({
     status: HttpStatus.OK,
-    description: 'Owned remembered products ordered by their comparison key.',
+    description:
+      'Owned remembered products that are still in suggestions, ordered by comparison key.',
     type: ShoppingProductListDto,
   })
   @ApiOkResponse({
-    description: 'Owned remembered products ordered by their comparison key.',
+    description:
+      'Owned remembered products that are still in suggestions, ordered by comparison key.',
     type: ShoppingProductListDto,
   })
   @ApiUnauthorizedResponse({
@@ -150,6 +153,47 @@ export class ShoppingProductsController {
       this.getAuthenticatedUserId(request),
       parameters.productId,
       productInput,
+    );
+  }
+
+  @Delete(':productId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Remove an owned remembered product from suggestions' })
+  @ApiParam({
+    name: 'productId',
+    required: true,
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ZodResponse({
+    status: HttpStatus.OK,
+    description:
+      'The remembered product was archived. Existing shopping lists and presets still reference it.',
+    type: ShoppingProductDto,
+  })
+  @ApiOkResponse({
+    description:
+      'The remembered product was archived. Existing shopping lists and presets still reference it.',
+    type: ShoppingProductDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Route parameter validation failed.',
+    type: ApiErrorResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'The access token is invalid.',
+    type: ApiErrorResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'The remembered product is missing or is not owned by the authenticated user.',
+    type: ApiErrorResponseDto,
+  })
+  async archiveProduct(
+    @Req() request: RequestWithAccessToken,
+    @Param() parameters: ShoppingProductRouteParametersDto,
+  ): Promise<ShoppingProduct> {
+    return this.shoppingProductsService.archiveProduct(
+      this.getAuthenticatedUserId(request),
+      parameters.productId,
     );
   }
 
